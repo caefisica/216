@@ -37,7 +37,6 @@ const nextConfig: NextConfig = {
   ],
   experimental: {
     mdxRs: true,
-    viewTransition: true,
     optimizePackageImports: ["lucide-react", "@aws-sdk/client-s3", "better-auth"],
   },
   typescript: {
