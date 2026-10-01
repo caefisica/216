@@ -68,7 +68,7 @@
     "shx": "^0.4.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "wrangler": "^4.141.0"
+    "wrangler": "^4.142.0"
   },
   "overrides": {
     "@types/react": "19.3.0",
