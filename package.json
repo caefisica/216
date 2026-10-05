@@ -60,7 +60,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "drizzle-kit": "^0.31.11",
-    "knip": "^6.38.0",
+    "knip": "^6.39.0",
     "oxfmt": "^0.71.0",
     "oxlint": "^1.86.0",
     "postcss": "^8.5.28",
