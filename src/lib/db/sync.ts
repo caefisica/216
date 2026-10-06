@@ -1,10 +1,21 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { sql } from "drizzle-orm";
 import { Pool } from "pg";
 import * as schema from "./schema";
 import { runSeeds } from "./seeds";
 import { computeHashes, readStoredIntegrity, writeStoredIntegrity } from "./integrity";
-import { execSync } from "node:child_process";
+import { planSync } from "./sync-plan";
+import { spawnSync } from "node:child_process";
+
+const IN_SYNC = "No changes detected";
+
+function drizzlePush(): { output: string } {
+  const result = spawnSync("bun", ["x", "drizzle-kit", "push"], {
+    env: process.env,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  return { output: result.stdout + result.stderr };
+}
 
 export async function sync() {
   const connectionString = process.env.DATABASE_URL;
@@ -20,33 +31,34 @@ export async function sync() {
 
   const { schemaHash, seedHash } = await computeHashes();
   const stored = await readStoredIntegrity(db);
+  const plan = planSync(stored, { schemaHash, seedHash });
 
-  if (stored.schemaHash === schemaHash && stored.seedHash === seedHash) {
+  if (!plan.pushSchema && !plan.seed) {
     console.log("Database is up to date (hash matches).");
     await pool.end();
     return;
   }
 
   try {
-    if (stored.schemaHash !== schemaHash) {
-      console.log("Schema changed. Wiping and regenerating...");
-
-      // 1. Wipe the schema
-      await db.execute(sql`DROP SCHEMA public CASCADE`);
-      await db.execute(sql`CREATE SCHEMA public`);
-      await db.execute(sql`GRANT ALL ON SCHEMA public TO public`);
-
-      // 2. Push Schema
-      execSync("bun x drizzle-kit push", { stdio: "inherit", env: process.env });
-
-      // 3. Re-seed everything
-      await runSeeds(db);
-    } else {
-      console.log("Seeds changed. Re-seeding...");
-      await runSeeds(db);
+    if (plan.pushSchema) {
+      console.log("Schema changed. Pushing it to the existing database...");
+      const first = drizzlePush();
+      // drizzle-kit exits 0 when it declines to push, so success means a second push finds nothing
+      // left to do. Without a terminal it never prompts, and it applies no data-losing statement.
+      const applied = first.output.includes(IN_SYNC) || drizzlePush().output.includes(IN_SYNC);
+      if (!applied) {
+        console.error(
+          `${first.output}\nThe schema was not applied, so nothing was seeded or recorded.\n` +
+            "If the change would lose data, back up what you need and drop the database, or revert the schema change.",
+        );
+        process.exitCode = 1;
+        return;
+      }
     }
 
-    // 4. Update the integrity hashes
+    console.log("Seeding...");
+    await runSeeds(db);
+
     await writeStoredIntegrity(db, { schemaHash, seedHash });
 
     console.log("Database synchronization complete!");
