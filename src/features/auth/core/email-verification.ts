@@ -1,12 +1,13 @@
 import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import { cookies } from "next/headers";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { emailVerificationRequest as evTable } from "@/lib/db/schema";
 import { setUserEmailVerified } from "@/features/auth/core/session";
 import { Ok, Err, isErr, type Result } from "@/lib/result";
 import { ExpiringTokenBucket } from "./rate-limit";
 import { generateOTP } from "./otp";
+import { sendVerificationEmail } from "./mailer";
 
 export interface EmailVerificationRequest {
   id: string;
@@ -23,8 +24,6 @@ export async function createEmailVerificationRequest(
   email: string,
 ): Promise<EmailVerificationRequest> {
   const db = await getDb();
-  await db.delete(evTable).where(eq(evTable.userId, userId));
-
   const idBytes = new Uint8Array(20);
   crypto.getRandomValues(idBytes);
   const id = encodeBase32LowerCaseNoPadding(idBytes);
@@ -33,6 +32,28 @@ export async function createEmailVerificationRequest(
 
   await db.insert(evTable).values({ id, userId, email, code, expiresAt });
   return { id, userId, email, code, expiresAt };
+}
+
+/**
+ * Creates a request and mails its code. Earlier requests stay valid until the mail is sent, so a
+ * failed send deletes only the new request and leaves the user's current code and cookie working.
+ */
+export async function issueEmailVerification(
+  userId: string,
+  email: string,
+  send: typeof sendVerificationEmail = sendVerificationEmail,
+): Promise<Result<EmailVerificationRequest, "mail_failed">> {
+  const request = await createEmailVerificationRequest(userId, email);
+  const db = await getDb();
+  try {
+    await send(request.email, request.code);
+  } catch (error) {
+    console.error("Could not send the verification email:", error);
+    await db.delete(evTable).where(eq(evTable.id, request.id));
+    return Err("mail_failed");
+  }
+  await db.delete(evTable).where(and(eq(evTable.userId, userId), ne(evTable.id, request.id)));
+  return Ok(request);
 }
 
 export async function getEmailVerificationRequest(
@@ -70,10 +91,6 @@ export async function verifyEmailCode(
   await deleteUserEmailVerificationRequests(userId);
   await setUserEmailVerified(userId);
   return Ok(undefined);
-}
-
-export function sendVerificationEmail(email: string, code: string): void {
-  console.log(`[email] To ${email}: verification code ${code}`);
 }
 
 export async function setEmailVerificationCookie(

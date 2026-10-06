@@ -7,6 +7,7 @@ import { getDb } from "@/lib/db";
 import { passwordResetSession as prsTable, user as userTable } from "@/lib/db/schema";
 import { Ok, Err, type Result } from "@/lib/result";
 import { generateOTP } from "./otp";
+import { sendPasswordResetEmail } from "./mailer";
 
 export interface PasswordResetSession {
   id: string;
@@ -84,8 +85,27 @@ export async function invalidatePasswordResetSession(userId: string): Promise<vo
   await db.delete(prsTable).where(eq(prsTable.userId, userId));
 }
 
-export function sendPasswordResetEmail(email: string, code: string): void {
-  console.log(`[email] To ${email}: password reset code ${code}`);
+/**
+ * Creates a reset session and starts mailing its code without waiting for the provider.
+ * `delivery` never rejects: if the code never left, it deletes only this session.
+ */
+export async function issuePasswordReset(
+  userId: string,
+  email: string,
+  send: typeof sendPasswordResetEmail = sendPasswordResetEmail,
+): Promise<{ token: string; expiresAt: Date; delivery: Promise<void> }> {
+  const token = generatePasswordResetToken();
+  const session = await createPasswordResetSession(token, userId, email);
+  const delivery = (async () => {
+    try {
+      await send(email, session.code);
+    } catch (error) {
+      console.error("Could not send the password reset email:", error);
+      const db = await getDb();
+      await db.delete(prsTable).where(eq(prsTable.id, session.id));
+    }
+  })().catch((error) => console.error("Could not clean up the password reset session:", error));
+  return { token, expiresAt: session.expiresAt, delivery };
 }
 
 export async function setPasswordResetCookie(token: string, expiresAt: Date): Promise<void> {

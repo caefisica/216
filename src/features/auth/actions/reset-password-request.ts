@@ -1,12 +1,12 @@
 "use server";
 
+import { after } from "next/server";
 import { getDb } from "@/lib/db";
 import { user as userTable } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import {
   generatePasswordResetToken,
-  createPasswordResetSession,
-  sendPasswordResetEmail,
+  issuePasswordReset,
   setPasswordResetCookie,
 } from "@/features/auth/core/password-reset";
 
@@ -28,12 +28,18 @@ export async function requestPasswordResetAction(
     .where(eq(userTable.email, email))
     .limit(1);
 
+  // Registered and unknown addresses get the same reply and cookie, and the response never waits
+  // on the mail provider. A registered address still costs one more database write.
   if (rows.length > 0) {
     const user = rows[0];
-    const token = generatePasswordResetToken();
-    const resetSession = await createPasswordResetSession(token, user.id, user.email);
-    sendPasswordResetEmail(user.email, resetSession.code);
-    await setPasswordResetCookie(token, resetSession.expiresAt);
+    const issued = await issuePasswordReset(user.id, user.email);
+    await setPasswordResetCookie(issued.token, issued.expiresAt);
+    after(() => issued.delivery);
+  } else {
+    await setPasswordResetCookie(
+      generatePasswordResetToken(),
+      new Date(Date.now() + 10 * 60 * 1000),
+    );
   }
 
   return { sent: true };

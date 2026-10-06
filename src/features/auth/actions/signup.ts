@@ -6,18 +6,13 @@ import { getDb } from "@/lib/db";
 import { user as userTable } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import {
-  createUser,
   generateSessionToken,
   createSession,
   setSessionTokenCookie,
 } from "@/features/auth/core/session";
 import { verifyPasswordStrength } from "@/features/auth/core/password";
-import {
-  createEmailVerificationRequest,
-  sendVerificationEmail,
-  sendVerificationEmailBucket,
-  setEmailVerificationCookie,
-} from "@/features/auth/core/email-verification";
+import { setEmailVerificationCookie } from "@/features/auth/core/email-verification";
+import { registerUser } from "@/features/auth/core/registration";
 import { RefillingTokenBucket } from "@/features/auth/core/rate-limit";
 
 const signupIpBucket = new RefillingTokenBucket<string>(3, 10);
@@ -67,17 +62,16 @@ export async function signUpAction(_prev: FormState, formData: FormData): Promis
     return { error: "Este correo ya está registrado." };
   }
 
-  const user = await createUser(email, name.trim(), password);
+  const registered = await registerUser({ email, name: name.trim(), password });
+  if (!registered.ok) {
+    return { error: "No pudimos enviar el correo de verificación. Inténtalo de nuevo más tarde." };
+  }
+  const { user, request } = registered.value;
 
   const token = generateSessionToken();
   const session = await createSession(token, user.id);
   await setSessionTokenCookie(token, session.expiresAt);
-
-  if (sendVerificationEmailBucket.consume(user.id, 1)) {
-    const request = await createEmailVerificationRequest(user.id, user.email);
-    sendVerificationEmail(request.email, request.code);
-    await setEmailVerificationCookie(request.id, request.expiresAt);
-  }
+  await setEmailVerificationCookie(request.id, request.expiresAt);
 
   redirect("/auth/verify-email");
 }

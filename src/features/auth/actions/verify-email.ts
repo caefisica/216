@@ -5,8 +5,7 @@ import { cookies } from "next/headers";
 import { getCurrentSession } from "@/features/auth/core/session";
 import {
   verifyEmailCode,
-  createEmailVerificationRequest,
-  sendVerificationEmail,
+  issueEmailVerification,
   sendVerificationEmailBucket,
   setEmailVerificationCookie,
   deleteEmailVerificationCookie,
@@ -51,8 +50,9 @@ export async function resendVerificationEmailAction(): Promise<Result<void, stri
     return Err("Demasiados envíos. Espera unos minutos.");
   }
 
-  const request = await createEmailVerificationRequest(user.id, user.email);
-  sendVerificationEmail(request.email, request.code);
-  await setEmailVerificationCookie(request.id, request.expiresAt);
+  const request = await issueEmailVerification(user.id, user.email);
+  if (!request.ok) return Err("No pudimos enviar el correo. Inténtalo de nuevo más tarde.");
+
+  await setEmailVerificationCookie(request.value.id, request.value.expiresAt);
   return Ok(undefined);
 }
