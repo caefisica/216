@@ -74,10 +74,8 @@ export class ExpiringTokenBucket<_Key> {
 
   public check(key: _Key, cost: number): boolean {
     const bucket = this.storage.get(key) ?? null;
-    const now = Date.now();
     if (bucket === null) return true;
-    if (now - bucket.createdAt >= this.expiresInSeconds * 1000) return true;
-    return bucket.count >= cost;
+    return this.currentCount(bucket, Date.now()) >= cost;
   }
 
   public consume(key: _Key, cost: number): boolean {
@@ -87,8 +85,9 @@ export class ExpiringTokenBucket<_Key> {
       this.storage.set(key, { count: this.max - cost, createdAt: now });
       return true;
     }
-    if (now - bucket.createdAt >= this.expiresInSeconds * 1000) {
+    if (this.isExpired(bucket, now)) {
       bucket.count = this.max;
+      bucket.createdAt = now;
     }
     if (bucket.count < cost) return false;
     bucket.count -= cost;
@@ -98,6 +97,14 @@ export class ExpiringTokenBucket<_Key> {
 
   public reset(key: _Key): void {
     this.storage.delete(key);
+  }
+
+  private isExpired(bucket: ExpiringBucket, now: number): boolean {
+    return now - bucket.createdAt >= this.expiresInSeconds * 1000;
+  }
+
+  private currentCount(bucket: ExpiringBucket, now: number): number {
+    return this.isExpired(bucket, now) ? this.max : bucket.count;
   }
 }
 
