@@ -13,7 +13,7 @@ export async function registerUser(
   send?: typeof sendVerificationEmail,
 ): Promise<Result<{ user: AuthUser; request: EmailVerificationRequest }, "mail_failed">> {
   const user = await createUser(input.email, input.name, input.password);
-  sendVerificationEmailBucket.consume(user.id, 1);
+  await sendVerificationEmailBucket.consume(user.id);
 
   const request = await issueEmailVerification(user.id, user.email, send);
   if (!request.ok) {

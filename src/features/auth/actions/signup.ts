@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getDb } from "@/lib/db";
 import { user as userTable } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -15,8 +14,9 @@ import { setEmailVerificationCookie } from "@/features/auth/core/email-verificat
 import { mailUnavailableReason } from "@/features/auth/core/mailer";
 import { registerUser } from "@/features/auth/core/registration";
 import { RefillingTokenBucket } from "@/features/auth/core/rate-limit";
+import { getClientIp } from "@/features/auth/core/client-ip";
 
-const signupIpBucket = new RefillingTokenBucket<string>(3, 10);
+const signupIpBucket = new RefillingTokenBucket("signup-ip", 3, 10);
 
 type FormState = { error: string } | null;
 
@@ -30,10 +30,7 @@ export async function signUpAction(_prev: FormState, formData: FormData): Promis
     return { error: "Datos de formulario inválidos." };
   }
 
-  const headerStore = await headers();
-  const ip = headerStore.get("x-forwarded-for") ?? headerStore.get("x-real-ip") ?? "unknown";
-
-  if (!signupIpBucket.consume(ip, 1)) {
+  if (!(await signupIpBucket.consume(await getClientIp()))) {
     return { error: "Demasiados intentos. Intente más tarde." };
   }
 
