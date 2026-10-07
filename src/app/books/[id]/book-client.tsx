@@ -8,11 +8,8 @@ import { BookDetails } from "./components/book-details";
 import { EditForm } from "./components/edit-form";
 import type { BookFormData } from "./types/book-types";
 import { toast } from "@/hooks/use-toast";
-import {
-  saveBookWithImages,
-  deleteBookImage,
-  setCoverImage,
-} from "@/features/books/actions/editor";
+import { saveBookWithImages } from "@/features/books/actions/editor";
+import { deleteBookImage, setCoverImage } from "@/features/books/actions";
 import { useRouter } from "next/navigation";
 import type { BookDetailed, Category, BookImage as BookImageData } from "@/features/books/types";
 import type { User } from "@/features/users/types";
@@ -100,7 +97,7 @@ export default function BookClient({ initialBook, categories, user }: BookClient
   };
 
   const removeExistingImage = async (imageId: string) => {
-    const result = await deleteBookImage(imageId, book.id);
+    const result = await deleteBookImage({ imageId, bookId: book.id });
     if (result.success) {
       setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
       toast({ title: "Imagen eliminada" });
@@ -108,13 +105,11 @@ export default function BookClient({ initialBook, categories, user }: BookClient
   };
 
   const handleSetCoverImage = async (imageId: string, isExisting: boolean) => {
-    const result = await setCoverImage(imageId, book.id, isExisting);
-    if (result.success) {
-      if (isExisting) {
-        setExistingImages((prev) => prev.map((img) => ({ ...img, isCover: img.id === imageId })));
-      }
-      toast({ title: "Portada actualizada" });
+    if (isExisting) {
+      await setCoverImage({ imageId, bookId: book.id, isExisting });
+      setExistingImages((prev) => prev.map((img) => ({ ...img, isCover: img.id === imageId })));
     }
+    toast({ title: "Portada actualizada" });
   };
 
   return (
@@ -162,7 +157,6 @@ export default function BookClient({ initialBook, categories, user }: BookClient
                   onImageRemove={removeExistingImage}
                   onSetCover={handleSetCoverImage}
                   saving={saving}
-                  bookId={book.id}
                   userId={(user as unknown as User)?.id}
                 />
               ) : (

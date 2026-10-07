@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { protectedAction } from "@/features/auth/protected-action";
+import { staffAction } from "@/features/auth/protected-action";
 import { getAdminCounts, listPendingBorrowRequests, listBorrowHistory } from "./repository";
 import { getDetailedAdminStatsService, updateBorrowStatusService } from "./service";
 
@@ -10,31 +10,25 @@ const BorrowStatusSchema = z.object({
   status: z.enum(["approved", "rejected"]),
 });
 
-export const getAdminStats = protectedAction(z.void(), ["librarian", "admin"], async () => {
+export const getAdminStats = staffAction(z.void(), async () => {
   return getAdminCounts();
 });
 
-export const getPendingBorrowRequests = protectedAction(
-  z.void(),
-  ["librarian", "admin"],
-  async () => {
-    return listPendingBorrowRequests();
-  },
-);
+export const getPendingBorrowRequests = staffAction(z.void(), async () => {
+  return listPendingBorrowRequests();
+});
 
-export const getDetailedAdminStats = protectedAction(z.void(), ["librarian", "admin"], async () => {
+export const getDetailedAdminStats = staffAction(z.void(), async () => {
   return getDetailedAdminStatsService();
 });
 
-export const getBorrowingHistory = protectedAction(
+export const getBorrowingHistory = staffAction(
   z.object({ limit: z.number().default(50) }),
-  ["librarian", "admin"],
   async ({ limit }) => listBorrowHistory(limit),
 );
 
-export const updateBorrowStatus = protectedAction(
+export const updateBorrowStatus = staffAction(
   BorrowStatusSchema,
-  ["librarian", "admin"],
   async ({ requestId, status }, session) => {
     return updateBorrowStatusService(requestId, status, session.user.id);
   },

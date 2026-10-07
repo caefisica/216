@@ -39,3 +39,10 @@ export function authenticatedAction<TInput extends z.ZodTypeAny, TOutput>(
 ) {
   return protectedAction(schema, ["user", "librarian", "admin"], handler);
 }
+
+export function staffAction<TInput extends z.ZodTypeAny, TOutput>(
+  schema: TInput,
+  handler: (input: z.infer<TInput>, session: AuthSession) => Promise<TOutput>,
+) {
+  return protectedAction(schema, ["librarian", "admin"], handler);
+}

@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import type { BookFormData } from "../types/book-types";
-import { uploadBookImage, deleteBookImage } from "@/features/books/actions/editor";
+import { uploadBookImage, cleanupTempFiles } from "@/features/books/actions/editor";
 
 interface UploadedImage {
   id: string;
@@ -44,7 +44,6 @@ interface EditFormProps {
   onImageRemove?: (imageId: string, isExisting: boolean) => void;
   onSetCover?: (imageId: string, isExisting: boolean) => void;
   saving?: boolean;
-  bookId: string;
   userId?: string;
 }
 
@@ -59,7 +58,6 @@ export function EditForm({
   onImageRemove,
   onSetCover,
   saving = false,
-  bookId,
 }: EditFormProps) {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
 
@@ -132,8 +130,8 @@ export function EditForm({
 
   const handleRemoveUploadedImage = async (imageId: string) => {
     const image = uploadedImages.find((img) => img.id === imageId);
-    if (image?.fileName) {
-      await deleteBookImage(image.id, bookId);
+    if (image?.url) {
+      await cleanupTempFiles({ fileNames: [image.fileName] });
     }
     setUploadedImages((prev) => prev.filter((img) => img.id !== imageId));
   };

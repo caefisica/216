@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { authenticatedAction, protectedAction, getSession } from "@/features/auth/protected-action";
+import { authenticatedAction, staffAction, getSession } from "@/features/auth/protected-action";
 import {
   AddBookImageSchema,
   BookIdSchema,
@@ -56,77 +56,57 @@ export async function getCategories() {
   return listCategories();
 }
 
-export const uploadBookImage = protectedAction(
-  z.instanceof(FormData),
-  ["librarian", "admin"],
-  async (formData) => {
-    const file = formData.get("file") as File;
-    if (!file) throw new Error("No file uploaded");
-    return uploadBookImageService(file);
-  },
-);
+export const uploadBookImage = staffAction(z.instanceof(FormData), async (formData) => {
+  const file = formData.get("file") as File;
+  if (!file) throw new Error("No file uploaded");
+  return uploadBookImageService(file);
+});
 
-export const deleteBookImage = protectedAction(
+export const deleteBookImage = staffAction(
   z.object({ imageId: z.uuid(), bookId: z.uuid() }),
-  ["librarian", "admin"],
   async ({ imageId }) => deleteBookImageService(imageId),
 );
 
-export const setCoverImage = protectedAction(
+export const setCoverImage = staffAction(
   z.object({ imageId: z.uuid(), bookId: z.uuid(), isExisting: z.boolean() }),
-  ["librarian", "admin"],
   async ({ imageId, bookId }) => setCoverImageService(imageId, bookId),
 );
 
-export const addBookImage = protectedAction(
-  AddBookImageSchema,
-  ["librarian", "admin"],
-  async (input) => addBookImageService(input),
+export const addBookImage = staffAction(AddBookImageSchema, async (input) =>
+  addBookImageService(input),
 );
 
-export const deleteBook = protectedAction(
-  BookIdSchema,
-  ["librarian", "admin"],
-  async ({ bookId }) => {
-    return deleteBookService(bookId);
-  },
-);
+export const deleteBook = staffAction(BookIdSchema, async ({ bookId }) => {
+  return deleteBookService(bookId);
+});
 
-export const updateBook = protectedAction(
-  UpdateBookSchema,
-  ["librarian", "admin"],
-  async (data) => {
-    return updateBookService({
-      id: data.id,
-      title: data.title,
-      author: data.author,
-      isbn: data.isbn,
-      publisher: data.publisher,
-      publicationYear: data.publicationYear,
-      pages: data.pages,
-      location: data.location,
-      description: data.description,
-      status: data.status,
-      categoryId: data.categoryId,
-    });
-  },
-);
+export const updateBook = staffAction(UpdateBookSchema, async (data) => {
+  return updateBookService({
+    id: data.id,
+    title: data.title,
+    author: data.author,
+    isbn: data.isbn,
+    publisher: data.publisher,
+    publicationYear: data.publicationYear,
+    pages: data.pages,
+    location: data.location,
+    description: data.description,
+    status: data.status,
+    categoryId: data.categoryId,
+  });
+});
 
-export const createBook = protectedAction(
-  CreateBookSchema,
-  ["librarian", "admin"],
-  async (data) => {
-    return createBookService({
-      title: data.title,
-      author: data.author,
-      isbn: data.isbn || null,
-      publisher: data.publisher || null,
-      publicationYear: data.publicationYear,
-      pages: data.pages,
-      location: data.location || null,
-      description: data.description || null,
-      status: data.status || "available",
-      categoryId: data.categoryId || null,
-    });
-  },
-);
+export const createBook = staffAction(CreateBookSchema, async (data) => {
+  return createBookService({
+    title: data.title,
+    author: data.author,
+    isbn: data.isbn || null,
+    publisher: data.publisher || null,
+    publicationYear: data.publicationYear,
+    pages: data.pages,
+    location: data.location || null,
+    description: data.description || null,
+    status: data.status || "available",
+    categoryId: data.categoryId || null,
+  });
+});

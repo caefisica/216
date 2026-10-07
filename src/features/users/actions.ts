@@ -1,7 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import { protectedAction, authenticatedAction } from "@/features/auth/protected-action";
+import {
+  protectedAction,
+  authenticatedAction,
+  staffAction,
+} from "@/features/auth/protected-action";
 import { listUsers, listUserActivity } from "./repository";
 import { updateUserProfileService, updateUserRoleService, suspendUserService } from "./service";
 
@@ -14,7 +18,7 @@ const ProfileUpdateSchema = z.object({
   name: z.string().min(1).optional(),
 });
 
-export const getAllUsers = protectedAction(z.void(), ["librarian", "admin"], async () => {
+export const getAllUsers = staffAction(z.void(), async () => {
   return listUsers();
 });
 
