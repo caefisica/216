@@ -5,14 +5,9 @@ let testDb: TestDatabase;
 
 beforeAll(async () => {
   testDb = await createTestDatabase();
-  const result = testDb.sync();
-  expect(result.status, result.output).toBe(0);
-  process.env.DATABASE_URL = testDb.url;
 }, 120_000);
 
 afterAll(async () => {
-  const { closeDb } = await import("@/lib/db");
-  await closeDb();
   await testDb?.drop();
 });
 
@@ -21,11 +16,11 @@ const failingSend = async () => {
 };
 
 async function count(table: string, where: string, value: string): Promise<number> {
-  const { rows } = await testDb.client.query(
-    `SELECT count(*)::int AS n FROM ${table} WHERE ${where} = $1`,
-    [value],
+  const [row] = await testDb.query<{ n: number }>(
+    `SELECT count(*) AS n FROM ${table} WHERE ${where} = ?`,
+    value,
   );
-  return rows[0].n;
+  return row.n;
 }
 
 describe("registerUser", () => {
@@ -62,9 +57,9 @@ describe("registerUser", () => {
 
 describe("issueEmailVerification", () => {
   async function requestIds(userId: string): Promise<string[]> {
-    const { rows } = await testDb.client.query(
-      "SELECT id FROM email_verification_request WHERE user_id = $1",
-      [userId],
+    const rows = await testDb.query<{ id: string }>(
+      "SELECT id FROM email_verification_request WHERE user_id = ?",
+      userId,
     );
     return rows.map((row) => row.id);
   }
@@ -188,9 +183,9 @@ describe("issuePasswordReset", () => {
     await older.delivery;
     error.mockRestore();
 
-    const { rows } = await testDb.client.query(
-      "SELECT id FROM password_reset_session WHERE user_id = $1",
-      [user.id],
+    const rows = await testDb.query(
+      "SELECT id FROM password_reset_session WHERE user_id = ?",
+      user.id,
     );
     expect(rows).toEqual([{ id: newer.id }]);
   });
