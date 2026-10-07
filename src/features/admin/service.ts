@@ -3,9 +3,15 @@ import {
   getBookActivity,
   getActiveUsers,
   getMonthlyActivity,
-  updateBorrowRequestStatus,
-  setBookStatus,
+  getBorrowRequest,
+  resolvePendingBorrowRequest,
+  approvePendingBorrowRequest,
+  returnApprovedLoan,
 } from "./repository";
+import { UserError } from "@/lib/action";
+
+const LOAN_DAYS = 14;
+const UNRESOLVABLE = "La solicitud no existe o ya fue resuelta.";
 
 export async function getDetailedAdminStatsService() {
   const bookActivity = await getBookActivity();
@@ -60,28 +66,33 @@ export async function updateBorrowStatusService(
   status: "approved" | "rejected",
   librarianId: string,
 ) {
-  const updateData: {
-    status: "approved" | "rejected";
-    librarianId: string;
-    updatedAt: Date;
-    approvedDate?: Date;
-    dueDate?: Date;
-  } = {
-    status,
-    librarianId,
-    updatedAt: new Date(),
-  };
+  const now = new Date();
+  const existing = await getBorrowRequest(requestId);
+  if (existing?.status !== "pending") throw new UserError(UNRESOLVABLE);
 
   if (status === "approved") {
-    updateData.approvedDate = new Date();
-    updateData.dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-  }
-
-  const request = await updateBorrowRequestStatus(requestId, updateData);
-  if (status === "approved" && request) {
-    await setBookStatus(request.bookId, "borrowed");
+    const dueDate = new Date(now.getTime() + LOAN_DAYS * 24 * 60 * 60 * 1000);
+    const approved = await approvePendingBorrowRequest(requestId, existing.bookId, {
+      librarianId,
+      approvedDate: now,
+      dueDate,
+    });
+    if (!approved)
+      throw new UserError("El libro no está disponible o la solicitud ya fue resuelta.");
+  } else if (
+    !(await resolvePendingBorrowRequest(requestId, { status, librarianId, updatedAt: now }))
+  ) {
+    throw new UserError(UNRESOLVABLE);
   }
 
   revalidatePath("/");
-  return { success: true };
+}
+
+export async function returnLoanService(requestId: string) {
+  const loan = await getBorrowRequest(requestId);
+  if (loan?.status !== "approved" || !(await returnApprovedLoan(requestId, loan.bookId))) {
+    throw new UserError("El préstamo no existe o ya fue devuelto.");
+  }
+
+  revalidatePath("/");
 }

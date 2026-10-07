@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { getDetailedAdminStats } from "../actions";
+import { toastActionError } from "@/hooks/use-toast";
+import { isErr } from "@/lib/result";
 import type { MonthlyStats, BookStats, UserStats } from "../types";
 import {
   BarChart3,
@@ -42,17 +44,16 @@ export function AdminStats() {
   }, []);
 
   const fetchStatistics = async () => {
-    try {
-      const data = await getDetailedAdminStats();
-      setAllPopularBooks(data.popularBooks);
-      setActiveUsers(data.activeUsers);
-      setMonthlyData(data.monthlyData);
-      setOverallStats(data.overallStats);
-    } catch (error) {
-      console.error("Error fetching statistics:", error);
-    } finally {
-      setLoading(false);
+    const result = await getDetailedAdminStats();
+    if (isErr(result)) {
+      toastActionError(result.error);
+    } else {
+      setAllPopularBooks(result.value.popularBooks);
+      setActiveUsers(result.value.activeUsers);
+      setMonthlyData(result.value.monthlyData);
+      setOverallStats(result.value.overallStats);
     }
+    setLoading(false);
   };
 
   const getCurrentBooks = () => {

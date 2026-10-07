@@ -2,20 +2,20 @@ import { BookDetailed } from "../books/types";
 import { BorrowRequest, User } from "../users/types";
 import { Role } from "@/lib/db/schema";
 
-export interface AdminStats {
-  totalBooks: number;
-  availableBooks: number;
-  borrowedBooks: number;
-  totalUsers: number;
-  pendingRequests: number;
-  totalBorrows: number;
-  activeUsers: number;
-}
-
 export type PendingRequest = BorrowRequest & {
   book: BookDetailed;
   user: User;
 };
+
+export interface ActiveLoan {
+  id: string;
+  bookId: string;
+  userId: string;
+  approvedDate: Date | null;
+  dueDate: Date | null;
+  book: { title: string; author: string };
+  user: { name: string; email: string };
+}
 
 export interface BookStats {
   id: string;
@@ -39,16 +39,4 @@ export interface MonthlyStats {
   month: string;
   borrows: number;
   returns: number;
-}
-
-export interface DetailedStats {
-  popularBooks: BookStats[];
-  activeUsers: UserStats[];
-  monthlyData: MonthlyStats[];
-  overallStats: {
-    totalBorrows: number;
-    totalReturns: number;
-    bookUtilizationRate: number;
-    mostActiveMonth: string;
-  };
 }

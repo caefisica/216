@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { getBorrowingHistory } from "../actions";
+import { toastActionError } from "@/hooks/use-toast";
+import { isErr } from "@/lib/result";
 import { Clock, BookOpen, TrendingUp, Loader2 } from "lucide-react";
 
 interface TimelineEvent {
@@ -26,13 +28,17 @@ export function BorrowingTimeline() {
   const [showAnonymized, setShowAnonymized] = useState(false);
 
   const fetchTimelineEvents = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await getBorrowingHistory({ limit: 50 });
+      const result = await getBorrowingHistory({ limit: 50 });
+      if (isErr(result)) {
+        toastActionError(result.error);
+        return;
+      }
 
       const timelineEvents: TimelineEvent[] = [];
 
-      data?.forEach((request) => {
+      result.value.forEach((request) => {
         const userName = showAnonymized ? undefined : request.user?.name;
         const userInitials = userName
           ? userName
@@ -88,8 +94,6 @@ export function BorrowingTimeline() {
       );
 
       setEvents(timelineEvents);
-    } catch (err) {
-      console.error("Error fetching timeline events:", err);
     } finally {
       setLoading(false);
     }

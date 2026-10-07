@@ -1,25 +1,24 @@
-import { getSession } from "@/features/auth/protected-action";
-import { getBooks, getCategories } from "@/features/books/actions";
-import { getAdminStats, getPendingBorrowRequests } from "@/features/admin/actions";
+import { getSession, getVerifiedUserId, isVerifiedStaff } from "@/features/auth/protected-action";
+import { getCategories } from "@/features/books/actions";
+import { SearchSchema } from "@/features/books/schemas";
+import { getBooksService } from "@/features/books/service";
+import { listActiveLoans, listPendingBorrowRequests } from "@/features/admin/repository";
 import { BookCatalog } from "@/features/books/components/book-catalog";
 import { AdminDashboard } from "@/features/admin/components/admin-dashboard";
-import type { User } from "@/features/users/types";
 import type { BookDetailed } from "@/features/books/types";
 
 export default async function HomePage() {
-  const session = await getSession();
-  const user = session.user as unknown as User | undefined;
-  const userRole = user?.role;
-  const isAdmin = user && (userRole === "librarian" || userRole === "admin");
+  const { user } = await getSession();
 
-  // Fetch base data for the catalog
-  const [initialBooks, initialCategories] = await Promise.all([getBooks(), getCategories()]);
+  const [initialBooks, initialCategories] = await Promise.all([
+    getBooksService(SearchSchema.parse({}), await getVerifiedUserId()),
+    getCategories(),
+  ]);
 
-  if (isAdmin) {
-    // Admin View Orchestration
-    const [initialStats, initialPendingRequests] = await Promise.all([
-      getAdminStats(),
-      getPendingBorrowRequests(),
+  if (isVerifiedStaff(user)) {
+    const [initialPendingRequests, initialActiveLoans] = await Promise.all([
+      listPendingBorrowRequests(),
+      listActiveLoans(),
     ]);
 
     return (
@@ -27,13 +26,12 @@ export default async function HomePage() {
         <AdminDashboard
           initialBooks={initialBooks as BookDetailed[]}
           initialPendingRequests={initialPendingRequests}
-          initialStats={initialStats}
+          initialActiveLoans={initialActiveLoans}
         />
       </main>
     );
   }
 
-  // Regular User View Orchestration
   return (
     <main className="container mx-auto px-6 py-12">
       <BookCatalog

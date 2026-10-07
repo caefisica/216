@@ -1,53 +1,8 @@
 import { getDb } from "@/lib/db";
 import { books, borrowRequests, user, userBookHearts } from "@/lib/db/schema";
-import { eq, sql, gte, desc } from "drizzle-orm";
+import { and, eq, sql, gte, desc } from "drizzle-orm";
 import { outer } from "@/lib/db/qualified";
-
-export async function getAdminCounts() {
-  const db = await getDb();
-  const [
-    totalBooks,
-    availableBooks,
-    borrowedBooks,
-    totalUsers,
-    pendingRequests,
-    totalBorrows,
-    activeUsers,
-  ] = await Promise.all([
-    db.select({ count: sql<number>`count(*)` }).from(books),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(books)
-      .where(eq(books.status, "available")),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(books)
-      .where(eq(books.status, "borrowed")),
-    db.select({ count: sql<number>`count(*)` }).from(user),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(borrowRequests)
-      .where(eq(borrowRequests.status, "pending")),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(borrowRequests)
-      .where(eq(borrowRequests.status, "approved")),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(user)
-      .where(gte(user.createdAt, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))),
-  ]);
-
-  return {
-    totalBooks: Number(totalBooks[0].count),
-    availableBooks: Number(availableBooks[0].count),
-    borrowedBooks: Number(borrowedBooks[0].count),
-    totalUsers: Number(totalUsers[0].count),
-    pendingRequests: Number(pendingRequests[0].count),
-    totalBorrows: Number(totalBorrows[0].count),
-    activeUsers: Number(activeUsers[0].count),
-  };
-}
+import { publicUserColumns } from "@/features/users/repository";
 
 export async function listPendingBorrowRequests() {
   const db = await getDb();
@@ -66,13 +21,33 @@ export async function listPendingBorrowRequests() {
       createdAt: borrowRequests.createdAt,
       updatedAt: borrowRequests.updatedAt,
       book: books,
-      user,
+      user: publicUserColumns,
     })
     .from(borrowRequests)
     .innerJoin(books, eq(borrowRequests.bookId, books.id))
     .innerJoin(user, eq(borrowRequests.userId, user.id))
     .where(eq(borrowRequests.status, "pending"))
     .orderBy(desc(borrowRequests.requestDate));
+}
+
+/** Loans that were approved and not yet returned, oldest due date first. */
+export async function listActiveLoans() {
+  const db = await getDb();
+  return db
+    .select({
+      id: borrowRequests.id,
+      bookId: borrowRequests.bookId,
+      userId: borrowRequests.userId,
+      approvedDate: borrowRequests.approvedDate,
+      dueDate: borrowRequests.dueDate,
+      book: { title: books.title, author: books.author },
+      user: { name: user.name, email: user.email },
+    })
+    .from(borrowRequests)
+    .innerJoin(books, eq(borrowRequests.bookId, books.id))
+    .innerJoin(user, eq(borrowRequests.userId, user.id))
+    .where(eq(borrowRequests.status, "approved"))
+    .orderBy(borrowRequests.dueDate);
 }
 
 export async function getBookActivity() {
@@ -84,7 +59,7 @@ export async function getBookActivity() {
       author: books.author,
       status: books.status,
       borrowCount:
-        sql<number>`(SELECT count(*) FROM ${borrowRequests} WHERE ${borrowRequests.bookId} = ${outer("books", "id")} AND ${borrowRequests.status} = 'approved')`.mapWith(
+        sql<number>`(SELECT count(*) FROM ${borrowRequests} WHERE ${borrowRequests.bookId} = ${outer("books", "id")} AND ${borrowRequests.approvedDate} IS NOT NULL)`.mapWith(
           Number,
         ),
       heartsCount:
@@ -97,7 +72,7 @@ export async function getBookActivity() {
 
 export async function getActiveUsers() {
   const db = await getDb();
-  const borrowCount = sql<number>`(SELECT count(*) FROM ${borrowRequests} WHERE ${borrowRequests.userId} = ${outer("user", "id")} AND ${borrowRequests.status} = 'approved')`;
+  const borrowCount = sql<number>`(SELECT count(*) FROM ${borrowRequests} WHERE ${borrowRequests.userId} = ${outer("user", "id")} AND ${borrowRequests.approvedDate} IS NOT NULL)`;
   return db
     .select({
       id: user.id,
@@ -117,7 +92,7 @@ export async function getMonthlyActivity(since: Date) {
   return db
     .select({
       month,
-      borrows: sql<number>`COUNT(*) FILTER (WHERE ${borrowRequests.status} = 'approved')`,
+      borrows: sql<number>`COUNT(*) FILTER (WHERE ${borrowRequests.approvedDate} IS NOT NULL)`,
       returns: sql<number>`COUNT(*) FILTER (WHERE ${borrowRequests.returnDate} IS NOT NULL)`,
     })
     .from(borrowRequests)
@@ -145,7 +120,8 @@ export async function listBorrowHistory(limit: number) {
     .limit(limit);
 }
 
-export async function updateBorrowRequestStatus(
+/** Updates the request only while it is pending. Returns undefined when it is not. */
+export async function resolvePendingBorrowRequest(
   requestId: string,
   updateData: Partial<typeof borrowRequests.$inferInsert>,
 ) {
@@ -153,12 +129,81 @@ export async function updateBorrowRequestStatus(
   const [request] = await db
     .update(borrowRequests)
     .set(updateData)
-    .where(eq(borrowRequests.id, requestId))
+    .where(and(eq(borrowRequests.id, requestId), eq(borrowRequests.status, "pending")))
     .returning();
   return request;
 }
 
-export async function setBookStatus(bookId: string, status: "available" | "borrowed") {
+export async function getBorrowRequest(requestId: string) {
   const db = await getDb();
-  await db.update(books).set({ status }).where(eq(books.id, bookId));
+  const [row] = await db
+    .select({ bookId: borrowRequests.bookId, status: borrowRequests.status })
+    .from(borrowRequests)
+    .where(eq(borrowRequests.id, requestId))
+    .limit(1);
+  return row;
+}
+
+/**
+ * Approves a pending request and marks its book borrowed in one batch, only while the book is
+ * available. Returns false, with nothing changed, when the request is not pending or the book is
+ * not available.
+ */
+export async function approvePendingBorrowRequest(
+  requestId: string,
+  bookId: string,
+  decision: { librarianId: string; approvedDate: Date; dueDate: Date },
+) {
+  const db = await getDb();
+  const [approved] = await db.batch([
+    db
+      .update(borrowRequests)
+      .set({ ...decision, status: "approved", updatedAt: decision.approvedDate })
+      .where(
+        and(
+          eq(borrowRequests.id, requestId),
+          eq(borrowRequests.status, "pending"),
+          sql`EXISTS (SELECT 1 FROM "books" WHERE "id" = ${bookId} AND "status" = 'available')`,
+        ),
+      )
+      .returning({ id: borrowRequests.id }),
+    db
+      .update(books)
+      .set({ status: "borrowed", updatedAt: decision.approvedDate })
+      .where(
+        and(
+          eq(books.id, bookId),
+          eq(books.status, "available"),
+          sql`EXISTS (SELECT 1 FROM "borrow_requests" WHERE "id" = ${requestId} AND "status" = 'approved' AND "approved_date" = ${decision.approvedDate.getTime()})`,
+        ),
+      ),
+  ]);
+  return approved.length > 0;
+}
+
+/**
+ * Marks an approved loan returned and frees its book in one batch. A book a librarian has since
+ * moved to maintenance stays there. Returns false when the loan was not approved.
+ */
+export async function returnApprovedLoan(requestId: string, bookId: string) {
+  const db = await getDb();
+  const now = new Date();
+  const [, returned] = await db.batch([
+    db
+      .update(books)
+      .set({ status: "available", updatedAt: now })
+      .where(
+        and(
+          eq(books.id, bookId),
+          eq(books.status, "borrowed"),
+          sql`EXISTS (SELECT 1 FROM ${borrowRequests} WHERE ${borrowRequests.id} = ${requestId} AND ${borrowRequests.status} = 'approved')`,
+        ),
+      ),
+    db
+      .update(borrowRequests)
+      .set({ status: "returned", returnDate: now, updatedAt: now })
+      .where(and(eq(borrowRequests.id, requestId), eq(borrowRequests.status, "approved")))
+      .returning({ id: borrowRequests.id }),
+  ]);
+  return returned.length > 0;
 }

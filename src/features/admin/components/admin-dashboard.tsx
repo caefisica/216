@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { AdminBookCard } from "./admin-book-card";
 import { AdminStats } from "./admin-stats";
@@ -21,79 +21,84 @@ import {
   Filter,
   CheckCircle2,
   XCircle,
+  Undo2,
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast, toastActionError } from "@/hooks/use-toast";
+import { isErr } from "@/lib/result";
 import { getBooks, deleteBook } from "../../books/actions";
-import { getPendingBorrowRequests, updateBorrowStatus, getAdminStats } from "../actions";
+import {
+  getActiveLoans,
+  getPendingBorrowRequests,
+  returnLoan,
+  updateBorrowStatus,
+} from "../actions";
 import type { BookDetailed } from "../../books/types";
-import type { AdminStats as AdminStatsType, PendingRequest } from "../types";
+import type { ActiveLoan, PendingRequest } from "../types";
 
 interface AdminDashboardProps {
   initialBooks: BookDetailed[];
   initialPendingRequests: PendingRequest[];
-  initialStats: AdminStatsType;
+  initialActiveLoans: ActiveLoan[];
 }
 
 export function AdminDashboard({
   initialBooks,
   initialPendingRequests,
-  initialStats,
+  initialActiveLoans,
 }: AdminDashboardProps) {
   const [books, setBooks] = useState<BookDetailed[]>(initialBooks);
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>(initialPendingRequests);
-  const [, setStats] = useState<AdminStatsType>(initialStats);
+  const [activeLoans, setActiveLoans] = useState<ActiveLoan[]>(initialActiveLoans);
   const [searchQuery, setSearchQuery] = useState("");
 
   const refreshBooks = useCallback(async () => {
-    try {
-      const filtered = await getBooks({
-        search: searchQuery,
-      });
-      setBooks(filtered);
-    } catch (error) {
-      console.error("Error refreshing books:", error);
-    }
+    const result = await getBooks({ search: searchQuery });
+    if (isErr(result)) toastActionError(result.error);
+    else setBooks(result.value);
   }, [searchQuery]);
 
+  const refreshLoans = async () => {
+    const [pending, active] = await Promise.all([getPendingBorrowRequests(), getActiveLoans()]);
+    if (isErr(pending)) toastActionError(pending.error);
+    else setPendingRequests(pending.value);
+    if (isErr(active)) toastActionError(active.error);
+    else setActiveLoans(active.value);
+  };
+
   const handleDeleteBook = async (bookId: string) => {
-    try {
-      await deleteBook({ bookId });
-      toast({ title: "Libro eliminado", description: "El libro ha sido eliminado del sistema." });
-      refreshBooks();
-      setStats(await getAdminStats());
-    } catch (error) {
-      console.error("Delete book failed:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el libro.",
-        variant: "destructive",
-      });
+    const result = await deleteBook({ bookId });
+    if (isErr(result)) {
+      toastActionError(result.error);
+      return;
     }
+    toast({ title: "Libro eliminado", description: "El libro ha sido eliminado del sistema." });
+    refreshBooks();
   };
 
   const handleRequestAction = async (requestId: string, action: "approved" | "rejected") => {
-    try {
-      await updateBorrowStatus({ requestId, status: action });
+    const result = await updateBorrowStatus({ requestId, status: action });
+    if (isErr(result)) {
+      toastActionError(result.error);
+    } else {
       toast({
         title: action === "approved" ? "Aprobado" : "Rechazado",
         description: `Solicitud de préstamo ${action === "approved" ? "aprobada" : "rechazada"}.`,
       });
-      setPendingRequests(await getPendingBorrowRequests());
-      setStats(await getAdminStats());
-      refreshBooks();
-    } catch (error) {
-      console.error("Request action failed:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo procesar la solicitud.",
-        variant: "destructive",
-      });
     }
+    await refreshLoans();
+    refreshBooks();
   };
 
-  useEffect(() => {
-    // Optional: add auto-refresh or other mount logic here if needed
-  }, []);
+  const handleReturn = async (requestId: string) => {
+    const result = await returnLoan({ requestId });
+    if (isErr(result)) {
+      toastActionError(result.error);
+    } else {
+      toast({ title: "Devolución registrada", description: "El libro vuelve a estar disponible." });
+    }
+    await refreshLoans();
+    refreshBooks();
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -121,7 +126,7 @@ export function AdminDashboard({
               { value: "books", label: "Colección", icon: <BookOpen className="h-4 w-4" /> },
               {
                 value: "requests",
-                label: `Solicitudes (${pendingRequests.length})`,
+                label: `Préstamos (${pendingRequests.length + activeLoans.length})`,
                 icon: <Clock className="h-4 w-4" />,
               },
               { value: "users", label: "Usuarios", icon: <UserCog className="h-4 w-4" /> },
@@ -184,7 +189,7 @@ export function AdminDashboard({
           )}
         </TabsContent>
 
-        <TabsContent value="requests" className="focus-visible:outline-hidden">
+        <TabsContent value="requests" className="space-y-8 focus-visible:outline-hidden">
           <Card className="rounded-3xl border-gray-100 shadow-xs overflow-hidden">
             <CardHeader className="bg-gray-50/50 border-b p-6">
               <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -239,6 +244,63 @@ export function AdminDashboard({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border-gray-100 shadow-xs overflow-hidden">
+            <CardHeader className="bg-gray-50/50 border-b p-6">
+              <CardTitle className="text-xl font-bold flex items-center gap-2">
+                <BookOpen className="h-6 w-6 text-blue-500" />
+                Préstamos activos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {activeLoans.length === 0 ? (
+                <div className="py-20 text-center text-gray-500 font-medium italic">
+                  No hay libros prestados.
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {activeLoans.map((loan) => {
+                    const overdue = loan.dueDate !== null && loan.dueDate.getTime() < Date.now();
+                    return (
+                      <div
+                        key={loan.id}
+                        className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:bg-gray-50/30 transition-colors"
+                      >
+                        <div className="space-y-1.5">
+                          <h4 className="font-bold text-gray-900 text-lg leading-tight">
+                            {loan.book.title}
+                          </h4>
+                          <p className="text-sm text-gray-600 flex items-center gap-2 font-medium">
+                            <span className="text-blue-600">@{loan.user.name}</span> •{" "}
+                            {loan.user.email}
+                          </p>
+                          {loan.dueDate && (
+                            <p
+                              className={`text-xs font-medium ${overdue ? "text-red-600" : "text-gray-400"}`}
+                            >
+                              {overdue ? "Vencido el " : "Vence el "}
+                              {loan.dueDate.toLocaleDateString("es-ES", {
+                                day: "numeric",
+                                month: "long",
+                              })}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="w-full sm:w-auto h-11 px-6 rounded-xl font-bold"
+                          onClick={() => handleReturn(loan.id)}
+                        >
+                          <Undo2 className="h-5 w-5 mr-2" /> Registrar devolución
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
