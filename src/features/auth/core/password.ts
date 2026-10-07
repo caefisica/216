@@ -1,7 +1,8 @@
 import { sha1 } from "@oslojs/crypto/sha1";
 import { encodeHexLowerCase } from "@oslojs/encoding";
 
-const ITERATIONS = 600_000;
+// The Workers runtime rejects PBKDF2 above 100,000 iterations.
+export const ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const KEY_BYTES = 32;
 
