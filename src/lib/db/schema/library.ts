@@ -1,7 +1,18 @@
-import { sqliteTable, text, integer, check, primaryKey } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  check,
+  primaryKey,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { user } from "./auth";
 import { timestampNow, uuidPrimaryKey } from "./columns";
+
+/** Keep in step with `books_status_check` below. */
+export const BookStatus = ["available", "borrowed", "maintenance"] as const;
+export type BookStatus = (typeof BookStatus)[number];
 
 export const categories = sqliteTable("categories", {
   id: uuidPrimaryKey(),
@@ -20,7 +31,7 @@ export const books = sqliteTable(
     description: text("description"),
     imageUrl: text("image_url"),
     categoryId: text("category_id").references(() => categories.id, { onDelete: "set null" }),
-    status: text("status").default("available").notNull(),
+    status: text("status").$type<BookStatus>().default("available").notNull(),
     publicationYear: integer("publication_year"),
     publisher: text("publisher"),
     pages: integer("pages"),
@@ -33,16 +44,20 @@ export const books = sqliteTable(
   ],
 );
 
-export const userBookHearts = sqliteTable("user_book_hearts", {
-  id: uuidPrimaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  bookId: text("book_id")
-    .notNull()
-    .references(() => books.id, { onDelete: "cascade" }),
-  createdAt: timestampNow("created_at"),
-});
+export const userBookHearts = sqliteTable(
+  "user_book_hearts",
+  {
+    id: uuidPrimaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    bookId: text("book_id")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    createdAt: timestampNow("created_at"),
+  },
+  (table) => [uniqueIndex("user_book_hearts_user_book_idx").on(table.userId, table.bookId)],
+);
 
 export const borrowRequests = sqliteTable(
   "borrow_requests",
@@ -69,20 +84,29 @@ export const borrowRequests = sqliteTable(
       "borrow_requests_status_check",
       sql`${table.status} IN ('pending', 'approved', 'rejected', 'returned')`,
     ),
+    // A user has at most one pending request per book, however many arrive at once.
+    uniqueIndex("borrow_requests_pending_idx")
+      .on(table.bookId, table.userId)
+      .where(sql`${table.status} = 'pending'`),
   ],
 );
 
-export const bookImages = sqliteTable("book_images", {
-  id: uuidPrimaryKey(),
-  bookId: text("book_id")
-    .notNull()
-    .references(() => books.id, { onDelete: "cascade" }),
-  imageUrl: text("image_url").notNull(),
-  isCover: integer("is_cover", { mode: "boolean" }).default(false).notNull(),
-  altText: text("alt_text"),
-  displayOrder: integer("display_order").default(0).notNull(),
-  createdAt: timestampNow("created_at"),
-});
+export const bookImages = sqliteTable(
+  "book_images",
+  {
+    id: uuidPrimaryKey(),
+    bookId: text("book_id")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    imageUrl: text("image_url").notNull(),
+    isCover: integer("is_cover", { mode: "boolean" }).default(false).notNull(),
+    altText: text("alt_text"),
+    displayOrder: integer("display_order").default(0).notNull(),
+    createdAt: timestampNow("created_at"),
+  },
+  // One stored object belongs to one image row, so deleting an image never removes a shared object.
+  (table) => [uniqueIndex("book_images_image_url_idx").on(table.imageUrl)],
+);
 
 export const bookCategories = sqliteTable(
   "book_categories",

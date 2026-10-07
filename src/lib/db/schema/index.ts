@@ -1,5 +1,6 @@
 export { user, session, emailVerificationRequest, passwordResetSession, Role } from "./auth";
 export {
+  BookStatus,
   categories,
   books,
   userBookHearts,
@@ -8,3 +9,4 @@ export {
   bookCategories,
 } from "./library";
 export { donors, donations } from "./donations";
+export { rateLimit } from "./rate-limit";
