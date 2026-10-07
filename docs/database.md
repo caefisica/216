@@ -78,4 +78,11 @@ _Principles of Quantum Mechanics_ and _Cosmos_.
 | `books`, `categories`, `book_categories`, `book_images` | The catalogue.                  |
 | `user_book_hearts`                                      | Favorites.                      |
 | `borrow_requests`                                       | Loan requests and their status. |
+| `rate_limit`                                            | Counters behind rate limits.    |
 | `donors`, `donations`                                   | The donors page.                |
+
+Unique indexes enforce rules that concurrent requests could otherwise break: one
+`pending` request per user and book (`borrow_requests_pending_idx`), one image
+row per stored object (`book_images_image_url_idx`) and one favorite per user
+and book (`user_book_hearts_user_book_idx`). Code that writes these tables
+inserts and handles the conflict instead of checking first.

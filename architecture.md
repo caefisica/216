@@ -77,6 +77,48 @@ catalogue mutation, including `src/features/books/actions/editor.ts`, uses
 - Password and session code uses Web Crypto and `@oslojs`, not Node-only APIs,
   so it runs on Workers.
 
+## Shared state
+
+Several requests and Worker instances change the same rows at once. Every
+transition below is one SQL statement or one `db.batch` (D1 runs a batch as a
+transaction), with its precondition in the `WHERE` clause. A service never reads
+a state, decides, and then writes. A transition whose precondition fails changes
+nothing and reports that it did not happen.
+
+**Loan** (`borrow_requests.status`). Only `features/admin` and
+`features/books/repository.ts` change it.
+
+| From       | To         | Owner                         | Condition                                                                 |
+| ---------- | ---------- | ----------------------------- | ------------------------------------------------------------------------- |
+| (none)     | `pending`  | `createBorrowRequestRecord`   | Book is `available`; no `pending` request by that user. One statement.    |
+| `pending`  | `approved` | `approvePendingBorrowRequest` | Book is `available`. The same batch sets the book `borrowed`.             |
+| `pending`  | `rejected` | `resolvePendingBorrowRequest` | Request is still `pending`.                                               |
+| `approved` | `returned` | `returnApprovedLoan`          | Request is `approved`. The same batch sets a `borrowed` book `available`. |
+
+`returned` and `rejected` are final. The unique index
+`borrow_requests_pending_idx` allows one `pending` request per user and book.
+
+**Book** (`books.status`). `available` becomes `borrowed` only in an approval,
+and `borrowed` becomes `available` only in a return. A librarian sets any status
+from the edit form; a book in `maintenance` is never moved by a loan.
+
+**Favorite** (`user_book_hearts`, owned by `setHeartRecord`). A user has the
+book as a favorite or not, and the action says which state it wants: `setHeart`
+takes `hearted`, not a toggle. Adding is an insert that does nothing when the
+row exists or the book does not, and removing is a delete, so repeating a call
+changes nothing and simultaneous calls end in the last state asked for. The
+unique index `user_book_hearts_user_book_idx` allows one row per user and book.
+
+**Book images.** `books.image_url` is the URL of the image with `is_cover`. The
+image writes in `features/books/repository.ts` change both in one batch, and
+`book_images_image_url_idx` keeps one image row per stored object.
+
+**Rate limits** (`rate_limit`, owned by `features/auth/core/rate-limit.ts`). A
+row is `(key, count, stamped_at, expires_at)`. Each limiter changes it with one
+upsert whose `WHERE` holds the allow condition, and every attempt first deletes
+rows past `expires_at`. Only the limiter that owns a key prefix writes it. See
+[accounts and roles](docs/auth.md#rate-limits) for the limits.
+
 ## Build and runtime
 
 `next dev` runs with the Workers bindings simulated locally
