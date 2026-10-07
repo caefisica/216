@@ -12,25 +12,29 @@ cp .env.example .env.local
 
 Set `DATABASE_URL` in `.env.local`, then run `bun run dev`.
 
-**`bun run dev` wipes the database `DATABASE_URL` points at** whenever the
-schema files change, and on its first run against any database. Use a scratch
-database. See [database](docs/database.md).
+`bun run dev` writes to the database `DATABASE_URL` points at: it pushes schema
+changes and seeds categories and demo accounts. It applies no statement that
+loses data. Use a scratch database anyway. See [database](docs/database.md).
 
 Read [architecture](architecture.md) for where code lives.
 
 ## Checks
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs three checks on
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs four checks on
 pull requests to `master`, but only when the change touches `src/**`, a `*.ts`,
 `*.json` or `*.css` file in the repository root, `bun.lock`, or the workflow
 file. A pull request that changes only Markdown runs no checks. Run them before
 you push:
 
 ```bash
-bunx oxfmt --check .
-bun run lint
-bun x tsc --noEmit
+mise run check
 ```
+
+`mise run check` runs the format check, lint, the type check and the tests. The
+tests need a PostgreSQL server: the task starts one in Docker on port 55432, so
+Docker must be running. Stop it with `mise run test-db-stop`. To use your own
+server, set `TEST_DATABASE_URL` and run `bun run test`; the tests create and
+drop their own databases on it.
 
 `bun run format` also formats the Markdown in this repository: 80 columns, prose
 wrapped (see [`oxfmt.config.ts`](oxfmt.config.ts)).
@@ -38,8 +42,9 @@ wrapped (see [`oxfmt.config.ts`](oxfmt.config.ts)).
 `bun run knip` reports unused files, exports and dependencies. CI does not run
 it.
 
-The repository has no automated tests. Check a change by running the app, and
-describe what you did in the pull request.
+Tests are `*.test.ts` files next to the code, run by Vitest. Add one that fails
+without your change. Run the app too, and describe what you did in the pull
+request.
 
 ## Conventions
 

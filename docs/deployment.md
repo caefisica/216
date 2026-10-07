@@ -13,7 +13,11 @@
 3. Make the bucket's objects readable at a public URL.
 4. Set `S3_PUBLIC_URL` to that URL as a Worker variable in the Cloudflare
    dashboard. See [configuration](configuration.md).
-5. Create the schema in the new database (see
+5. Create a [Resend](https://resend.com) API key and a verified sender address.
+   Set `RESEND_API_KEY` as a Worker secret and `MAIL_FROM` as a Worker variable
+   in the dashboard. Without both, sign-up and password reset fail in
+   production.
+6. Create the schema in the new database (see
    [Production database](#production-database)).
 
 `DATABASE_URL` is not needed on Cloudflare when the `HYPERDRIVE` binding exists.
@@ -48,8 +52,9 @@ With `NODE_ENV=production` the seed adds the categories and no demo accounts or
 books. Create the first admin by signing up and then setting that user's `role`
 to `admin` in the `user` table.
 
-Sync drops the `public` schema whenever the schema hash changes, so do not run
-it again against a database that holds real data. Apply later schema changes
-with `bun run db:push`, which does not update the stored hash: never run
-`bun run dev` or `bun run db:sync` against that database afterwards. See
+Sync applies no statement that loses data. Run it again after a schema change
+and it pushes the change in place; it stops with exit status 1, and seeds
+nothing, if the change would delete data. You can also apply a change with
+`bun run db:push`, which asks before any step that loses data; the next sync
+records it. Back up the production database before you change its schema. See
 [database](database.md).

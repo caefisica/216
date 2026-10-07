@@ -8,31 +8,46 @@ provider.
 1. `/auth/signup` takes a name, an email and a password of 8 to 255 characters.
    The password is checked against the Have I Been Pwned range API; a password
    found in a breach is refused. If that API is unreachable the check passes.
-2. The account is created and the user is signed in at once.
-3. A six-digit code, valid for 10 minutes, is stored and the user is sent to
-   `/auth/verify-email` to enter it. The **Reenviar código** button on that page
-   replaces the code with a new one. See [Rate limits](#rate-limits) for how
-   many codes are issued.
+2. The account is created, a six-digit code valid for 10 minutes is stored, and
+   the code is emailed.
+3. The user is signed in and sent to `/auth/verify-email` to enter the code. The
+   **Reenviar código** button on that page sends a new code. See
+   [Rate limits](#rate-limits) for how many codes are issued.
 
-**The app sends no email.** `sendVerificationEmail` and `sendPasswordResetEmail`
-in `src/features/auth/core/` write the code to the server log:
+If the email cannot be sent, the account is deleted, the user is not signed in
+and the form says the email could not be sent. The same address can sign up
+again. A failed resend leaves the previous code valid.
+
+## Email
+
+[`mailer.ts`](../src/features/auth/core/mailer.ts) sends the verification and
+password reset codes through the [Resend](https://resend.com) API. It depends on
+two variables, described in [configuration](configuration.md):
+
+| `RESEND_API_KEY` and `MAIL_FROM` | `NODE_ENV`     | What happens                                                                           |
+| -------------------------------- | -------------- | -------------------------------------------------------------------------------------- |
+| Both set                         | any            | The email is sent. A provider error, or no answer in 10 seconds, fails the send.       |
+| Either missing                   | not production | The email is not sent. The message is written to the server log.                       |
+| Either missing                   | `production`   | The send fails with an error that names the missing variables. The code is not logged. |
+
+In development with no mail settings, read the code in the `bun run dev`
+terminal:
 
 ```text
-[email] To student@example.com: verification code 482913
+[email] To student@example.com: Tu código de verificación es 482913. Expira en 10 minutos.
 ```
-
-In development read the code in the `bun run dev` terminal. A deployment that
-needs real mail has to replace those two functions.
 
 ## Password reset
 
 `/auth/reset-password` takes an email. If an account has it, the app stores a
-reset session with a six-digit code valid for 10 minutes, writes the code to the
-server log as above, and sets the `password_reset_session` cookie to a random
-token. The page answers the same way whether or not the account exists.
+reset session with a six-digit code valid for 10 minutes, emails the code, and
+sets the `password_reset_session` cookie to a random token. The email is sent
+after the response, so the page does not wait for the provider. If the send
+fails, the error is logged and the session is deleted. The page answers the same
+way, with a cookie, whether or not the account exists.
 
 No page asks for the code. The form that sets the new password is
-`/auth/reset-password/<token>`, and the app sends no link. The token is the
+`/auth/reset-password/<token>`, and the email carries no link. The token is the
 value of the `password_reset_session` cookie in the browser that made the
 request, so open that URL with it. The new password must be 8 to 255 characters
 and pass the same breach check as at sign-up.
@@ -58,7 +73,7 @@ instance restarts and are not shared between instances.
 | Sign in            | 20 attempts per IP, refilling one per second.                 |
 | Sign in, per user  | Waits of 1, 2, 4, 8, 16, 30, 60, 180, 300 s between tries.    |
 | Sign up            | 3 per IP, refilling one per 10 seconds.                       |
-| Verification codes | 3 in the first 10 minutes after an account's first code.      |
+| Verification codes | 3 per account in each 10-minute window.                       |
 | Password reset     | None.                                                         |
 | Entering a code    | None. A wrong verification code can be retried without limit. |
 
@@ -69,9 +84,7 @@ stays at 300 seconds after the ninth, and clears on a successful sign-in. A try
 inside the wait is refused even with the right password.
 
 The verification-code window opens at the first code an instance issues for an
-account. After 10 minutes it is never reopened: each later request refills the
-bucket to 3 and takes one, so no request is refused again until the instance
-restarts.
+account. When it ends, the next request starts a new window of 3 codes.
 
 ## Roles
 

@@ -6,18 +6,27 @@ Local settings live in `.env.local`, copied from
 
 ## Environment variables
 
-| Variable        | Required   | Read by                                               | Purpose                                                        |
-| --------------- | ---------- | ----------------------------------------------------- | -------------------------------------------------------------- |
-| `DATABASE_URL`  | locally    | `src/lib/db/index.ts`, `sync.ts`, `drizzle.config.ts` | PostgreSQL connection string. Fallback when no Hyperdrive.     |
-| `S3_PUBLIC_URL` | for images | `src/features/books/service.ts`, `actions/editor.ts`  | Public base URL of the image bucket, without a trailing slash. |
-| `SEED_PASSWORD` | no         | `src/lib/db/seeds/demo.ts`                            | Password of the demo accounts. Default `password123`.          |
-| `NODE_ENV`      | no         | seeds, cookies                                        | `production` skips the demo seed and marks cookies `Secure`.   |
+| Variable         | Required      | Read by                                               | Purpose                                                                                             |
+| ---------------- | ------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`   | locally       | `src/lib/db/index.ts`, `sync.ts`, `drizzle.config.ts` | PostgreSQL connection string. Fallback when no Hyperdrive.                                          |
+| `S3_PUBLIC_URL`  | for images    | `src/features/books/service.ts`, `actions/editor.ts`  | Public base URL of the image bucket, without a trailing slash.                                      |
+| `SEED_PASSWORD`  | no            | `src/lib/db/seeds/demo.ts`                            | Password of the demo accounts. Default `password123`.                                               |
+| `RESEND_API_KEY` | in production | `src/features/auth/core/mailer.ts`                    | [Resend](https://resend.com) API key for verification and password reset emails.                    |
+| `MAIL_FROM`      | in production | `src/features/auth/core/mailer.ts`                    | Sender address of those emails, such as `216 <no-reply@example.com>`.                               |
+| `NODE_ENV`       | no            | seeds, cookies, mailer                                | `production` skips the demo seed, marks cookies `Secure` and makes a missing mail setting an error. |
 
 `S3_PUBLIC_URL` is prepended to the object key to form the stored image URL:
 uploading `book-images/<uuid>-cover.jpg` stores
 `<S3_PUBLIC_URL>/book-images/<uuid>-cover.jpg`. If it is unset, the stored URL
 starts with the literal text `undefined`. `wrangler.jsonc` defines no `vars`, so
 on Cloudflare set `S3_PUBLIC_URL` as a Worker variable in the dashboard.
+
+`RESEND_API_KEY` and `MAIL_FROM` work as a pair. With both set, the app sends
+email through Resend. If either is missing, development writes the email to the
+server log and production fails the send, so sign-up returns an error until both
+are set. On Cloudflare set the API key as a Worker secret and `MAIL_FROM` as a
+variable. OpenNext copies both into `process.env`, which is where the mailer
+reads them. See [Email](auth.md#email).
 
 ## Database connection
 

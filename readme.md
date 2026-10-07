@@ -10,12 +10,10 @@ Readers browse and search books, favorite them and request loans. Librarians
 approve or reject requests and manage the catalogue. Admins also manage user
 roles.
 
-> **`bun run dev` can erase your database.** It runs `src/lib/db/sync.ts` before
-> it starts Next.js. When the hash of `src/lib/db/schema/*.ts` differs from the
-> one stored in the database, sync runs `DROP SCHEMA public CASCADE` against
-> `DATABASE_URL`. A database that sync has never touched always differs, so the
-> first run wipes every table in `public`. Point `DATABASE_URL` at a database
-> you can lose. See [the database page](docs/database.md).
+> **`bun run dev` writes to your database.** It runs `src/lib/db/sync.ts` before
+> it starts Next.js, which pushes schema changes to `DATABASE_URL` and seeds it.
+> It applies no statement that loses data. Point `DATABASE_URL` at a database
+> you can lose anyway. See [the database page](docs/database.md).
 
 ## Get started
 
