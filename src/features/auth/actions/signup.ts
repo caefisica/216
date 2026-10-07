@@ -12,6 +12,7 @@ import {
 } from "@/features/auth/core/session";
 import { verifyPasswordStrength } from "@/features/auth/core/password";
 import { setEmailVerificationCookie } from "@/features/auth/core/email-verification";
+import { mailUnavailableReason } from "@/features/auth/core/mailer";
 import { registerUser } from "@/features/auth/core/registration";
 import { RefillingTokenBucket } from "@/features/auth/core/rate-limit";
 
@@ -46,6 +47,12 @@ export async function signUpAction(_prev: FormState, formData: FormData): Promis
 
   if (password.length < 8 || password.length > 255) {
     return { error: "La contraseña debe tener entre 8 y 255 caracteres." };
+  }
+
+  const unavailable = await mailUnavailableReason();
+  if (unavailable) {
+    console.error("Sign-up refused:", unavailable);
+    return { error: "No pudimos enviar el correo de verificación. Inténtalo de nuevo más tarde." };
   }
 
   const strong = await verifyPasswordStrength(password);

@@ -9,6 +9,7 @@ import {
   issuePasswordReset,
   setPasswordResetCookie,
 } from "@/features/auth/core/password-reset";
+import { mailUnavailableReason } from "@/features/auth/core/mailer";
 
 type FormState = { error: string } | { sent: true } | null;
 
@@ -20,6 +21,14 @@ export async function requestPasswordResetAction(
   const email = formData.get("email");
   if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { error: "Correo electrónico inválido." };
+  }
+
+  // A missing mail setting is the same for every address, so refusing here reveals nothing about
+  // which addresses are registered.
+  const unavailable = await mailUnavailableReason();
+  if (unavailable) {
+    console.error("Password reset refused:", unavailable);
+    return { error: "No podemos enviar correos por ahora. Inténtalo de nuevo más tarde." };
   }
 
   const rows = await db
