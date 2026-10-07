@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Loader2 } from "lucide-react";
-import { getBooks, toggleHeart } from "../actions";
-import { toast } from "@/hooks/use-toast";
+import { getBooks, setHeart } from "../actions";
+import { toast, toastActionError } from "@/hooks/use-toast";
+import { isErr } from "@/lib/result";
+import type { BookStatus } from "@/lib/db/schema";
 import type { BookDetailed as Book, Category } from "../types";
 
 interface BookCatalogProps {
@@ -25,23 +27,19 @@ export function BookCatalog({ initialBooks, initialCategories }: BookCatalogProp
   const [books, setBooks] = useState<Book[]>(initialBooks);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<BookStatus | "all">("all");
   const [loading, setLoading] = useState(false);
 
   const filterBooks = useCallback(async () => {
     setLoading(true);
-    try {
-      const filtered = await getBooks({
-        search: searchQuery,
-        categoryId: selectedCategory,
-        status: selectedStatus,
-      });
-      setBooks(filtered as Book[]);
-    } catch (err) {
-      console.error("Error filtering books:", err);
-    } finally {
-      setLoading(false);
-    }
+    const result = await getBooks({
+      search: searchQuery,
+      categoryId: selectedCategory,
+      status: selectedStatus,
+    });
+    if (isErr(result)) toastActionError(result.error);
+    else setBooks(result.value);
+    setLoading(false);
   }, [searchQuery, selectedCategory, selectedStatus]);
 
   useEffect(() => {
@@ -51,28 +49,22 @@ export function BookCatalog({ initialBooks, initialCategories }: BookCatalogProp
     return () => clearTimeout(handler);
   }, [filterBooks]);
 
-  const handleToggleHeart = async (e: React.MouseEvent, bookId: string) => {
+  const handleToggleHeart = async (e: React.MouseEvent, bookId: string, hearted: boolean) => {
     e.preventDefault();
     e.stopPropagation();
 
-    try {
-      const result = await toggleHeart({ bookId });
-      // Optimized update
-      setBooks((prev) =>
-        prev.map((b) => (b.id === bookId ? { ...b, isHearted: result.hearted } : b)),
-      );
-
-      toast({
-        title: result.hearted ? "Añadido a favoritos" : "Eliminado de favoritos",
-        description: result.hearted ? "Libro marcado con un corazón." : "Libro desmarcado.",
-      });
-    } catch {
-      toast({
-        title: "Error",
-        description: "Inicia sesión para marcar libros como favoritos.",
-        variant: "destructive",
-      });
+    const result = await setHeart({ bookId, hearted: !hearted });
+    if (isErr(result)) {
+      toastActionError(result.error);
+      return;
     }
+    const now = result.value.hearted;
+    setBooks((prev) => prev.map((b) => (b.id === bookId ? { ...b, isHearted: now } : b)));
+
+    toast({
+      title: now ? "Añadido a favoritos" : "Eliminado de favoritos",
+      description: now ? "Libro marcado con un corazón." : "Libro desmarcado.",
+    });
   };
 
   const availableCount = books.filter((b) => b.status === "available").length;
@@ -106,7 +98,10 @@ export function BookCatalog({ initialBooks, initialCategories }: BookCatalogProp
             </SelectContent>
           </Select>
 
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <Select
+            value={selectedStatus}
+            onValueChange={(value) => setSelectedStatus(value as BookStatus | "all")}
+          >
             <SelectTrigger className="w-full md:w-40 h-12 rounded-xl border-gray-100 bg-gray-50/50">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
@@ -159,7 +154,7 @@ export function BookCatalog({ initialBooks, initialCategories }: BookCatalogProp
               key={book.id}
               book={book}
               isHearted={!!book.isHearted}
-              onToggleHeart={(e) => handleToggleHeart(e, book.id)}
+              onToggleHeart={(e) => handleToggleHeart(e, book.id, !!book.isHearted)}
               priority={index < 4}
             />
           ))}

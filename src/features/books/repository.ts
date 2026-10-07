@@ -8,13 +8,10 @@ import {
   borrowRequests,
 } from "@/lib/db/schema";
 import { outer } from "@/lib/db/qualified";
-import { eq, like, or, and, sql, desc, inArray } from "drizzle-orm";
+import { eq, or, and, sql, desc, inArray, type AnyColumn } from "drizzle-orm";
+import type { BookFields, BookFilters } from "./schemas";
 
-export async function listBooks(filters: {
-  search?: string;
-  status?: string;
-  categoryId?: string;
-}) {
+export async function listBooks(filters: BookFilters) {
   const db = await getDb();
   const query = db
     .select({
@@ -41,13 +38,9 @@ export async function listBooks(filters: {
 
   const conditions = [];
   if (filters.search) {
-    conditions.push(
-      or(
-        like(books.title, `%${filters.search}%`),
-        like(books.author, `%${filters.search}%`),
-        like(books.description, `%${filters.search}%`),
-      ),
-    );
+    const pattern = `%${filters.search.replace(/[\\%_]/g, "\\$&")}%`;
+    const matches = (column: AnyColumn) => sql`${column} LIKE ${pattern} ESCAPE '\\'`;
+    conditions.push(or(matches(books.title), matches(books.author), matches(books.description)));
   }
   if (filters.status && filters.status !== "all") conditions.push(eq(books.status, filters.status));
   if (filters.categoryId && filters.categoryId !== "all")
@@ -169,28 +162,42 @@ export async function hasHeart(bookId: string, userId: string) {
   return rows.length > 0;
 }
 
-export async function toggleHeartRecord(bookId: string, userId: string) {
+/**
+ * Sets whether the user has the book as a favorite, in one statement. Setting the state a user
+ * already has changes nothing, so repeated or simultaneous calls end in the last state asked for.
+ */
+export async function setHeartRecord(bookId: string, userId: string, hearted: boolean) {
   const db = await getDb();
-  const exists = await hasHeart(bookId, userId);
-  if (exists) {
+  if (hearted) {
+    await db.run(sql`
+      INSERT INTO ${userBookHearts} (${sql.identifier("id")}, ${sql.identifier("user_id")}, ${sql.identifier("book_id")})
+      SELECT ${crypto.randomUUID()}, ${userId}, ${books.id} FROM ${books} WHERE ${books.id} = ${bookId}
+      ON CONFLICT DO NOTHING`);
+  } else {
     await db
       .delete(userBookHearts)
       .where(and(eq(userBookHearts.bookId, bookId), eq(userBookHearts.userId, userId)));
-    return false;
   }
-  await db.insert(userBookHearts).values({ bookId, userId });
-  return true;
 }
 
-export async function createBorrowRequestRecord(bookId: string, userId: string, note?: string) {
+/**
+ * Inserts a pending request in one statement that only matches an available book, and returns
+ * whether it did. It does not insert when the book is not available or the user already has a
+ * pending request for it, however many requests arrive at once.
+ */
+export async function createBorrowRequestRecord(
+  bookId: string,
+  userId: string,
+  note: string | null,
+) {
   const db = await getDb();
-  await db.insert(borrowRequests).values({
-    id: crypto.randomUUID(),
-    bookId,
-    userId,
-    status: "pending",
-    notes: note || null,
-  });
+  const rows = await db.all(sql`
+    INSERT INTO ${borrowRequests} (${sql.identifier("id")}, ${sql.identifier("user_id")}, ${sql.identifier("book_id")}, ${sql.identifier("status")}, ${sql.identifier("notes")})
+    SELECT ${crypto.randomUUID()}, ${userId}, ${books.id}, 'pending', ${note}
+    FROM ${books} WHERE ${books.id} = ${bookId} AND ${books.status} = 'available'
+    ON CONFLICT DO NOTHING
+    RETURNING ${sql.identifier("id")}`);
+  return rows.length > 0;
 }
 
 export async function listCategories() {
@@ -198,33 +205,71 @@ export async function listCategories() {
   return db.select().from(categories).orderBy(categories.name);
 }
 
-export async function getBookImageById(imageId: string) {
+export async function getBookImageById(imageId: string, bookId: string) {
   const db = await getDb();
-  const [img] = await db.select().from(bookImages).where(eq(bookImages.id, imageId)).limit(1);
+  const [img] = await db
+    .select()
+    .from(bookImages)
+    .where(and(eq(bookImages.id, imageId), eq(bookImages.bookId, bookId)))
+    .limit(1);
   return img ?? null;
 }
 
-export async function deleteBookImageRecord(imageId: string) {
+/*
+ * A book's `image_url` is the URL of its cover image. Each write below changes the image rows and
+ * `books.image_url` in one batch, which D1 runs as a transaction, so they never disagree.
+ */
+
+const coverUrlOf = (bookId: string) =>
+  sql`(SELECT ${sql.identifier("image_url")} FROM ${sql.identifier("book_images")} WHERE ${sql.identifier("book_id")} = ${bookId} AND ${sql.identifier("is_cover")} = 1 LIMIT 1)`;
+
+/**
+ * Deletes the image. When the book is left without a cover, its first image becomes the cover and
+ * the book's image URL follows, or is cleared when no image is left.
+ */
+export async function deleteBookImageRecord(imageId: string, bookId: string) {
   const db = await getDb();
-  await db.delete(bookImages).where(eq(bookImages.id, imageId));
+  await db.batch([
+    db.delete(bookImages).where(and(eq(bookImages.id, imageId), eq(bookImages.bookId, bookId))),
+    db
+      .update(bookImages)
+      .set({ isCover: true })
+      .where(
+        and(
+          sql`${bookImages.id} = (SELECT "id" FROM "book_images" WHERE "book_id" = ${bookId} ORDER BY "display_order" LIMIT 1)`,
+          sql`${coverUrlOf(bookId)} IS NULL`,
+        ),
+      ),
+    db
+      .update(books)
+      .set({ imageUrl: coverUrlOf(bookId) })
+      .where(eq(books.id, bookId)),
+  ]);
 }
 
 export async function setCoverImageRecord(imageId: string, bookId: string) {
   const db = await getDb();
-  await db.update(bookImages).set({ isCover: false }).where(eq(bookImages.bookId, bookId));
-  await db.update(bookImages).set({ isCover: true }).where(eq(bookImages.id, imageId));
+  await db.batch([
+    db
+      .update(bookImages)
+      .set({ isCover: sql`${bookImages.id} = ${imageId}` })
+      .where(
+        and(
+          eq(bookImages.bookId, bookId),
+          sql`EXISTS (SELECT 1 FROM "book_images" WHERE "id" = ${imageId} AND "book_id" = ${bookId})`,
+        ),
+      ),
+    db
+      .update(books)
+      .set({ imageUrl: coverUrlOf(bookId) })
+      .where(eq(books.id, bookId)),
+  ]);
 }
 
-export async function clearCoverFlags(bookId: string) {
-  const db = await getDb();
-  await db.update(bookImages).set({ isCover: false }).where(eq(bookImages.bookId, bookId));
-}
-
-export async function setBookImageUrl(bookId: string, imageUrl: string) {
-  const db = await getDb();
-  await db.update(books).set({ imageUrl }).where(eq(books.id, bookId));
-}
-
+/**
+ * Adds the image, as the cover when `isCover`. Returns false when another image row already
+ * stores that URL.
+ */
 export async function addBookImageRecord(input: {
   bookId: string;
   imageUrl: string;
@@ -232,12 +277,37 @@ export async function addBookImageRecord(input: {
   displayOrder: number;
 }) {
   const db = await getDb();
-  await db.insert(bookImages).values({ id: crypto.randomUUID(), ...input });
-}
+  const id = crypto.randomUUID();
+  const insert = db
+    .insert(bookImages)
+    .values({ id, ...input })
+    .onConflictDoNothing()
+    .returning({ id: bookImages.id });
+  if (!input.isCover) return (await insert).length > 0;
 
-export async function listBookImagesForDelete(bookId: string) {
-  const db = await getDb();
-  return db.select().from(bookImages).where(eq(bookImages.bookId, bookId));
+  const [inserted] = await db.batch([
+    insert,
+    db
+      .update(bookImages)
+      .set({ isCover: false })
+      .where(
+        and(
+          eq(bookImages.bookId, input.bookId),
+          sql`${bookImages.id} <> ${id}`,
+          sql`EXISTS (SELECT 1 FROM "book_images" WHERE "id" = ${id})`,
+        ),
+      ),
+    db
+      .update(books)
+      .set({ imageUrl: input.imageUrl })
+      .where(
+        and(
+          eq(books.id, input.bookId),
+          sql`EXISTS (SELECT 1 FROM "book_images" WHERE "id" = ${id})`,
+        ),
+      ),
+  ]);
+  return inserted.length > 0;
 }
 
 export async function deleteBookRecord(bookId: string) {
@@ -245,39 +315,17 @@ export async function deleteBookRecord(bookId: string) {
   await db.delete(books).where(eq(books.id, bookId));
 }
 
-export async function updateBookRecord(data: {
-  id: string;
-  title: string;
-  author: string;
-  isbn: string | null;
-  publisher: string | null;
-  publicationYear: number;
-  pages: number;
-  location: string | null;
-  description: string | null;
-  status: "available" | "borrowed" | "reserved";
-  categoryId: string | null;
-}) {
+export async function updateBookRecord(id: string, data: BookFields) {
   const db = await getDb();
-  await db
+  const rows = await db
     .update(books)
     .set({ ...data, updatedAt: new Date() })
-    .where(eq(books.id, data.id));
+    .where(eq(books.id, id))
+    .returning({ id: books.id });
+  return rows.length > 0;
 }
 
-export async function createBookRecord(data: {
-  id: string;
-  title: string;
-  author: string;
-  isbn: string | null;
-  publisher: string | null;
-  publicationYear: number;
-  pages: number;
-  location: string | null;
-  description: string | null;
-  status: "available" | "borrowed" | "reserved";
-  categoryId: string | null;
-}) {
+export async function createBookRecord(id: string, data: BookFields) {
   const db = await getDb();
-  await db.insert(books).values(data);
+  await db.insert(books).values({ id, ...data });
 }

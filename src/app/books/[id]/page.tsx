@@ -7,7 +7,7 @@ import { isErr } from "@/lib/result";
 
 export default async function BookPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await getSession();
+  const { user } = await getSession();
 
   const [book, categories] = await Promise.all([getBookById(id), getCategories()]);
 
@@ -19,7 +19,7 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
     <BookClient
       initialBook={book.value as BookDetailed}
       categories={categories}
-      user={session?.user}
+      user={user?.emailVerified ? user : null}
     />
   );
 }

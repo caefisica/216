@@ -1,15 +1,23 @@
 "use server";
 
 import { z } from "zod";
-import { authenticatedAction, staffAction, getSession } from "@/features/auth/protected-action";
+import {
+  authenticatedAction,
+  staffAction,
+  getVerifiedUserId,
+} from "@/features/auth/protected-action";
 import {
   AddBookImageSchema,
+  BookFieldsSchema,
   BookIdSchema,
+  BorrowRequestSchema,
+  ImageRefSchema,
+  ImageUploadSchema,
   SearchSchema,
+  SetHeartSchema,
   UpdateBookSchema,
-  CreateBookSchema,
 } from "./schemas";
-import { listCategories, toggleHeartRecord, createBorrowRequestRecord } from "./repository";
+import { listCategories, setHeartRecord } from "./repository";
 import {
   getBooksService,
   getFavoriteBooksService,
@@ -21,55 +29,59 @@ import {
   deleteBookService,
   updateBookService,
   createBookService,
+  createBorrowRequestService,
 } from "./service";
+import { Err, Ok } from "@/lib/result";
+import type { ActionResult } from "@/lib/action";
+import type { BookDetailed } from "./types";
 
-export async function getBooks(filters?: z.infer<typeof SearchSchema>) {
-  const session = await getSession();
-  const parsedFilters = SearchSchema.parse(filters || {});
-  return getBooksService(parsedFilters, session.user?.id ?? null);
+export async function getBooks(
+  filters?: z.input<typeof SearchSchema>,
+): Promise<ActionResult<BookDetailed[]>> {
+  const parsed = SearchSchema.safeParse(filters ?? {});
+  if (!parsed.success) {
+    return Err({ code: "invalid", message: "Los filtros de búsqueda no son válidos." });
+  }
+  return Ok(await getBooksService(parsed.data, await getVerifiedUserId()));
 }
 
-export async function getFavoriteBooks() {
-  const session = await getSession();
-  return getFavoriteBooksService(session.user?.id ?? null);
-}
+export const getFavoriteBooks = authenticatedAction(z.object({}), async (_input, { user }) =>
+  getFavoriteBooksService(user.id),
+);
 
 export async function getBookById(id: string) {
-  const session = await getSession();
-  return getBookByIdService(id, session.user?.id ?? null);
+  const parsed = BookIdSchema.safeParse({ bookId: id });
+  if (!parsed.success) return Err("not_found");
+  return getBookByIdService(parsed.data.bookId, await getVerifiedUserId());
 }
 
-export const toggleHeart = authenticatedAction(BookIdSchema, async ({ bookId }, session) => {
-  const hearted = await toggleHeartRecord(bookId, session.user.id);
-  return { hearted };
-});
+export const setHeart = authenticatedAction(
+  SetHeartSchema,
+  async ({ bookId, hearted }, session) => {
+    await setHeartRecord(bookId, session.user.id, hearted);
+    return { hearted };
+  },
+);
 
 export const createBorrowRequest = authenticatedAction(
-  z.object({ bookId: z.uuid(), note: z.string().optional() }),
-  async ({ bookId, note }, session) => {
-    await createBorrowRequestRecord(bookId, session.user.id, note);
-    return { success: true };
-  },
+  BorrowRequestSchema,
+  async ({ bookId, note }, session) => createBorrowRequestService(bookId, session.user.id, note),
 );
 
 export async function getCategories() {
   return listCategories();
 }
 
-export const uploadBookImage = staffAction(z.instanceof(FormData), async (formData) => {
-  const file = formData.get("file") as File;
-  if (!file) throw new Error("No file uploaded");
-  return uploadBookImageService(file);
-});
-
-export const deleteBookImage = staffAction(
-  z.object({ imageId: z.uuid(), bookId: z.uuid() }),
-  async ({ imageId }) => deleteBookImageService(imageId),
+export const uploadBookImage = staffAction(ImageUploadSchema, async (file) =>
+  uploadBookImageService(file),
 );
 
-export const setCoverImage = staffAction(
-  z.object({ imageId: z.uuid(), bookId: z.uuid(), isExisting: z.boolean() }),
-  async ({ imageId, bookId }) => setCoverImageService(imageId, bookId),
+export const deleteBookImage = staffAction(ImageRefSchema, async ({ imageId, bookId }) =>
+  deleteBookImageService(imageId, bookId),
+);
+
+export const setCoverImage = staffAction(ImageRefSchema, async ({ imageId, bookId }) =>
+  setCoverImageService(imageId, bookId),
 );
 
 export const addBookImage = staffAction(AddBookImageSchema, async (input) =>
@@ -80,33 +92,10 @@ export const deleteBook = staffAction(BookIdSchema, async ({ bookId }) => {
   return deleteBookService(bookId);
 });
 
-export const updateBook = staffAction(UpdateBookSchema, async (data) => {
-  return updateBookService({
-    id: data.id,
-    title: data.title,
-    author: data.author,
-    isbn: data.isbn,
-    publisher: data.publisher,
-    publicationYear: data.publicationYear,
-    pages: data.pages,
-    location: data.location,
-    description: data.description,
-    status: data.status,
-    categoryId: data.categoryId,
-  });
+export const updateBook = staffAction(UpdateBookSchema, async ({ id, ...data }) => {
+  return updateBookService(id, data);
 });
 
-export const createBook = staffAction(CreateBookSchema, async (data) => {
-  return createBookService({
-    title: data.title,
-    author: data.author,
-    isbn: data.isbn || null,
-    publisher: data.publisher || null,
-    publicationYear: data.publicationYear,
-    pages: data.pages,
-    location: data.location || null,
-    description: data.description || null,
-    status: data.status || "available",
-    categoryId: data.categoryId || null,
-  });
+export const createBook = staffAction(BookFieldsSchema, async (data) => {
+  return createBookService(data);
 });

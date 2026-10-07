@@ -12,6 +12,7 @@ import type { Category } from "@/features/books/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { BookStatus } from "@/lib/db/schema";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -24,7 +25,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
+import { toast, toastActionError } from "@/hooks/use-toast";
+import { isErr } from "@/lib/result";
 import { Loader2, Save, Star, Trash2 } from "lucide-react";
 import { ImageDropzone } from "@/components/ui/image-dropzone";
 
@@ -50,7 +52,7 @@ export function NewBookClient() {
     publicationYear: "",
     pages: "",
     description: "",
-    status: "available",
+    status: "available" as BookStatus,
     location: "",
   });
 
@@ -148,26 +150,35 @@ export function NewBookClient() {
         location: formData.location,
         categoryId: selectedCategories[0] || undefined,
       });
-      if (!bookResult.success || !bookResult.id) throw new Error("Error creating book");
+      if (isErr(bookResult)) {
+        toastActionError(bookResult.error);
+        return;
+      }
 
       for (let i = 0; i < imageUploads.length; i++) {
         const imgUpload = imageUploads[i];
         const uploadFormData = new FormData();
         uploadFormData.append("file", imgUpload.file);
-        const { url } = await uploadBookImage(uploadFormData);
-        await addBookImage({
-          bookId: bookResult.id,
-          imageUrl: url!,
+        const uploaded = await uploadBookImage(uploadFormData);
+        if (isErr(uploaded)) {
+          toastActionError(uploaded.error);
+          return;
+        }
+        const added = await addBookImage({
+          bookId: bookResult.value.id,
+          imageUrl: uploaded.value.url,
           isCover: imgUpload.isCover,
           displayOrder: i,
         });
+        if (isErr(added)) {
+          toastActionError(added.error);
+          return;
+        }
       }
 
       toast({ title: "Libro añadido", description: "El libro se ha añadido correctamente." });
       router.push("/");
       router.refresh();
-    } catch {
-      toast({ title: "Error", description: "Error al añadir el libro.", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -424,7 +435,9 @@ export function NewBookClient() {
                     </Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, status: value as BookStatus }))
+                      }
                     >
                       <SelectTrigger
                         id="status"

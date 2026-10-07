@@ -29,6 +29,11 @@ export async function deleteFile(key: string) {
   return await bucket.delete(key);
 }
 
+export async function fileExists(key: string) {
+  const bucket = await getBucket();
+  return (await bucket.head(key)) !== null;
+}
+
 const MEDIA_PREFIX = "/media/";
 
 /** The URL the app serves an object from. See `src/app/media`. */
@@ -39,14 +44,18 @@ export function getFileUrl(key: string) {
 /** The object key behind a URL from `getFileUrl`, or null for any other URL. */
 export function getFileKey(url: string) {
   if (!url.startsWith(MEDIA_PREFIX)) return null;
-  return url.slice(MEDIA_PREFIX.length).split("/").map(decodeURIComponent).join("/");
+  try {
+    return url.slice(MEDIA_PREFIX.length).split("/").map(decodeURIComponent).join("/");
+  } catch {
+    return null;
+  }
 }
 
 /**
  * @workaround R2Bucket.copy() is supported at runtime but currently missing
  * from official TypeScript definitions. We use get+put to avoid '@ts-ignore'.
  */
-export async function copyFile(sourceKey: string, destinationKey: string) {
+async function copyFile(sourceKey: string, destinationKey: string) {
   const bucket = await getBucket();
   const object = await bucket.get(sourceKey);
 

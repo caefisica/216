@@ -7,7 +7,8 @@ import { BookHeader } from "./components/book-header";
 import { BookDetails } from "./components/book-details";
 import { EditForm } from "./components/edit-form";
 import type { BookFormData } from "./types/book-types";
-import { toast } from "@/hooks/use-toast";
+import { toast, toastActionError } from "@/hooks/use-toast";
+import { isErr } from "@/lib/result";
 import { saveBookWithImages } from "@/features/books/actions/editor";
 import { deleteBookImage, setCoverImage } from "@/features/books/actions";
 import { useRouter } from "next/navigation";
@@ -81,16 +82,13 @@ export default function BookClient({ initialBook, categories, user }: BookClient
         selectedCategories,
       });
 
-      if (result.success) {
-        toast({ title: "Libro actualizado", description: result.message });
-        setIsEditing(false);
-        router.refresh();
-      } else {
-        throw new Error(result.error);
+      if (isErr(result)) {
+        toastActionError(result.error);
+        return;
       }
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Error desconocido";
-      toast({ title: "Error", description: errorMessage, variant: "destructive" });
+      toast({ title: "Libro actualizado", description: "Libro actualizado correctamente" });
+      setIsEditing(false);
+      router.refresh();
     } finally {
       setSaving(false);
     }
@@ -98,15 +96,21 @@ export default function BookClient({ initialBook, categories, user }: BookClient
 
   const removeExistingImage = async (imageId: string) => {
     const result = await deleteBookImage({ imageId, bookId: book.id });
-    if (result.success) {
-      setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
-      toast({ title: "Imagen eliminada" });
+    if (isErr(result)) {
+      toastActionError(result.error);
+      return;
     }
+    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+    toast({ title: "Imagen eliminada" });
   };
 
   const handleSetCoverImage = async (imageId: string, isExisting: boolean) => {
     if (isExisting) {
-      await setCoverImage({ imageId, bookId: book.id, isExisting });
+      const result = await setCoverImage({ imageId, bookId: book.id });
+      if (isErr(result)) {
+        toastActionError(result.error);
+        return;
+      }
       setExistingImages((prev) => prev.map((img) => ({ ...img, isCover: img.id === imageId })));
     }
     toast({ title: "Portada actualizada" });

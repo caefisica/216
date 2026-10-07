@@ -1,6 +1,8 @@
 import { revalidatePath } from "next/cache";
-import { deleteFile, getFileKey, getFileUrl, uploadFile } from "@/lib/storage";
+import { deleteFile, fileExists, getFileKey, getFileUrl, uploadFile } from "@/lib/storage";
+import { IMAGE_EXTENSIONS, type BookFields, type BookFilters } from "./schemas";
 import { Ok, Err } from "@/lib/result";
+import { UserError } from "@/lib/action";
 import {
   listBooks,
   listBooksByIds,
@@ -14,19 +16,14 @@ import {
   getBookImageById,
   deleteBookImageRecord,
   setCoverImageRecord,
-  clearCoverFlags,
-  setBookImageUrl,
+  createBorrowRequestRecord,
   addBookImageRecord,
-  listBookImagesForDelete,
   deleteBookRecord,
   updateBookRecord,
   createBookRecord,
 } from "./repository";
 
-export async function getBooksService(
-  filters: { search?: string; status?: string; categoryId?: string },
-  userId?: string | null,
-) {
+export async function getBooksService(filters: BookFilters, userId?: string | null) {
   const booksData = await listBooks(filters);
   const bookIds = booksData.map((b) => b.id);
   if (bookIds.length === 0) return [];
@@ -50,8 +47,7 @@ export async function getBooksService(
   });
 }
 
-export async function getFavoriteBooksService(userId?: string | null) {
-  if (!userId) return [];
+export async function getFavoriteBooksService(userId: string) {
   const bookIds = await listHeartedBookIds(userId);
   if (bookIds.length === 0) return [];
 
@@ -93,16 +89,24 @@ export async function getBookByIdService(id: string, userId?: string | null) {
   });
 }
 
+/** `prefix` ends in a slash. The name comes from the file type, never from the client's file name. */
+export function newImageKey(prefix: string, file: File) {
+  return `${prefix}${crypto.randomUUID()}.${IMAGE_EXTENSIONS[file.type]}`;
+}
+
 export async function uploadBookImageService(file: File) {
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const fileName = `book-images/${crypto.randomUUID()}-${file.name}`;
-  await uploadFile(fileName, buffer, file.type);
+  const fileName = newImageKey("book-images/", file);
+  await uploadFile(fileName, file, file.type);
   return { url: getFileUrl(fileName) };
 }
 
-export async function deleteBookImageService(imageId: string) {
-  const img = await getBookImageById(imageId);
-  const key = img && getFileKey(img.imageUrl);
+export async function deleteBookImageService(imageId: string, bookId: string) {
+  const img = await getBookImageById(imageId, bookId);
+  if (!img) throw new UserError("Imagen no encontrada.");
+
+  await deleteBookImageRecord(imageId, bookId);
+
+  const key = getFileKey(img.imageUrl);
   if (key) {
     try {
       await deleteFile(key);
@@ -111,19 +115,14 @@ export async function deleteBookImageService(imageId: string) {
     }
   }
 
-  await deleteBookImageRecord(imageId);
-  return { success: true };
+  revalidatePath(`/books/${bookId}`);
 }
 
 export async function setCoverImageService(imageId: string, bookId: string) {
-  await setCoverImageRecord(imageId, bookId);
-  const img = await getBookImageById(imageId);
-  if (img) {
-    await setBookImageUrl(bookId, img.imageUrl);
-  }
+  if (!(await getBookImageById(imageId, bookId))) throw new UserError("Imagen no encontrada.");
 
+  await setCoverImageRecord(imageId, bookId);
   revalidatePath(`/books/${bookId}`);
-  return { success: true };
 }
 
 export async function addBookImageService(input: {
@@ -132,18 +131,16 @@ export async function addBookImageService(input: {
   isCover: boolean;
   displayOrder: number;
 }) {
-  if (input.isCover) {
-    await clearCoverFlags(input.bookId);
-    await setBookImageUrl(input.bookId, input.imageUrl);
-  }
+  const key = getFileKey(input.imageUrl);
+  if (!key || !(await fileExists(key))) throw new UserError("La imagen no se ha subido.");
+  if (!(await getBookById(input.bookId))) throw new UserError("Libro no encontrado.");
 
-  await addBookImageRecord(input);
+  if (!(await addBookImageRecord(input))) throw new UserError("Esa imagen ya está en uso.");
   revalidatePath(`/books/${input.bookId}`);
-  return { success: true };
 }
 
 export async function deleteBookService(bookId: string) {
-  const images = await listBookImagesForDelete(bookId);
+  const images = await listBookImagesByBookId(bookId);
   for (const img of images) {
     const key = getFileKey(img.imageUrl);
     if (key) await deleteFile(key);
@@ -151,66 +148,33 @@ export async function deleteBookService(bookId: string) {
 
   await deleteBookRecord(bookId);
   revalidatePath("/");
-  return { success: true };
 }
 
-export async function updateBookService(data: {
-  id: string;
-  title: string;
-  author: string;
-  isbn?: string | null;
-  publisher?: string | null;
-  publicationYear?: number | null;
-  pages?: number | null;
-  location?: string | null;
-  description?: string | null;
-  status: string;
-  categoryId?: string | null;
-}) {
-  await updateBookRecord({
-    id: data.id,
-    title: data.title,
-    author: data.author,
-    isbn: data.isbn ?? null,
-    publisher: data.publisher ?? null,
-    publicationYear: data.publicationYear ?? 0,
-    pages: data.pages ?? 0,
-    location: data.location ?? null,
-    description: data.description ?? null,
-    status: data.status as "available" | "borrowed" | "reserved",
-    categoryId: data.categoryId ?? null,
-  });
-  revalidatePath(`/books/${data.id}`);
+export async function updateBookService(id: string, data: BookFields) {
+  if (!(await updateBookRecord(id, data))) throw new UserError("Libro no encontrado.");
+  revalidatePath(`/books/${id}`);
   revalidatePath("/");
-  return { success: true };
 }
 
-export async function createBookService(data: {
-  title: string;
-  author: string;
-  isbn?: string | null;
-  publisher?: string | null;
-  publicationYear?: number | null;
-  pages?: number | null;
-  location?: string | null;
-  description?: string | null;
-  status: string;
-  categoryId?: string | null;
-}) {
+export async function createBookService(data: BookFields) {
   const bookId = crypto.randomUUID();
-  await createBookRecord({
-    id: bookId,
-    title: data.title,
-    author: data.author,
-    isbn: data.isbn ?? null,
-    publisher: data.publisher ?? null,
-    publicationYear: data.publicationYear ?? 0,
-    pages: data.pages ?? 0,
-    location: data.location ?? null,
-    description: data.description ?? null,
-    status: data.status as "available" | "borrowed" | "reserved",
-    categoryId: data.categoryId ?? null,
-  });
+  await createBookRecord(bookId, data);
   revalidatePath("/");
-  return { success: true, id: bookId };
+  return { id: bookId };
+}
+
+export async function createBorrowRequestService(
+  bookId: string,
+  userId: string,
+  note: string | null,
+) {
+  if (!(await createBorrowRequestRecord(bookId, userId, note))) {
+    // The insert refused; the book is read only to say why.
+    const book = await getBookById(bookId);
+    if (!book) throw new UserError("Libro no encontrado.");
+    if (book.status !== "available") throw new UserError("El libro no está disponible.");
+    throw new UserError("Ya tienes una solicitud pendiente para este libro.");
+  }
+
+  revalidatePath("/");
 }

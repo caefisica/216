@@ -21,6 +21,7 @@ import { isErr } from "@/lib/result";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { BookStatus } from "@/lib/db/schema";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -40,7 +41,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "@/hooks/use-toast";
+import { toast, toastActionError } from "@/hooks/use-toast";
 import { X, Loader2, Save, Trash2, Star, ChevronLeft } from "lucide-react";
 import { ImageDropzone } from "@/components/ui/image-dropzone";
 
@@ -69,7 +70,7 @@ export function EditBookClient({ bookId }: { bookId: string }) {
     publicationYear: "",
     pages: "",
     description: "",
-    status: "available",
+    status: "available" as BookStatus,
     location: "",
   });
 
@@ -153,20 +154,16 @@ export function EditBookClient({ bookId }: { bookId: string }) {
   };
 
   const removeExistingImage = async (imageId: string) => {
-    try {
-      await deleteBookImage({ imageId, bookId });
-      setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
-      toast({
-        title: "Imagen eliminada",
-        description: "La imagen ha sido eliminada correctamente.",
-      });
-    } catch {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la imagen.",
-        variant: "destructive",
-      });
+    const result = await deleteBookImage({ imageId, bookId });
+    if (isErr(result)) {
+      toastActionError(result.error);
+      return;
     }
+    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+    toast({
+      title: "Imagen eliminada",
+      description: "La imagen ha sido eliminada correctamente.",
+    });
   };
 
   const removeNewImage = (imageId: string) => {
@@ -174,23 +171,19 @@ export function EditBookClient({ bookId }: { bookId: string }) {
   };
 
   const handleSetCoverImage = async (imageId: string, isExisting: boolean) => {
-    try {
-      if (isExisting) {
-        await setCoverImage({ imageId, bookId, isExisting: true });
-        setExistingImages((prev) => prev.map((img) => ({ ...img, isCover: img.id === imageId })));
-        setNewImageUploads((prev) => prev.map((img) => ({ ...img, isCover: false })));
-      } else {
-        setNewImageUploads((prev) => prev.map((img) => ({ ...img, isCover: img.id === imageId })));
-        setExistingImages((prev) => prev.map((img) => ({ ...img, isCover: false })));
+    if (isExisting) {
+      const result = await setCoverImage({ imageId, bookId });
+      if (isErr(result)) {
+        toastActionError(result.error);
+        return;
       }
-      toast({ title: "Portada actualizada" });
-    } catch {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la portada.",
-        variant: "destructive",
-      });
+      setExistingImages((prev) => prev.map((img) => ({ ...img, isCover: img.id === imageId })));
+      setNewImageUploads((prev) => prev.map((img) => ({ ...img, isCover: false })));
+    } else {
+      setNewImageUploads((prev) => prev.map((img) => ({ ...img, isCover: img.id === imageId })));
+      setExistingImages((prev) => prev.map((img) => ({ ...img, isCover: false })));
     }
+    toast({ title: "Portada actualizada" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -205,7 +198,7 @@ export function EditBookClient({ bookId }: { bookId: string }) {
     }
     setSubmitting(true);
     try {
-      await updateBook({
+      const updated = await updateBook({
         id: bookId,
         title: formData.title,
         author: formData.author,
@@ -218,18 +211,30 @@ export function EditBookClient({ bookId }: { bookId: string }) {
         location: formData.location,
         categoryId: selectedCategories[0] || undefined,
       });
+      if (isErr(updated)) {
+        toastActionError(updated.error);
+        return;
+      }
 
       for (let i = 0; i < newImageUploads.length; i++) {
         const imageUpload = newImageUploads[i];
         const uploadFormData = new FormData();
         uploadFormData.append("file", imageUpload.file);
-        const { url } = await uploadBookImage(uploadFormData);
-        await addBookImage({
+        const uploaded = await uploadBookImage(uploadFormData);
+        if (isErr(uploaded)) {
+          toastActionError(uploaded.error);
+          return;
+        }
+        const added = await addBookImage({
           bookId,
-          imageUrl: url!,
+          imageUrl: uploaded.value.url,
           isCover: imageUpload.isCover,
           displayOrder: existingImages.length + i,
         });
+        if (isErr(added)) {
+          toastActionError(added.error);
+          return;
+        }
       }
 
       toast({
@@ -238,25 +243,19 @@ export function EditBookClient({ bookId }: { bookId: string }) {
       });
       fetchBookDetails();
       setNewImageUploads([]);
-    } catch {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el libro.",
-        variant: "destructive",
-      });
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteBook = async () => {
-    try {
-      await deleteBook({ bookId });
-      toast({ title: "Libro eliminado" });
-      router.push("/");
-    } catch {
-      toast({ title: "Error al eliminar", variant: "destructive" });
+    const result = await deleteBook({ bookId });
+    if (isErr(result)) {
+      toastActionError(result.error);
+      return;
     }
+    toast({ title: "Libro eliminado" });
+    router.push("/");
   };
 
   if (loading) {
@@ -478,7 +477,9 @@ export function EditBookClient({ bookId }: { bookId: string }) {
                     </Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(val) => setFormData((p) => ({ ...p, status: val }))}
+                      onValueChange={(val) =>
+                        setFormData((p) => ({ ...p, status: val as BookStatus }))
+                      }
                     >
                       <SelectTrigger className="h-14 rounded-2xl border-gray-100 bg-gray-50/30">
                         <SelectValue />
