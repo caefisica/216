@@ -1,6 +1,8 @@
 "use server";
 
 import { after } from "next/server";
+import { RefillingTokenBucket } from "@/features/auth/core/rate-limit";
+import { getClientIp } from "@/features/auth/core/client-ip";
 import { getDb } from "@/lib/db";
 import { user as userTable } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -10,6 +12,8 @@ import {
   setPasswordResetCookie,
 } from "@/features/auth/core/password-reset";
 import { mailUnavailableReason } from "@/features/auth/core/mailer";
+
+const resetRequestIpBucket = new RefillingTokenBucket("reset-request-ip", 3, 30);
 
 type FormState = { error: string } | { sent: true } | null;
 
@@ -21,6 +25,10 @@ export async function requestPasswordResetAction(
   const email = formData.get("email");
   if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { error: "Correo electrónico inválido." };
+  }
+
+  if (!(await resetRequestIpBucket.consume(await getClientIp()))) {
+    return { error: "Demasiados intentos. Intente más tarde." };
   }
 
   // A missing mail setting is the same for every address, so refusing here reveals nothing about

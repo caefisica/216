@@ -5,7 +5,8 @@ import { cookies } from "next/headers";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { passwordResetSession as prsTable, user as userTable } from "@/lib/db/schema";
-import { Ok, Err, type Result } from "@/lib/result";
+import { Ok, Err, isErr, type Result } from "@/lib/result";
+import { ExpiringTokenBucket } from "./rate-limit";
 import { generateOTP } from "./otp";
 import { sendPasswordResetEmail } from "./mailer";
 
@@ -38,7 +39,30 @@ export async function createPasswordResetSession(
   return { id, userId, email, code, expiresAt };
 }
 
-export async function validatePasswordResetToken(
+/** Wrong-code tries per account, shared by every reset session the account has. */
+export const resetCodeBucket = new ExpiringTokenBucket("reset-code", 5, 60 * 10);
+
+/**
+ * The token alone proves nothing, because whoever asks for a reset receives it in a cookie. The
+ * emailed code is what proves control of the address. `invalid` covers an unknown token, an expired
+ * session and a wrong code alike, so the answer does not say whether the address has an account.
+ */
+export async function claimPasswordReset(
+  token: string,
+  code: string,
+): Promise<Result<{ id: string }, "invalid" | "too_many">> {
+  const found = await validatePasswordResetToken(token);
+  if (isErr(found)) return Err("invalid");
+
+  const { session, user } = found.value;
+  if (!(await resetCodeBucket.consume(user.id))) return Err("too_many");
+  if (session.code !== code) return Err("invalid");
+
+  await resetCodeBucket.reset(user.id);
+  return Ok({ id: user.id });
+}
+
+async function validatePasswordResetToken(
   token: string,
 ): Promise<
   Result<
@@ -78,11 +102,6 @@ export async function validatePasswordResetToken(
     },
     user,
   });
-}
-
-export async function invalidatePasswordResetSession(userId: string): Promise<void> {
-  const db = await getDb();
-  await db.delete(prsTable).where(eq(prsTable.userId, userId));
 }
 
 /**

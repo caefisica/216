@@ -2,8 +2,7 @@ import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import { cookies } from "next/headers";
 import { and, eq, ne } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { emailVerificationRequest as evTable } from "@/lib/db/schema";
-import { setUserEmailVerified } from "@/features/auth/core/session";
+import { emailVerificationRequest as evTable, user as userTable } from "@/lib/db/schema";
 import { Ok, Err, isErr, type Result } from "@/lib/result";
 import { ExpiringTokenBucket } from "./rate-limit";
 import { generateOTP } from "./otp";
@@ -17,7 +16,10 @@ export interface EmailVerificationRequest {
   expiresAt: Date;
 }
 
-export const sendVerificationEmailBucket = new ExpiringTokenBucket<string>(3, 60 * 10);
+export const sendVerificationEmailBucket = new ExpiringTokenBucket("verification-send", 3, 60 * 10);
+
+/** Wrong-code tries per account. Six digits are too few to leave unlimited. */
+export const verifyEmailCodeBucket = new ExpiringTokenBucket("verification-code", 5, 60 * 10);
 
 export async function createEmailVerificationRequest(
   userId: string,
@@ -56,7 +58,7 @@ export async function issueEmailVerification(
   return Ok(request);
 }
 
-export async function getEmailVerificationRequest(
+async function getEmailVerificationRequest(
   userId: string,
   id: string,
 ): Promise<Result<EmailVerificationRequest, "not_found">> {
@@ -68,7 +70,7 @@ export async function getEmailVerificationRequest(
   return Ok({ id: r.id, userId: r.userId, email: r.email, code: r.code, expiresAt: r.expiresAt });
 }
 
-export async function deleteUserEmailVerificationRequests(userId: string): Promise<void> {
+async function deleteUserEmailVerificationRequests(userId: string): Promise<void> {
   const db = await getDb();
   await db.delete(evTable).where(eq(evTable.userId, userId));
 }
@@ -88,8 +90,11 @@ export async function verifyEmailCode(
 
   if (r.value.code !== code) return Err("invalid_code");
 
-  await deleteUserEmailVerificationRequests(userId);
-  await setUserEmailVerified(userId);
+  const db = await getDb();
+  await db.batch([
+    db.delete(evTable).where(eq(evTable.userId, userId)),
+    db.update(userTable).set({ emailVerified: true }).where(eq(userTable.id, userId)),
+  ]);
   return Ok(undefined);
 }
 

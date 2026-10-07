@@ -7,6 +7,7 @@ import {
   verifyEmailCode,
   issueEmailVerification,
   sendVerificationEmailBucket,
+  verifyEmailCodeBucket,
   setEmailVerificationCookie,
   deleteEmailVerificationCookie,
 } from "@/features/auth/core/email-verification";
@@ -27,6 +28,10 @@ export async function verifyEmailAction(_prev: FormState, formData: FormData): P
   const requestId = (await cookies()).get("email_verification")?.value ?? null;
   if (!requestId) return { error: "No hay verificación pendiente." };
 
+  if (!(await verifyEmailCodeBucket.consume(user.id))) {
+    return { error: "Demasiados intentos. Espera unos minutos." };
+  }
+
   const result = await verifyEmailCode(user.id, requestId, code);
   if (isErr(result)) {
     const messages = {
@@ -38,6 +43,7 @@ export async function verifyEmailAction(_prev: FormState, formData: FormData): P
     return { error: messages[result.error] };
   }
 
+  await verifyEmailCodeBucket.reset(user.id);
   await deleteEmailVerificationCookie();
   redirect("/");
 }
@@ -46,7 +52,7 @@ export async function resendVerificationEmailAction(): Promise<Result<void, stri
   const { user } = await getCurrentSession();
   if (!user) return Err("No has iniciado sesión.");
 
-  if (!sendVerificationEmailBucket.consume(user.id, 1)) {
+  if (!(await sendVerificationEmailBucket.consume(user.id))) {
     return Err("Demasiados envíos. Espera unos minutos.");
   }
 

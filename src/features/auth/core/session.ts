@@ -4,7 +4,11 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { session as sessionTable, user as userTable } from "@/lib/db/schema";
+import {
+  passwordResetSession as resetTable,
+  session as sessionTable,
+  user as userTable,
+} from "@/lib/db/schema";
 import { hashPassword } from "./password";
 import type { Role } from "@/lib/db/schema";
 import { Ok, Err, type Result } from "@/lib/result";
@@ -41,7 +45,7 @@ export async function createSession(token: string, userId: string): Promise<Sess
   return { id, userId, expiresAt };
 }
 
-export async function validateSessionToken(token: string): Promise<SessionValidationResult> {
+async function validateSessionToken(token: string): Promise<SessionValidationResult> {
   const db = await getDb();
   const id = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
 
@@ -150,13 +154,17 @@ export async function createUser(email: string, name: string, password: string):
   return u;
 }
 
+/**
+ * Signs the user out everywhere, since whoever held the old password may hold a session, and ends
+ * their reset sessions, so a used code cannot set another password. One batch, so none of the
+ * three happens without the others.
+ */
 export async function updateUserPassword(userId: string, password: string): Promise<void> {
   const db = await getDb();
   const passwordHash = await hashPassword(password);
-  await db.update(userTable).set({ passwordHash }).where(eq(userTable.id, userId));
-}
-
-export async function setUserEmailVerified(userId: string): Promise<void> {
-  const db = await getDb();
-  await db.update(userTable).set({ emailVerified: true }).where(eq(userTable.id, userId));
+  await db.batch([
+    db.update(userTable).set({ passwordHash }).where(eq(userTable.id, userId)),
+    db.delete(sessionTable).where(eq(sessionTable.userId, userId)),
+    db.delete(resetTable).where(eq(resetTable.userId, userId)),
+  ]);
 }
