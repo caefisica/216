@@ -1,10 +1,21 @@
 import { getDb } from "@/lib/db";
-import { user, borrowRequests, books } from "@/lib/db/schema";
+import { user, borrowRequests, books, type Role } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
+
+/** Every `user` column except the password hash. Select this, never the whole table, for data that reaches the browser. */
+export const publicUserColumns = {
+  id: user.id,
+  email: user.email,
+  name: user.name,
+  emailVerified: user.emailVerified,
+  role: user.role,
+  totalDonations: user.totalDonations,
+  createdAt: user.createdAt,
+};
 
 export async function listUsers() {
   const db = await getDb();
-  return db.select().from(user).orderBy(desc(user.createdAt));
+  return db.select(publicUserColumns).from(user).orderBy(desc(user.createdAt));
 }
 
 export async function listUserActivity(userId: string) {
@@ -34,17 +45,27 @@ export async function listUserActivity(userId: string) {
 export async function updateUserName(userId: string, name?: string) {
   const db = await getDb();
   if (!name) {
-    const [currentUser] = await db.select().from(user).where(eq(user.id, userId)).limit(1);
+    const [currentUser] = await db
+      .select(publicUserColumns)
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
     return currentUser;
   }
-  const [updatedUser] = await db.update(user).set({ name }).where(eq(user.id, userId)).returning();
+  const [updatedUser] = await db
+    .update(user)
+    .set({ name })
+    .where(eq(user.id, userId))
+    .returning(publicUserColumns);
   return updatedUser;
 }
 
-export async function setUserRole(
-  userId: string,
-  newRole: "user" | "librarian" | "admin" | "suspended",
-) {
+export async function setUserRole(userId: string, newRole: Role) {
   const db = await getDb();
-  await db.update(user).set({ role: newRole }).where(eq(user.id, userId));
+  const rows = await db
+    .update(user)
+    .set({ role: newRole })
+    .where(eq(user.id, userId))
+    .returning({ id: user.id });
+  return rows.length > 0;
 }

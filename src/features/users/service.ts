@@ -1,23 +1,21 @@
 import { revalidatePath } from "next/cache";
+import { UserError } from "@/lib/action";
+import type { Role } from "@/lib/db/schema";
 import { updateUserName, setUserRole } from "./repository";
 
 export async function updateUserProfileService(userId: string, name?: string) {
   const user = await updateUserName(userId, name);
   revalidatePath("/profile");
-  return { success: true, user };
+  return user;
 }
 
-export async function updateUserRoleService(
-  userId: string,
-  newRole: "user" | "librarian" | "admin" | "suspended",
-) {
-  await setUserRole(userId, newRole);
+/** An admin cannot change their own role, so the last admin cannot lock everyone out. */
+export async function updateUserRoleService(actorId: string, userId: string, newRole: Role) {
+  if (userId === actorId) throw new UserError("No puedes cambiar tu propio rol.");
+  if (!(await setUserRole(userId, newRole))) throw new UserError("Usuario no encontrado.");
   revalidatePath("/");
-  return { success: true, message: `Rol actualizado a ${newRole}` };
 }
 
-export async function suspendUserService(userId: string) {
-  await setUserRole(userId, "suspended");
-  revalidatePath("/");
-  return { success: true, message: "Usuario suspendido exitosamente" };
+export async function suspendUserService(actorId: string, userId: string) {
+  await updateUserRoleService(actorId, userId, "suspended");
 }

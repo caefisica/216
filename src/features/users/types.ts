@@ -1,7 +1,8 @@
 import { user, borrowRequests } from "@/lib/db/schema";
 import type { BookDetailed } from "../books/types";
 
-export type User = typeof user.$inferSelect;
+/** A user as the browser may see it: never the password hash. */
+export type User = Omit<typeof user.$inferSelect, "passwordHash">;
 type BorrowRequestRow = typeof borrowRequests.$inferSelect;
 
 export interface BorrowRequest extends BorrowRequestRow {
