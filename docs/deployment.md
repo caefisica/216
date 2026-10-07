@@ -49,16 +49,20 @@ To enable email:
 3. Set `MAIL_FROM` in `wrangler.jsonc`, such as
    `216 <no-reply@mail.example.com>`, and deploy again.
 
-Without email nobody can sign up, so create the first admin by hand (see below).
+Without email nobody can sign up, so create the first admin with the command
+below.
 
 ## First admin
 
-Sign up once email works, then promote that account:
-
 ```bash
-bunx wrangler d1 execute DB --remote \
-  --command "UPDATE user SET role = 'admin' WHERE email = 'you@example.com'"
+bun run admin:create -- --email you@example.com --name "Your Name" --remote
 ```
+
+It asks for the password twice, or reads it from stdin when piped. The account
+is verified and has the admin role, so it signs in at `/auth/signin` without
+email. If the email already belongs to an account, that account is promoted and
+keeps its name; give a password to change it too. Leave out `--remote` to do the
+same in the local database.
 
 ## Production database
 

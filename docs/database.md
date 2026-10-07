@@ -12,6 +12,7 @@ schema is defined in `src/lib/db/schema/`. The SQL that creates it is in
 | `bun run db:migrate:production` | Apply pending migrations to the production database.           |
 | `bun run db:generate`           | Write a new migration from the difference to the schema files. |
 | `bun run db:seed`               | Add the demo accounts and books to the local database.         |
+| `bun run admin:create`          | Create or promote an admin. `--remote` targets production.     |
 
 `bun run dev` runs `db:migrate` first. The local database lives in
 `.wrangler/state`; delete that folder to start over. `bun run deploy` runs
