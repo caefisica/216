@@ -53,4 +53,6 @@ to that release date and run `mise run check` and `bun run preview`. The
 `nodejs_compat` flag provides the Node.js APIs that Next.js needs.
 
 After you change `wrangler.jsonc`, run `bun run typegen` to regenerate
-`worker-configuration.d.ts`.
+`worker-configuration.d.ts`. Git ignores that file, so a lint or check run never
+changes tracked files, and `mise run check` deletes it as its last step. Run
+`bun run typegen` or `bun install` to get it back for your editor.

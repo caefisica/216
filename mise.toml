@@ -2,5 +2,11 @@
 bun = "1.4.2"
 
 [tasks.check]
-description = "Format check, lint, type check and tests"
-run = ["bunx oxfmt --check .", "bun run lint", "bun x tsc --noEmit", "bun run test"]
+description = "Format check, lint, type check and tests. Leaves no generated file behind."
+run = [
+  "bunx oxfmt --check .",
+  "bun run lint",
+  "bun x tsc --noEmit",
+  "bun run test",
+  "rm -f worker-configuration.d.ts",
+]
