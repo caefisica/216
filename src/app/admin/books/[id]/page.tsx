@@ -1,12 +1,8 @@
-import { getCurrentSession } from "@/features/auth/core/session";
-import { redirect } from "next/navigation";
+import { requireStaffPage } from "@/features/auth/protected-action";
 import { EditBookClient } from "./edit-book-client";
 
 export default async function EditBookPage({ params }: { params: Promise<{ id: string }> }) {
-  const { user } = await getCurrentSession();
-  if (!user || (user.role !== "librarian" && user.role !== "admin")) {
-    redirect("/");
-  }
+  await requireStaffPage();
   const { id } = await params;
   return <EditBookClient bookId={id} />;
 }

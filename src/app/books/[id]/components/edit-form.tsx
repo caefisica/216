@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import type { BookFormData } from "../types/book-types";
 import { uploadBookImage, cleanupTempFiles } from "@/features/books/actions/editor";
+import { Err, isErr } from "@/lib/result";
 
 interface UploadedImage {
   id: string;
@@ -79,36 +80,28 @@ export function EditForm({
 
         setUploadedImages((prev) => [...prev, placeholder]);
 
-        try {
-          const formData = new FormData();
-          formData.append("file", file);
+        const formData = new FormData();
+        formData.append("file", file);
 
-          const result = await uploadBookImage(formData);
+        const result = await uploadBookImage(formData).catch(() =>
+          Err({ code: "failed" as const, message: "Error al subir" }),
+        );
 
-          if (result.success) {
-            setUploadedImages((prev) =>
-              prev.map((img) =>
-                img.id === imageId
-                  ? {
-                      ...img,
-                      url: result.url!,
-                      fileName: result.fileName!,
-                      isUploading: false,
-                      uploadProgress: 100,
-                    }
-                  : img,
-              ),
-            );
-          }
-        } catch {
-          setUploadedImages((prev) =>
-            prev.map((img) =>
-              img.id === imageId
-                ? { ...img, isUploading: false, uploadError: "Error al subir" }
-                : img,
-            ),
-          );
-        }
+        setUploadedImages((prev) =>
+          prev.map((img) => {
+            if (img.id !== imageId) return img;
+            if (isErr(result)) {
+              return { ...img, isUploading: false, uploadError: result.error.message };
+            }
+            return {
+              ...img,
+              url: result.value.url,
+              fileName: result.value.fileName,
+              isUploading: false,
+              uploadProgress: 100,
+            };
+          }),
+        );
       }
     },
     [existingImages.length],

@@ -35,7 +35,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "@/hooks/use-toast";
+import { toast, toastActionError } from "@/hooks/use-toast";
+import { isErr } from "@/lib/result";
 import {
   UserPlus,
   Shield,
@@ -66,19 +67,10 @@ export function UserManagement() {
   });
 
   const fetchUsers = async () => {
-    try {
-      const data = await getAllUsers();
-      setUsers(data || []);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los usuarios.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    const result = await getAllUsers();
+    if (isErr(result)) toastActionError(result.error);
+    else setUsers(result.value);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -112,45 +104,23 @@ export function UserManagement() {
   };
 
   const handleRoleChange = async (userId: string, newRole: Role) => {
-    try {
-      const result = await updateUserRole({ userId, newRole });
-
-      if (result.success) {
-        toast({
-          title: "Rol actualizado",
-          description: result.message,
-        });
-        fetchUsers();
-      }
-    } catch (error) {
-      console.error("Error updating role:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el rol del usuario.",
-        variant: "destructive",
-      });
+    const result = await updateUserRole({ userId, newRole });
+    if (isErr(result)) {
+      toastActionError(result.error);
+      return;
     }
+    toast({ title: "Rol actualizado", description: `Rol actualizado a ${newRole}` });
+    fetchUsers();
   };
 
   const handleSuspendUser = async (userId: string) => {
-    try {
-      const result = await suspendUser({ userId });
-
-      if (result.success) {
-        toast({
-          title: "Usuario suspendido",
-          description: result.message,
-        });
-        fetchUsers();
-      }
-    } catch (error) {
-      console.error("Error suspending user:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo suspender al usuario.",
-        variant: "destructive",
-      });
+    const result = await suspendUser({ userId });
+    if (isErr(result)) {
+      toastActionError(result.error);
+      return;
     }
+    toast({ title: "Usuario suspendido", description: "Usuario suspendido exitosamente" });
+    fetchUsers();
   };
 
   const getRoleIcon = (role: string) => {

@@ -26,7 +26,8 @@ import {
   User,
   Calendar,
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast, toastActionError } from "@/hooks/use-toast";
+import { isErr } from "@/lib/result";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -84,36 +85,26 @@ export function ProfileClient({ user }: { user: AuthUser }) {
 
   useState(() => {
     getUserActivity()
-      .then((data) => setBorrowHistory(data || []))
-      .catch(() =>
-        toast({
-          title: "Error",
-          description: "No se pudo cargar tu actividad.",
-          variant: "destructive",
-        }),
-      )
+      .then((result) => {
+        if (isErr(result)) toastActionError(result.error);
+        else setBorrowHistory(result.value);
+      })
       .finally(() => setLoadingData(false));
   });
 
   const handleNameUpdate = async () => {
     if (!newName.trim()) return;
-    try {
-      const result = await updateUserProfile({ name: newName.trim() });
-      if (result.success) {
-        toast({
-          title: "Perfil actualizado",
-          description: "Tu nombre ha sido modificado correctamente.",
-        });
-        setIsEditingName(false);
-        router.refresh();
-      }
-    } catch {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el perfil.",
-        variant: "destructive",
-      });
+    const result = await updateUserProfile({ name: newName.trim() });
+    if (isErr(result)) {
+      toastActionError(result.error);
+      return;
     }
+    toast({
+      title: "Perfil actualizado",
+      description: "Tu nombre ha sido modificado correctamente.",
+    });
+    setIsEditingName(false);
+    router.refresh();
   };
 
   const activeLoans = borrowHistory.filter(

@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getFavoriteBooks, toggleHeart } from "@/features/books/actions";
+import { getFavoriteBooks, setHeart } from "@/features/books/actions";
 import { BookCard } from "@/features/books/components/book-card";
 import { Heart, BookOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { toast } from "@/hooks/use-toast";
+import { toast, toastActionError } from "@/hooks/use-toast";
+import { isErr } from "@/lib/result";
 import type { BookDetailed } from "@/features/books/types";
 
 export function FavoritesClient() {
@@ -16,10 +17,12 @@ export function FavoritesClient() {
   const fetchFavoriteBooks = useCallback(async () => {
     setLoadingData(true);
     try {
-      const data = await getFavoriteBooks();
-      setFavoriteBooks(data || []);
-    } catch {
-      // silent
+      const result = await getFavoriteBooks({});
+      if (isErr(result)) {
+        toastActionError(result.error);
+        return;
+      }
+      setFavoriteBooks(result.value as BookDetailed[]);
     } finally {
       setLoadingData(false);
     }
@@ -32,22 +35,16 @@ export function FavoritesClient() {
   const handleToggleHeart = async (e: React.MouseEvent, bookId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    try {
-      const result = await toggleHeart({ bookId });
-      if (!result.hearted) {
-        setFavoriteBooks((prev) => prev.filter((b) => b.id !== bookId));
-      }
-      toast({
-        title: result.hearted ? "Añadido a favoritos" : "Eliminado de favoritos",
-        description: result.hearted ? "Libro marcado con un corazón." : "Libro desmarcado.",
-      });
-    } catch {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el favorito.",
-        variant: "destructive",
-      });
+    const result = await setHeart({ bookId, hearted: false });
+    if (isErr(result)) {
+      toastActionError(result.error);
+      return;
     }
+    setFavoriteBooks((prev) => prev.filter((b) => b.id !== bookId));
+    toast({
+      title: "Eliminado de favoritos",
+      description: "Libro desmarcado.",
+    });
   };
 
   return (

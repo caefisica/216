@@ -1,9 +1,7 @@
-import { getCurrentSession } from "@/features/auth/core/session";
-import { redirect } from "next/navigation";
+import { requireVerifiedPage } from "@/features/auth/protected-action";
 import { ProfileClient } from "./profile-client";
 
 export default async function ProfilePage() {
-  const { user } = await getCurrentSession();
-  if (!user) redirect("/auth/signin");
+  const { user } = await requireVerifiedPage();
   return <ProfileClient user={user} />;
 }

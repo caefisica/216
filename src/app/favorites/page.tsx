@@ -1,9 +1,7 @@
-import { getCurrentSession } from "@/features/auth/core/session";
-import { redirect } from "next/navigation";
+import { requireVerifiedPage } from "@/features/auth/protected-action";
 import { FavoritesClient } from "./favorites-client";
 
 export default async function FavoritesPage() {
-  const { user } = await getCurrentSession();
-  if (!user) redirect("/auth/signin");
+  await requireVerifiedPage();
   return <FavoritesClient />;
 }
