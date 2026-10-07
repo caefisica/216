@@ -10,9 +10,8 @@ export interface TestDatabase {
 }
 
 /**
- * Creates an empty database on the server named by TEST_DATABASE_URL, for example
- * postgres://postgres:pw@localhost:5432/postgres. Fails instead of skipping when it is unset,
- * so a missing server can never turn the database tests into silent passes.
+ * Creates an empty database on the server named by TEST_DATABASE_URL. The URL must identify a
+ * database whose user can create databases. Failing when it is unset prevents silent test passes.
  */
 export async function createTestDatabase(): Promise<TestDatabase> {
   const adminUrl = process.env.TEST_DATABASE_URL;

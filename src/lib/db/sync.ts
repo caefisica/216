@@ -43,8 +43,9 @@ export async function sync() {
     if (plan.pushSchema) {
       console.log("Schema changed. Pushing it to the existing database...");
       const first = drizzlePush();
-      // drizzle-kit exits 0 when it declines to push, so success means a second push finds nothing
-      // left to do. Without a terminal it never prompts, and it applies no data-losing statement.
+      // A zero exit status can mean that drizzle-kit declined to push. Run it again to confirm
+      // that no schema changes remain. Without a terminal it never prompts, and it applies no
+      // data-losing statement.
       const applied = first.output.includes(IN_SYNC) || drizzlePush().output.includes(IN_SYNC);
       if (!applied) {
         console.error(
