@@ -1,64 +1,48 @@
 # Configuration
 
-Local settings live in `.env.local`, copied from
-[`.env.example`](../.env.example). Cloudflare settings live in
-[`wrangler.jsonc`](../wrangler.jsonc) and the dashboard.
+The app reads no environment variables at runtime. Everything it needs is a
+Cloudflare binding or a variable in [`wrangler.jsonc`](../wrangler.jsonc).
+Local-only settings go in `.env.local`, copied from
+[`.env.example`](../.env.example).
 
-## Environment variables
+## Variables
 
-| Variable         | Required      | Read by                                               | Purpose                                                                                             |
-| ---------------- | ------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`   | locally       | `src/lib/db/index.ts`, `sync.ts`, `drizzle.config.ts` | PostgreSQL connection string. Fallback when no Hyperdrive.                                          |
-| `S3_PUBLIC_URL`  | for images    | `src/features/books/service.ts`, `actions/editor.ts`  | Public base URL of the image bucket, without a trailing slash.                                      |
-| `SEED_PASSWORD`  | no            | `src/lib/db/seeds/demo.ts`                            | Password of the demo accounts. Default `password123`.                                               |
-| `RESEND_API_KEY` | in production | `src/features/auth/core/mailer.ts`                    | [Resend](https://resend.com) API key for verification and password reset emails.                    |
-| `MAIL_FROM`      | in production | `src/features/auth/core/mailer.ts`                    | Sender address of those emails, such as `216 <no-reply@example.com>`.                               |
-| `NODE_ENV`       | no            | seeds, cookies, mailer                                | `production` skips the demo seed, marks cookies `Secure` and makes a missing mail setting an error. |
+| Name            | Where                      | Read by                            | Purpose                                                                                      |
+| --------------- | -------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| `MAIL_FROM`     | `vars` in `wrangler.jsonc` | `src/features/auth/core/mailer.ts` | Sender of verification and password reset emails, such as `216 <no-reply@mail.example.com>`. |
+| `SEED_PASSWORD` | environment of `db:seed`   | `src/lib/db/seeds/demo.ts`         | Password of the demo accounts. Default `password123`. Optional.                              |
+| `NODE_ENV`      | set by Next.js             | cookies, mailer                    | `production` marks cookies `Secure` and makes a missing mail setting an error.               |
 
-`S3_PUBLIC_URL` is prepended to the object key to form the stored image URL:
-uploading `book-images/<uuid>-cover.jpg` stores
-`<S3_PUBLIC_URL>/book-images/<uuid>-cover.jpg`. If it is unset, the stored URL
-starts with the literal text `undefined`. `wrangler.jsonc` defines no `vars`, so
-on Cloudflare set `S3_PUBLIC_URL` as a Worker variable in the dashboard.
-
-`RESEND_API_KEY` and `MAIL_FROM` work as a pair. With both set, the app sends
-email through Resend. If either is missing, development writes the email to the
-server log and production fails the send, so sign-up returns an error until both
-are set. On Cloudflare set the API key as a Worker secret and `MAIL_FROM` as a
-variable. OpenNext copies both into `process.env`, which is where the mailer
-reads them. See [Email](auth.md#email).
-
-## Database connection
-
-[`src/lib/db/index.ts`](../src/lib/db/index.ts) picks the connection string in
-this order:
-
-1. The `HYPERDRIVE` binding's `connectionString`, when the code runs on
-   Cloudflare.
-2. `DATABASE_URL`.
-
-When neither exists it throws. In production set up the `HYPERDRIVE` binding;
-`DATABASE_URL` is the local and script fallback. `sync.ts` and `drizzle-kit`
-always use `DATABASE_URL`, never Hyperdrive.
+`MAIL_FROM` is empty until a sending domain exists. See [Email](auth.md#email).
 
 ## Cloudflare bindings
 
-| Binding                 | Type       | Used for                                              |
-| ----------------------- | ---------- | ----------------------------------------------------- |
-| `HYPERDRIVE`            | Hyperdrive | Database connections from the Worker.                 |
-| `_216_storage`          | R2 bucket  | Book image uploads and deletes. Bucket `216-storage`. |
-| `ASSETS`                | Assets     | Static files from `.open-next/assets`.                |
-| `WORKER_SELF_REFERENCE` | Service    | The Worker calling itself, used by OpenNext.          |
+| Binding                 | Type       | Used for                                                         |
+| ----------------------- | ---------- | ---------------------------------------------------------------- |
+| `DB`                    | D1         | The database. Database `216`, migrations in `migrations/`.       |
+| `_216_storage`          | R2 bucket  | Book images. Bucket `216-storage`, served by the `/media` route. |
+| `EMAIL`                 | Send Email | Verification and password reset emails.                          |
+| `ASSETS`                | Assets     | Static files from `.open-next/assets`.                           |
+| `WORKER_SELF_REFERENCE` | Service    | The Worker calling itself, used by OpenNext.                     |
 
-The Hyperdrive `id` and the R2 `bucket_name` in `wrangler.jsonc` belong to the
+The D1 `database_id` and the R2 `bucket_name` in `wrangler.jsonc` belong to the
 production Cloudflare account. To run your own copy, replace them with resources
-from your account.
+from your account. See [deployment](deployment.md).
 
-[`src/lib/storage.ts`](../src/lib/storage.ts) reads `_216_storage` through
-`getCloudflareContext()`. `next.config.ts` does not initialize the Cloudflare
-context for `next dev`, so image upload and delete throw there. After
-`bun run pages:build`, `bun run preview` runs the built app in the Workers
-runtime, where the bindings are defined.
+`bun run dev` and `bun run preview` simulate all of these locally and keep their
+state in `.wrangler/state`. Sending email is not simulated: the mailer logs the
+message instead. [`src/lib/storage.ts`](../src/lib/storage.ts) and
+[`src/lib/db/index.ts`](../src/lib/db/index.ts) read the bindings through
+`getCloudflareContext()`.
+
+## Images
+
+Uploads go to R2 under `temp/` or `book-images/`. The database stores the path
+`/media/<key>`, and [`src/app/media/`](../src/app/media/%5B...key%5D/route.ts)
+serves it from the bucket with the stored content type, a one-year immutable
+cache and headers that stop the browser from running an upload as a page.
+`images.unoptimized` is set in `next.config.ts`, because the Next.js image
+optimizer needs an image binding this app does not configure.
 
 After you change `wrangler.jsonc`, run `bun run typegen` to regenerate
 `worker-configuration.d.ts`.

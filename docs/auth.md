@@ -21,16 +21,23 @@ again. A failed resend leaves the previous code valid.
 ## Email
 
 [`mailer.ts`](../src/features/auth/core/mailer.ts) sends the verification and
-password reset codes through the [Resend](https://resend.com) API. It depends on
-two variables, described in [configuration](configuration.md):
+password reset codes through the `EMAIL` Cloudflare Email Service binding. It
+needs that binding and the `MAIL_FROM` variable, described in
+[configuration](configuration.md) and [deployment](deployment.md#email):
 
-| `RESEND_API_KEY` and `MAIL_FROM` | `NODE_ENV`     | What happens                                                                           |
-| -------------------------------- | -------------- | -------------------------------------------------------------------------------------- |
-| Both set                         | any            | The email is sent. A provider error, or no answer in 10 seconds, fails the send.       |
-| Either missing                   | not production | The email is not sent. The message is written to the server log.                       |
-| Either missing                   | `production`   | The send fails with an error that names the missing variables. The code is not logged. |
+| `EMAIL` and `MAIL_FROM` | `NODE_ENV`     | What happens                                                                     |
+| ----------------------- | -------------- | -------------------------------------------------------------------------------- |
+| Both present            | any            | The email is sent. A provider error, or no answer in 10 seconds, fails the send. |
+| Either missing          | not production | The email is not sent. The message is written to the server log.                 |
+| Either missing          | `production`   | The send fails with an error that names what is missing. The code is not logged. |
 
-In development with no mail settings, read the code in the `bun run dev`
+In production with a setting missing, sign-up and password reset check this
+before they touch the database. They log `Cannot send email: MAIL_FROM not set.`
+(or the missing binding) and answer that email cannot be sent, with no account
+or reset session created. The password reset answer is the same for every
+address, so it still does not reveal which addresses have an account.
+
+In development, `MAIL_FROM` is empty, so read the code in the `bun run dev`
 terminal:
 
 ```text
@@ -39,12 +46,14 @@ terminal:
 
 ## Password reset
 
-`/auth/reset-password` takes an email. If an account has it, the app stores a
-reset session with a six-digit code valid for 10 minutes, emails the code, and
-sets the `password_reset_session` cookie to a random token. The email is sent
-after the response, so the page does not wait for the provider. If the send
-fails, the error is logged and the session is deleted. The page answers the same
-way, with a cookie, whether or not the account exists.
+`/auth/reset-password` takes an email. If mail is not set up in production, it
+answers with an error for every address, as described under [Email](#email).
+Otherwise, if an account has the address, the app stores a reset session with a
+six-digit code valid for 10 minutes, emails the code, and sets the
+`password_reset_session` cookie to a random token. The email is sent after the
+response, so the page does not wait for the provider. If the send fails, the
+error is logged and the session is deleted. The page answers the same way, with
+a cookie, whether or not the account exists.
 
 No page asks for the code. The form that sets the new password is
 `/auth/reset-password/<token>`, and the email carries no link. The token is the
@@ -57,7 +66,8 @@ and pass the same breach check as at sign-up.
 A session is a random token in the `session` cookie (`httpOnly`, `SameSite=Lax`,
 `Secure` when `NODE_ENV` is `production`). The database stores only its SHA-256
 hash. A session lasts 30 days and renews when fewer than 15 days remain.
-Passwords are hashed with PBKDF2-SHA256, 600,000 iterations.
+Passwords are hashed with PBKDF2-SHA256, 100,000 iterations, the most the
+Workers runtime allows.
 
 [`src/middleware.ts`](../src/middleware.ts) sets the cookie again, with a 30-day
 lifetime, on every GET that carries one. For other methods it answers 403 unless

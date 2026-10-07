@@ -3,43 +3,34 @@
 [![CodeQL](https://github.com/caefisica/216/actions/workflows/codeql.yml/badge.svg)](https://github.com/caefisica/216/actions/workflows/codeql.yml)
 
 Library catalogue and loan tracker for the physics undergrad library at UNMSM's
-Faculty of Physical Sciences. It is a Next.js app on PostgreSQL, deployed to
-Cloudflare Workers. The interface is in Spanish.
+Faculty of Physical Sciences. It is a Next.js app on Cloudflare Workers with a
+D1 database and R2 image storage. The interface is in Spanish.
 
 Readers browse and search books, favorite them and request loans. Librarians
 approve or reject requests and manage the catalogue. Admins also manage user
 roles.
 
-> **`bun run dev` writes to your database.** It runs `src/lib/db/sync.ts` before
-> it starts Next.js, which pushes schema changes to `DATABASE_URL` and seeds it.
-> It applies no statement that loses data. Point `DATABASE_URL` at a database
-> you can lose anyway. See [the database page](docs/database.md).
-
 ## Get started
 
-You need [Bun](https://bun.sh) 1.4.2 (`mise install` reads it from `mise.toml`)
-and an empty PostgreSQL database.
+You need [Bun](https://bun.sh) 1.4.2 (`mise install` reads it from `mise.toml`).
+There is no database to install: local development runs D1 and R2 in the Workers
+runtime simulator, and keeps their state in `.wrangler/state`.
 
 ```bash
 bun install
-cp .env.example .env.local
-```
-
-Set `DATABASE_URL` in `.env.local`, then start the dev server:
-
-```bash
 bun run dev
+bun run db:seed
 ```
 
-`bun run dev` first syncs the database. It pushes the schema with
-`drizzle-kit push` without a terminal, so it never prompts and never applies a
-statement that loses data. It seeds only after the push has been applied. If a
-schema change would lose data, the sync prints what would be lost, seeds nothing
-and exits with an error.
+`bun run dev` applies the migrations in [`migrations/`](migrations) to the local
+database, which also adds the book categories, then starts Next.js.
+`bun run db:seed` adds three demo accounts and two books to that database, and
+is safe to repeat.
 
 Open <http://localhost:3000> and sign in as `admin@unmsm.edu.pe` with the
 password `password123`. Demo accounts are listed in
-[the database page](docs/database.md#demo-data).
+[the database page](docs/database.md#demo-data). To start over, delete
+`.wrangler/state`.
 
 ## What you can do
 
@@ -56,20 +47,16 @@ password `password123`. Demo accounts are listed in
 
 ## Configuration
 
-| Variable         | Description                                             |
-| ---------------- | ------------------------------------------------------- |
-| `DATABASE_URL`   | PostgreSQL connection string                            |
-| `S3_PUBLIC_URL`  | Public base URL of the image bucket                     |
-| `SEED_PASSWORD`  | Password for demo accounts (default: `password123`)     |
-| `RESEND_API_KEY` | [Resend](https://resend.com) API key for outgoing email |
-| `MAIL_FROM`      | Sender address for outgoing email                       |
+| Name            | Description                                            |
+| --------------- | ------------------------------------------------------ |
+| `SEED_PASSWORD` | Password for demo accounts (default: `password123`)    |
+| `MAIL_FROM`     | Sender address for outgoing email, in `wrangler.jsonc` |
 
-Without `RESEND_API_KEY` and `MAIL_FROM`, codes are printed to the server log in
-development. In production, sending either email fails until both are set.
-
-On Cloudflare the database comes from the `HYPERDRIVE` binding and images go to
-the `_216_storage` R2 binding. See [configuration](docs/configuration.md) and
-[deployment](docs/deployment.md).
+On Cloudflare the database is the `DB` D1 binding, images are in the
+`_216_storage` R2 binding and email goes through the `EMAIL` binding. Without a
+sender, codes are printed to the server log in development. In production,
+sending either email fails until `MAIL_FROM` is set. See
+[configuration](docs/configuration.md) and [deployment](docs/deployment.md).
 
 ## Documentation
 
@@ -84,6 +71,5 @@ the `_216_storage` R2 binding. See [configuration](docs/configuration.md) and
 mise run check   # format, lint, type check and tests
 ```
 
-The tests create throwaway databases on the Postgres server named by
-`TEST_DATABASE_URL`. `mise run check` starts one in Docker on port 55432; stop
-it with `mise run test-db-stop`.
+The database tests run against a real local D1 database in a temporary
+directory. They need no Docker and no server.

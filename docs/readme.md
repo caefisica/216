@@ -1,11 +1,10 @@
 # Manual
 
-1. [Database](database.md): schema sync, seeds, demo accounts, and how to change
+1. [Database](database.md): migrations, seeds, demo accounts, and how to change
    the schema.
-2. [Configuration](configuration.md): environment variables and Cloudflare
-   bindings.
-3. [Deployment](deployment.md): build, deploy and set up the production
-   database.
+2. [Configuration](configuration.md): variables, Cloudflare bindings and image
+   serving.
+3. [Deployment](deployment.md): deploy, email setup and the first admin.
 4. [Accounts and roles](auth.md): sign-up, sessions, rate limits and what each
    role can do.
 5. [Borrowing](borrowing.md): the loan flow and the dashboard statistics.

@@ -2,8 +2,8 @@
 
 216 is a Next.js App Router application. Pages render on the server, and the
 browser calls server actions for every mutation. There is no REST API and no
-`src/app/api` directory. PostgreSQL holds the data and Cloudflare R2 holds the
-images.
+`src/app/api` directory. Cloudflare D1 (SQLite) holds the data and Cloudflare R2
+holds the images.
 
 ```text
 browser
@@ -38,46 +38,52 @@ See [accounts and roles](docs/auth.md).
 
 ## Directory map
 
-| Path                        | Owns                                                                                             |
-| --------------------------- | ------------------------------------------------------------------------------------------------ |
-| `src/app/`                  | Routes. `page.tsx` is `/`: the catalogue, or the dashboard for staff.                            |
-| `src/app/books/[id]/`       | Book detail page with its own components, hooks and types.                                       |
-| `src/app/auth/`             | Sign-in, sign-up, email verification and password reset pages.                                   |
-| `src/app/about/`, `donors/` | Static information pages. `privacy` and `terms` are MDX.                                         |
-| `src/features/admin/`       | Dashboard counts, pending requests, loan approval, statistics.                                   |
-| `src/features/auth/`        | Sessions, password hashing, one-time codes, rate limits. See [accounts and roles](docs/auth.md). |
-| `src/features/books/`       | Catalogue queries, book and image editing, favorites, loan requests.                             |
-| `src/features/users/`       | Profile updates, role changes, suspension, user activity.                                        |
-| `src/features/donors/`      | Read-only donor and donation lists.                                                              |
-| `src/components/ui/`        | Radix-based primitives in the shadcn style (`components.json`).                                  |
-| `src/components/layout/`    | Header and footer.                                                                               |
-| `src/lib/db/schema/`        | Drizzle table definitions. See [database](docs/database.md).                                     |
-| `src/lib/db/sync.ts`        | Schema sync and seeding run by `bun run dev`.                                                    |
-| `src/lib/db/seeds/`         | Bootstrap and demo seed data.                                                                    |
-| `src/lib/db/index.ts`       | `getDb()`: one pooled connection from Hyperdrive or `DATABASE_URL`.                              |
-| `src/lib/storage.ts`        | R2 helpers over the `_216_storage` binding.                                                      |
-| `src/lib/result.ts`         | `Ok`/`Err` result type for fallible service calls.                                               |
-| `src/middleware.ts`         | Session cookie refresh and the same-origin check on non-GET requests.                            |
+| Path                               | Owns                                                                                             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `src/app/`                         | Routes. `page.tsx` is `/`: the catalogue, or the dashboard for staff.                            |
+| `src/app/books/[id]/`              | Book detail page with its own components, hooks and types.                                       |
+| `src/app/auth/`                    | Sign-in, sign-up, email verification and password reset pages.                                   |
+| `src/app/about/`, `donors/`        | Static information pages. `privacy` and `terms` are MDX.                                         |
+| `src/features/admin/`              | Dashboard counts, pending requests, loan approval, statistics.                                   |
+| `src/features/auth/`               | Sessions, password hashing, one-time codes, rate limits. See [accounts and roles](docs/auth.md). |
+| `src/features/books/`              | Catalogue queries, book and image editing, favorites, loan requests.                             |
+| `src/features/users/`              | Profile updates, role changes, suspension, user activity.                                        |
+| `src/features/donors/`             | Read-only donor and donation lists.                                                              |
+| `src/components/ui/`               | Radix-based primitives in the shadcn style (`components.json`).                                  |
+| `src/components/layout/`           | Header and footer.                                                                               |
+| `src/lib/db/schema/`               | Drizzle table definitions. See [database](docs/database.md).                                     |
+| `migrations/`                      | SQL migrations for D1, generated by `drizzle-kit` and applied by `wrangler`.                     |
+| `src/lib/db/seed.ts`               | `bun run db:seed`: demo data for the local database. The data is in `seeds/demo.ts`.             |
+| `src/lib/db/index.ts`              | `getDb()`: Drizzle over the `DB` D1 binding.                                                     |
+| `src/lib/db/qualified.ts`          | `outer()`: column references for correlated subqueries.                                          |
+| `src/lib/storage.ts`               | R2 helpers over the `_216_storage` binding, and the `/media/` URL of an object.                  |
+| `src/app/media/`                   | Route that serves R2 objects at `/media/<key>`.                                                  |
+| `src/features/auth/core/mailer.ts` | Verification and reset emails through the `EMAIL` binding.                                       |
+| `src/lib/result.ts`                | `Ok`/`Err` result type for fallible service calls.                                               |
+| `src/middleware.ts`                | Session cookie refresh and the same-origin check on non-GET requests.                            |
 
 `@/` resolves to `src/` (`tsconfig.json`).
 
 ## Boundaries
 
 - Components never import a repository. They call actions.
-- `src/lib/db/index.ts` is the only place a connection is made at runtime.
-  [`getDb()`](src/lib/db/index.ts) memoizes one `pg` pool with `max: 1`, which
-  suits a Worker instance with Hyperdrive in front.
-- `src/lib/db/sync.ts` opens its own pool and never runs inside the app.
-- Only `src/lib/storage.ts` touches the R2 binding.
+- [`getDb()`](src/lib/db/index.ts) is the only place the D1 binding is read. It
+  builds a Drizzle client per call; D1 has no connection to pool.
+- Only `src/lib/storage.ts` and the `/media` route touch the R2 binding.
+- Stored image URLs are `/media/<key>` paths, never absolute URLs, so the bucket
+  needs no public address.
 - Password and session code uses Web Crypto and `@oslojs`, not Node-only APIs,
   so it runs on Workers.
 
 ## Build and runtime
 
-`next dev` and `next build` are plain Next.js. `opennextjs-cloudflare build`
-turns the Next.js output into `.open-next/worker.js`, which `wrangler.jsonc`
-names as the Worker entry. See [deployment](docs/deployment.md).
+`next dev` runs with the Workers bindings simulated locally
+(`initOpenNextCloudflareForDev` in `next.config.ts`).
+`opennextjs-cloudflare build` turns the Next.js output into
+`.open-next/worker.js`, which `wrangler.jsonc` names as the Worker entry. See
+[deployment](docs/deployment.md).
 
 Tooling configuration at the root: `oxfmt.config.ts` (formatter, including
 Markdown), `oxlint.config.ts` (linter), `knip.ts` (unused code and
-dependencies), `drizzle.config.ts` (schema path for `drizzle-kit`).
+dependencies), `drizzle.config.ts` (schema path and migration folder for
+`drizzle-kit`).
