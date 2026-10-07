@@ -17,12 +17,19 @@
       "service": "216",
     },
   ],
-  "hyperdrive": [
+  "d1_databases": [
     {
-      "binding": "HYPERDRIVE",
-      "id": "3ad78d6978c74a96ac1bb03e4cc63840",
+      "binding": "DB",
+      "database_name": "216",
+      "database_id": "5e1a9f58-f85e-4c91-8ffa-ec9580ad10e1",
+      "migrations_dir": "migrations",
     },
   ],
+  "send_email": [{ "name": "EMAIL" }],
+  "vars": {
+    // Sender address on a domain onboarded to Cloudflare Email Service. Empty until one exists.
+    "MAIL_FROM": "",
+  },
   "r2_buckets": [
     {
       "bucket_name": "216-storage",

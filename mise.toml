@@ -1,20 +1,6 @@
 [tools]
 bun = "1.4.2"
 
-[tasks.test-db]
-description = "Start the Postgres server the database tests run against"
-run = """
-docker inspect 216-test-db > /dev/null 2>&1 || docker run -d --rm --name 216-test-db \
-  -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17-alpine
-until docker exec 216-test-db pg_isready -h 127.0.0.1 -U postgres > /dev/null 2>&1; do sleep 1; done
-"""
-
-[tasks.test-db-stop]
-description = "Stop the database test server"
-run = "docker stop 216-test-db"
-
 [tasks.check]
 description = "Format check, lint, type check and tests"
-depends = ["test-db"]
-env = { TEST_DATABASE_URL = "postgres://postgres:postgres@localhost:55432/postgres" }
 run = ["bunx oxfmt --check .", "bun run lint", "bun x tsc --noEmit", "bun run test"]
