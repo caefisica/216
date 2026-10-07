@@ -37,7 +37,7 @@ describe("migrations", () => {
   it("reject a book status the library does not use", async () => {
     const db = await getDb();
     await expect(
-      db.insert(schema.books).values({ title: "Bad", author: "A", status: "lost" }),
+      db.insert(schema.books).values({ title: "Bad", author: "A", status: "lost" as never }),
     ).rejects.toThrow();
   });
 
@@ -91,12 +91,14 @@ describe("queries", () => {
         bookId: book.id,
         status: "approved",
         requestDate: new Date("2026-03-10T12:00:00Z"),
+        approvedDate: new Date("2026-03-11T12:00:00Z"),
       },
       {
         userId: student.id,
         bookId: book.id,
         status: "returned",
         requestDate: new Date("2026-03-20T12:00:00Z"),
+        approvedDate: new Date("2026-03-21T12:00:00Z"),
         returnDate: new Date("2026-03-25T12:00:00Z"),
       },
       {
@@ -104,18 +106,19 @@ describe("queries", () => {
         bookId: book.id,
         status: "approved",
         requestDate: new Date("2026-04-02T12:00:00Z"),
+        approvedDate: new Date("2026-04-03T12:00:00Z"),
       },
     ]);
 
     const months = await getMonthlyActivity(new Date("2026-01-01T00:00:00Z"));
 
     expect(months).toEqual([
-      { month: "2026-03", borrows: 1, returns: 1 },
+      { month: "2026-03", borrows: 2, returns: 1 },
       { month: "2026-04", borrows: 1, returns: 0 },
     ]);
   });
 
-  it("count a book's approved loans and hearts", async () => {
+  it("count a book's approved loans, returned ones included, and hearts", async () => {
     const { getBookActivity } = await import("@/features/admin/repository");
     const db = await getDb();
     const [student] = await db.select().from(schema.user);
@@ -125,7 +128,7 @@ describe("queries", () => {
     const activity = await getBookActivity();
 
     expect(activity.find((row) => row.id === book.id)).toMatchObject({
-      borrowCount: 2,
+      borrowCount: 3,
       heartsCount: 1,
     });
     expect(activity.filter((row) => row.id !== book.id).every((row) => row.heartsCount === 0)).toBe(
@@ -133,9 +136,9 @@ describe("queries", () => {
     );
   });
 
-  it("rank active users by approved loans", async () => {
+  it("rank active users by approved loans, returned ones included", async () => {
     const { getActiveUsers } = await import("@/features/admin/repository");
     const users = await getActiveUsers();
-    expect(users[0].borrowCount).toBe(2);
+    expect(users[0].borrowCount).toBe(3);
   });
 });
