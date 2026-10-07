@@ -1,105 +1,98 @@
-import { pgTable, text, integer, timestamp, uuid, check, primaryKey } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, check, primaryKey } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { user } from "./auth";
+import { timestampNow, uuidPrimaryKey } from "./columns";
 
-export const categories = pgTable("categories", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
+export const categories = sqliteTable("categories", {
+  id: uuidPrimaryKey(),
   name: text("name").unique().notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestampNow("created_at"),
+  updatedAt: timestampNow("updated_at"),
 });
 
-export const books = pgTable(
+export const books = sqliteTable(
   "books",
   {
-    id: uuid("id").primaryKey().defaultRandom().notNull(),
+    id: uuidPrimaryKey(),
     title: text("title").notNull(),
     author: text("author").notNull(),
     isbn: text("isbn").unique(),
     description: text("description"),
     imageUrl: text("image_url"),
-    categoryId: uuid("category_id").references(() => categories.id, { onDelete: "set null" }),
+    categoryId: text("category_id").references(() => categories.id, { onDelete: "set null" }),
     status: text("status").default("available").notNull(),
     publicationYear: integer("publication_year"),
     publisher: text("publisher"),
     pages: integer("pages"),
     location: text("location"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestampNow("created_at"),
+    updatedAt: timestampNow("updated_at"),
   },
-  (table) => ({
-    statusCheck: check(
-      "status_check",
-      sql`${table.status} IN ('available', 'borrowed', 'maintenance')`,
-    ),
-  }),
+  (table) => [
+    check("books_status_check", sql`${table.status} IN ('available', 'borrowed', 'maintenance')`),
+  ],
 );
 
-export const userBookHearts = pgTable("user_book_hearts", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
+export const userBookHearts = sqliteTable("user_book_hearts", {
+  id: uuidPrimaryKey(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  bookId: uuid("book_id")
+  bookId: text("book_id")
     .notNull()
     .references(() => books.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestampNow("created_at"),
 });
 
-export const borrowRequests = pgTable(
+export const borrowRequests = sqliteTable(
   "borrow_requests",
   {
-    id: uuid("id").primaryKey().defaultRandom().notNull(),
+    id: uuidPrimaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    bookId: uuid("book_id")
+    bookId: text("book_id")
       .notNull()
       .references(() => books.id, { onDelete: "cascade" }),
-    requestDate: timestamp("request_date", { withTimezone: true }).defaultNow().notNull(),
+    requestDate: timestampNow("request_date"),
     status: text("status").default("pending").notNull(),
     librarianId: text("librarian_id").references(() => user.id, { onDelete: "set null" }),
-    approvedDate: timestamp("approved_date", { withTimezone: true }),
-    dueDate: timestamp("due_date", { withTimezone: true }),
-    returnDate: timestamp("return_date", { withTimezone: true }),
+    approvedDate: integer("approved_date", { mode: "timestamp_ms" }),
+    dueDate: integer("due_date", { mode: "timestamp_ms" }),
+    returnDate: integer("return_date", { mode: "timestamp_ms" }),
     notes: text("notes"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestampNow("created_at"),
+    updatedAt: timestampNow("updated_at"),
   },
-  (table) => ({
-    statusCheck: check(
-      "status_check",
+  (table) => [
+    check(
+      "borrow_requests_status_check",
       sql`${table.status} IN ('pending', 'approved', 'rejected', 'returned')`,
     ),
-  }),
+  ],
 );
 
-export const bookImages = pgTable("book_images", {
-  id: uuid("id").primaryKey().defaultRandom().notNull(),
-  bookId: uuid("book_id")
+export const bookImages = sqliteTable("book_images", {
+  id: uuidPrimaryKey(),
+  bookId: text("book_id")
     .notNull()
     .references(() => books.id, { onDelete: "cascade" }),
   imageUrl: text("image_url").notNull(),
-  isCover: boolean("is_cover").default(false).notNull(), // Note: boolean was missing in some context earlier, but I'll assume it's imported.
+  isCover: integer("is_cover", { mode: "boolean" }).default(false).notNull(),
   altText: text("alt_text"),
   displayOrder: integer("display_order").default(0).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestampNow("created_at"),
 });
 
-// Wait, I need to import boolean for bookImages.
-import { boolean } from "drizzle-orm/pg-core";
-
-export const bookCategories = pgTable(
+export const bookCategories = sqliteTable(
   "book_categories",
   {
-    bookId: uuid("book_id")
+    bookId: text("book_id")
       .notNull()
       .references(() => books.id, { onDelete: "cascade" }),
-    categoryId: uuid("category_id")
+    categoryId: text("category_id")
       .notNull()
       .references(() => categories.id, { onDelete: "cascade" }),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.bookId, table.categoryId] }),
-  }),
+  (table) => [primaryKey({ columns: [table.bookId, table.categoryId] })],
 );

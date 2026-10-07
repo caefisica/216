@@ -1,4 +1,5 @@
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { eq } from "drizzle-orm";
+import type { Database } from "../index";
 import * as schema from "../schema";
 import { hashPassword } from "@/features/auth/core/password";
 
@@ -8,10 +9,30 @@ const SEED_USERS = [
   { email: "student@unmsm.edu.pe", name: "Student", role: "user" as const },
 ];
 
-export async function runDemoSeed(db: NodePgDatabase<typeof schema>) {
-  console.log("Seeding demo users...");
+const SEED_BOOKS = [
+  {
+    category: "Quantum Mechanics",
+    title: "Principles of Quantum Mechanics",
+    author: "R. Shankar",
+    isbn: "978-0306447907",
+    publicationYear: 1994,
+    publisher: "Plenum Press",
+    pages: 676,
+    location: "QA-101",
+  },
+  {
+    category: "Astrophysics",
+    title: "Cosmos",
+    author: "Carl Sagan",
+    isbn: "978-0345539434",
+    publicationYear: 2013,
+    publisher: "Ballantine Books",
+    pages: 432,
+    location: "AP-300",
+  },
+];
 
-  const password = process.env.SEED_PASSWORD ?? "password123";
+export async function runDemoSeed(db: Database, password: string) {
   const passwordHash = await hashPassword(password);
 
   for (const u of SEED_USERS) {
@@ -29,41 +50,15 @@ export async function runDemoSeed(db: NodePgDatabase<typeof schema>) {
       .onConflictDoNothing();
   }
 
-  const allCategories = await db.query.categories.findMany();
-  const qmCat = allCategories.find((c) => c.name === "Quantum Mechanics");
-  const astroCat = allCategories.find((c) => c.name === "Astrophysics");
-
-  if (qmCat) {
+  for (const { category, ...book } of SEED_BOOKS) {
+    const [row] = await db
+      .select({ id: schema.categories.id })
+      .from(schema.categories)
+      .where(eq(schema.categories.name, category));
+    if (!row) throw new Error(`Category "${category}" is missing. Apply the migrations first.`);
     await db
       .insert(schema.books)
-      .values({
-        title: "Principles of Quantum Mechanics",
-        author: "R. Shankar",
-        isbn: "978-0306447907",
-        categoryId: qmCat.id,
-        status: "available",
-        publicationYear: 1994,
-        publisher: "Plenum Press",
-        pages: 676,
-        location: "QA-101",
-      })
-      .onConflictDoNothing();
-  }
-
-  if (astroCat) {
-    await db
-      .insert(schema.books)
-      .values({
-        title: "Cosmos",
-        author: "Carl Sagan",
-        isbn: "978-0345539434",
-        categoryId: astroCat.id,
-        status: "available",
-        publicationYear: 2013,
-        publisher: "Ballantine Books",
-        pages: 432,
-        location: "AP-300",
-      })
+      .values({ ...book, categoryId: row.id, status: "available" })
       .onConflictDoNothing();
   }
 }

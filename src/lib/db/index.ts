@@ -1,60 +1,11 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { drizzle, type DrizzleD1Database } from "drizzle-orm/d1";
 import * as schema from "./schema";
 
-type Database = NodePgDatabase<typeof schema>;
+export type Database = DrizzleD1Database<typeof schema>;
 
-let dbPromise: Promise<Database> | undefined;
-let pool: Pool | undefined;
-
-async function resolveConnectionString(): Promise<string> {
-  try {
-    const context = await getCloudflareContext({ async: true });
-    const hyperdrive = (context.env as { HYPERDRIVE?: { connectionString?: string } }).HYPERDRIVE;
-    const hyperdriveConnectionString = hyperdrive?.connectionString;
-
-    if (hyperdriveConnectionString) {
-      return hyperdriveConnectionString;
-    }
-  } catch {
-    // No Cloudflare runtime context available (for example local Node scripts).
-  }
-
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error(
-      "No database connection configured. Set DATABASE_URL for local/runtime environments or configure a Hyperdrive binding named HYPERDRIVE.",
-    );
-  }
-
-  return databaseUrl;
-}
-
+/** The D1 database bound as `DB`. In `next dev` it is a local copy under `.wrangler/state`. */
 export async function getDb(): Promise<Database> {
-  if (dbPromise) return dbPromise;
-
-  dbPromise = (async () => {
-    const connectionString = await resolveConnectionString();
-    pool = new Pool({
-      connectionString,
-      max: 1,
-      connectionTimeoutMillis: 10_000,
-      idleTimeoutMillis: 10_000,
-      keepAlive: true,
-      allowExitOnIdle: true,
-    });
-
-    return drizzle({ client: pool, schema });
-  })();
-
-  return dbPromise;
-}
-
-export async function closeDb(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    pool = undefined;
-  }
-  dbPromise = undefined;
+  const { env } = await getCloudflareContext({ async: true });
+  return drizzle(env.DB, { schema });
 }

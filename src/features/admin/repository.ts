@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/db";
 import { books, borrowRequests, user, userBookHearts } from "@/lib/db/schema";
 import { eq, sql, gte, desc } from "drizzle-orm";
+import { outer } from "@/lib/db/qualified";
 
 export async function getAdminCounts() {
   const db = await getDb();
@@ -83,11 +84,11 @@ export async function getBookActivity() {
       author: books.author,
       status: books.status,
       borrowCount:
-        sql<number>`(SELECT count(*) FROM ${borrowRequests} WHERE ${borrowRequests.bookId} = ${books.id} AND ${borrowRequests.status} = 'approved')`.mapWith(
+        sql<number>`(SELECT count(*) FROM ${borrowRequests} WHERE ${borrowRequests.bookId} = ${outer("books", "id")} AND ${borrowRequests.status} = 'approved')`.mapWith(
           Number,
         ),
       heartsCount:
-        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${books.id})`.mapWith(
+        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${outer("books", "id")})`.mapWith(
           Number,
         ),
     })
@@ -96,34 +97,33 @@ export async function getBookActivity() {
 
 export async function getActiveUsers() {
   const db = await getDb();
+  const borrowCount = sql<number>`(SELECT count(*) FROM ${borrowRequests} WHERE ${borrowRequests.userId} = ${outer("user", "id")} AND ${borrowRequests.status} = 'approved')`;
   return db
     .select({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
-      borrowCount:
-        sql<number>`(SELECT count(*) FROM ${borrowRequests} WHERE ${borrowRequests.userId} = ${user.id} AND ${borrowRequests.status} = 'approved')`.mapWith(
-          Number,
-        ),
+      borrowCount: borrowCount.mapWith(Number),
     })
     .from(user)
-    .orderBy(sql`borrow_count DESC`)
+    .orderBy(desc(borrowCount))
     .limit(20);
 }
 
 export async function getMonthlyActivity(since: Date) {
   const db = await getDb();
+  const month = sql<string>`strftime('%Y-%m', ${borrowRequests.requestDate} / 1000, 'unixepoch')`;
   return db
     .select({
-      month: sql<string>`TO_CHAR(${borrowRequests.requestDate}, 'YYYY-MM')`,
+      month,
       borrows: sql<number>`COUNT(*) FILTER (WHERE ${borrowRequests.status} = 'approved')`,
       returns: sql<number>`COUNT(*) FILTER (WHERE ${borrowRequests.returnDate} IS NOT NULL)`,
     })
     .from(borrowRequests)
     .where(gte(borrowRequests.requestDate, since))
-    .groupBy(sql`TO_CHAR(${borrowRequests.requestDate}, 'YYYY-MM')`)
-    .orderBy(sql`month ASC`);
+    .groupBy(month)
+    .orderBy(month);
 }
 
 export async function listBorrowHistory(limit: number) {

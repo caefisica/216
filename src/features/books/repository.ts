@@ -7,7 +7,8 @@ import {
   userBookHearts,
   borrowRequests,
 } from "@/lib/db/schema";
-import { eq, ilike, or, and, sql, desc, inArray } from "drizzle-orm";
+import { outer } from "@/lib/db/qualified";
+import { eq, like, or, and, sql, desc, inArray } from "drizzle-orm";
 
 export async function listBooks(filters: {
   search?: string;
@@ -32,7 +33,7 @@ export async function listBooks(filters: {
       createdAt: books.createdAt,
       updatedAt: books.updatedAt,
       heartsCount:
-        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${books.id})`.mapWith(
+        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${outer("books", "id")})`.mapWith(
           Number,
         ),
     })
@@ -42,9 +43,9 @@ export async function listBooks(filters: {
   if (filters.search) {
     conditions.push(
       or(
-        ilike(books.title, `%${filters.search}%`),
-        ilike(books.author, `%${filters.search}%`),
-        ilike(books.description, `%${filters.search}%`),
+        like(books.title, `%${filters.search}%`),
+        like(books.author, `%${filters.search}%`),
+        like(books.description, `%${filters.search}%`),
       ),
     );
   }
@@ -75,7 +76,7 @@ export async function listBooksByIds(bookIds: string[]) {
       createdAt: books.createdAt,
       updatedAt: books.updatedAt,
       heartsCount:
-        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${books.id})`.mapWith(
+        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${outer("books", "id")})`.mapWith(
           Number,
         ),
     })
@@ -148,7 +149,7 @@ export async function getBookById(id: string) {
       createdAt: books.createdAt,
       updatedAt: books.updatedAt,
       heartsCount:
-        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${books.id})`.mapWith(
+        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${outer("books", "id")})`.mapWith(
           Number,
         ),
     })
