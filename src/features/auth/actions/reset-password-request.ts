@@ -28,8 +28,8 @@ export async function requestPasswordResetAction(
     .where(eq(userTable.email, email))
     .limit(1);
 
-  // Registered and unknown addresses get the same reply and cookie, and the response never waits
-  // on the mail provider. A registered address still costs one more database write.
+  // Registered and unknown addresses get the same reply and cookie. The response never waits on
+  // the mail provider, although a registered address requires one more database write.
   if (rows.length > 0) {
     const user = rows[0];
     const issued = await issuePasswordReset(user.id, user.email);

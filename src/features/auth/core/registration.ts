@@ -7,7 +7,7 @@ import { issueEmailVerification, sendVerificationEmailBucket } from "./email-ver
 import type { EmailVerificationRequest } from "./email-verification";
 import type { sendVerificationEmail } from "./mailer";
 
-/** Creates the account and mails its first code. The account is deleted if the mail fails. */
+/** Deletes the new account when sending its first verification code fails. */
 export async function registerUser(
   input: { email: string; name: string; password: string },
   send?: typeof sendVerificationEmail,

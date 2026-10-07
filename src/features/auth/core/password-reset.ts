@@ -86,8 +86,8 @@ export async function invalidatePasswordResetSession(userId: string): Promise<vo
 }
 
 /**
- * Creates a reset session and starts mailing its code without waiting for the provider.
- * `delivery` never rejects: if the code never left, it deletes only this session.
+ * `delivery` sends the code without delaying the caller. It never rejects and deletes only this
+ * session if sending fails.
  */
 export async function issuePasswordReset(
   userId: string,

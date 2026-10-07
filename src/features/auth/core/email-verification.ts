@@ -35,8 +35,8 @@ export async function createEmailVerificationRequest(
 }
 
 /**
- * Creates a request and mails its code. Earlier requests stay valid until the mail is sent, so a
- * failed send deletes only the new request and leaves the user's current code and cookie working.
+ * Earlier requests stay valid until the new code is sent. A failed send deletes only the new
+ * request, so the user's current code and cookie continue to work.
  */
 export async function issueEmailVerification(
   userId: string,
