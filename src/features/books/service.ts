@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { deleteFile, uploadFile } from "@/lib/storage";
+import { deleteFile, getFileKey, getFileUrl, uploadFile } from "@/lib/storage";
 import { Ok, Err } from "@/lib/result";
 import {
   listBooks,
@@ -97,20 +97,17 @@ export async function uploadBookImageService(file: File) {
   const buffer = Buffer.from(await file.arrayBuffer());
   const fileName = `book-images/${crypto.randomUUID()}-${file.name}`;
   await uploadFile(fileName, buffer, file.type);
-  const publicUrl = `${process.env.S3_PUBLIC_URL}/${fileName}`;
-  return { url: publicUrl };
+  return { url: getFileUrl(fileName) };
 }
 
 export async function deleteBookImageService(imageId: string) {
   const img = await getBookImageById(imageId);
-  if (img && img.imageUrl.includes("book-images")) {
-    const fileName = img.imageUrl.split("/").pop();
-    if (fileName) {
-      try {
-        await deleteFile(`book-images/${fileName}`);
-      } catch (error) {
-        console.error("Error deleting file from S3:", error);
-      }
+  const key = img && getFileKey(img.imageUrl);
+  if (key) {
+    try {
+      await deleteFile(key);
+    } catch (error) {
+      console.error("Error deleting file from R2:", error);
     }
   }
 
@@ -148,10 +145,8 @@ export async function addBookImageService(input: {
 export async function deleteBookService(bookId: string) {
   const images = await listBookImagesForDelete(bookId);
   for (const img of images) {
-    if (img.imageUrl.includes("book-images")) {
-      const fileName = img.imageUrl.split("/").pop();
-      if (fileName) await deleteFile(fileName);
-    }
+    const key = getFileKey(img.imageUrl);
+    if (key) await deleteFile(key);
   }
 
   await deleteBookRecord(bookId);

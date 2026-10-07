@@ -2,7 +2,13 @@
 
 import { z } from "zod";
 import { authenticatedAction, protectedAction, getSession } from "@/features/auth/protected-action";
-import { BookIdSchema, SearchSchema, UpdateBookSchema, CreateBookSchema } from "./schemas";
+import {
+  AddBookImageSchema,
+  BookIdSchema,
+  SearchSchema,
+  UpdateBookSchema,
+  CreateBookSchema,
+} from "./schemas";
 import { listCategories, toggleHeartRecord, createBorrowRequestRecord } from "./repository";
 import {
   getBooksService,
@@ -73,12 +79,7 @@ export const setCoverImage = protectedAction(
 );
 
 export const addBookImage = protectedAction(
-  z.object({
-    bookId: z.uuid(),
-    imageUrl: z.url(),
-    isCover: z.boolean(),
-    displayOrder: z.number(),
-  }),
+  AddBookImageSchema,
   ["librarian", "admin"],
   async (input) => addBookImageService(input),
 );

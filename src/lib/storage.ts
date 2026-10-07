@@ -29,11 +29,17 @@ export async function deleteFile(key: string) {
   return await bucket.delete(key);
 }
 
-/**
- * NOTE: For private buckets, use a custom storage proxy API route.
- */
-export async function getFileUrl(key: string) {
-  return `/api/storage/${key}`;
+const MEDIA_PREFIX = "/media/";
+
+/** The URL the app serves an object from. See `src/app/media`. */
+export function getFileUrl(key: string) {
+  return MEDIA_PREFIX + key.split("/").map(encodeURIComponent).join("/");
+}
+
+/** The object key behind a URL from `getFileUrl`, or null for any other URL. */
+export function getFileKey(url: string) {
+  if (!url.startsWith(MEDIA_PREFIX)) return null;
+  return url.slice(MEDIA_PREFIX.length).split("/").map(decodeURIComponent).join("/");
 }
 
 /**

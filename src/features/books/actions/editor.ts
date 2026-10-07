@@ -3,7 +3,7 @@
 import { getCurrentSession } from "@/features/auth/core/session";
 import { getDb } from "@/lib/db";
 import { books, bookImages, bookCategories } from "@/lib/db/schema";
-import { moveFile, deleteFile, getFileUrl, uploadFile } from "@/lib/storage";
+import { moveFile, deleteFile, getFileKey, getFileUrl, uploadFile } from "@/lib/storage";
 import { revalidatePath } from "next/cache";
 import { eq, desc } from "drizzle-orm";
 
@@ -18,7 +18,7 @@ export async function uploadBookImage(formData: FormData) {
   const fileName = `temp/${crypto.randomUUID()}-${file.name}`;
 
   await uploadFile(fileName, buffer, file.type);
-  const url = await getFileUrl(fileName);
+  const url = getFileUrl(fileName);
 
   return { success: true, url, fileName };
 }
@@ -63,10 +63,9 @@ export async function moveImageFromTemp(
     const fileExt = tempFileName.split(".").pop();
     const newFileName = `${bookId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-    await moveFile(`temp/${tempFileName}`, newFileName);
+    await moveFile(tempFileName, newFileName);
 
-    const publicUrl = `${process.env.S3_PUBLIC_URL}/${newFileName}`;
-    return { success: true, url: publicUrl };
+    return { success: true, url: getFileUrl(newFileName) };
   } catch (error) {
     console.error("Unexpected error moving file:", error);
     return { success: false, error: "Unexpected error occurred" };
@@ -170,11 +169,8 @@ export async function deleteBookImage(imageId: string, bookId: string) {
 
     if (imageDataList.length === 0) throw new Error("Image not found");
 
-    const url = new URL(imageDataList[0].imageUrl);
-    const parts = url.pathname.split("/");
-    const key = parts.slice(parts.length - 2).join("/");
-
-    await deleteFile(key);
+    const key = getFileKey(imageDataList[0].imageUrl);
+    if (key) await deleteFile(key);
     await db.delete(bookImages).where(eq(bookImages.id, imageId));
     revalidatePath(`/books/${bookId}`);
 

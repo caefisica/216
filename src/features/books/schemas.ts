@@ -8,6 +8,13 @@ export const SearchSchema = z.object({
   status: z.string().optional(),
 });
 
+export const AddBookImageSchema = z.object({
+  bookId: z.uuid(),
+  imageUrl: z.string().startsWith("/media/"),
+  isCover: z.boolean(),
+  displayOrder: z.number(),
+});
+
 export const UpdateBookSchema = z.object({
   id: z.uuid(),
   title: z.string(),
