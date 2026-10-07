@@ -107,18 +107,18 @@ account. When it ends, the next request starts a new window of 3 codes.
 | `admin`     | Everything a librarian can, plus change roles and suspend users.        |
 | `suspended` | Sign in and browse. Every action that needs a role is refused.          |
 
-Roles are enforced in server actions by `protectedAction` and
+Roles are enforced in server actions by `protectedAction`, `staffAction` and
 `authenticatedAction` in
-[`protected-action.ts`](../src/features/auth/protected-action.ts). An `admin`
-passes every role check. The `/admin` and `/admin/books/create` pages also
-redirect users who are not a librarian or admin.
+[`protected-action.ts`](../src/features/auth/protected-action.ts). `staffAction`
+admits a librarian or admin, and every action that creates, edits or deletes a
+book, an image or a loan decision uses it, including those in
+`src/features/books/actions/editor.ts`. An `admin` passes every role check. The
+`/admin` and `/admin/books/create` pages also redirect users who are not a
+librarian or admin.
 
-Two groups of actions do not use those wrappers. The sign-in, sign-up,
-verification and reset actions in `src/features/auth/actions/` run before there
-is a role to check. The image actions in `src/features/books/actions/editor.ts`
-(`uploadBookImage`, `moveImageFromTemp`, `saveBookWithImages`,
-`deleteBookImage`, `setCoverImage`) check only that a session exists, so any
-signed-in account, whatever its role, can call them.
+The sign-in, sign-up, verification and reset actions in
+`src/features/auth/actions/` do not use the wrappers. They run before there is a
+role to check.
 
 The admin dashboard is the home page (`/`) for a librarian or admin. It has tabs
 for books, loan requests and users.

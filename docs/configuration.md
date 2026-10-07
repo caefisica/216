@@ -44,5 +44,13 @@ cache and headers that stop the browser from running an upload as a page.
 `images.unoptimized` is set in `next.config.ts`, because the Next.js image
 optimizer needs an image binding this app does not configure.
 
+## Runtime version
+
+`compatibility_date` in `wrangler.jsonc` selects the Workers runtime behavior.
+It must not be later than the `workerd` release bundled by `wrangler`, or
+`wrangler` refuses to start. When you upgrade `wrangler`, move the date forward
+to that release date and run `mise run check` and `bun run preview`. The
+`nodejs_compat` flag provides the Node.js APIs that Next.js needs.
+
 After you change `wrangler.jsonc`, run `bun run typegen` to regenerate
 `worker-configuration.d.ts`.

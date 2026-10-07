@@ -29,12 +29,13 @@ through `getDb()` in `core/` and has no repository.
 | `types.ts`      | Types shared with components.                                    |
 | `components/`   | Client components that belong to the feature.                    |
 
-Role checks happen in actions through `protectedAction` and
+Role checks happen in actions through `protectedAction`, `staffAction` and
 `authenticatedAction`
 ([`protected-action.ts`](src/features/auth/protected-action.ts)). A wrapped
-handler runs only after the session, the role and the Zod parse all pass. The
-auth actions and `src/features/books/actions/editor.ts` do not use the wrappers.
-See [accounts and roles](docs/auth.md).
+handler runs only after the session, the role and the Zod parse all pass. Every
+catalogue mutation, including `src/features/books/actions/editor.ts`, uses
+`staffAction`. The auth actions do not use the wrappers. See
+[accounts and roles](docs/auth.md).
 
 ## Directory map
 

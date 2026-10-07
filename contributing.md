@@ -47,7 +47,8 @@ request.
 - Source and identifiers are English. User-facing text is Spanish.
 - Import from `src/` with the `@/` alias.
 - A server action goes in `src/features/<feature>/actions.ts`. Wrap it in
-  `protectedAction` or `authenticatedAction`, with a Zod schema for the input.
+  `staffAction` (catalogue and loan mutations), `protectedAction` or
+  `authenticatedAction`, with a Zod schema for the input.
 - A schema change is a change to `src/lib/db/schema/` plus a migration from
   `bun run db:generate`. Export new tables from `schema/index.ts` and commit the
   generated files in `migrations/`.
