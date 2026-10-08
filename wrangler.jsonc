@@ -25,10 +25,12 @@
       "migrations_dir": "migrations",
     },
   ],
-  "send_email": [{ "name": "EMAIL" }],
   "vars": {
-    // Sender address on a domain onboarded to Cloudflare Email Service. Empty until one exists.
-    "MAIL_FROM": "",
+    // Resend's test sender delivers only to the Resend account owner.
+    "MAIL_FROM": "onboarding@resend.dev",
+  },
+  "secrets": {
+    "required": ["RESEND_API_KEY"],
   },
   "r2_buckets": [
     {

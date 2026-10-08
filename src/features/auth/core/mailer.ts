@@ -1,14 +1,16 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 const SEND_TIMEOUT_MS = 10_000;
+const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
 interface MailOptions {
-  /** Defaults to the `EMAIL` binding. */
-  binding?: Pick<SendEmail, "send"> | null;
+  /** Defaults to the `RESEND_API_KEY` secret. */
+  apiKey?: string | null;
   /** Defaults to the `MAIL_FROM` variable. */
   from?: string | null;
   production?: boolean;
   timeoutMs?: number;
+  endpoint?: string;
 }
 
 interface Message {
@@ -47,25 +49,39 @@ export function sendPasswordResetEmail(
   );
 }
 
-/** An option left `undefined` falls back to the Worker's binding or variable. `null` means none. */
+/** An omitted option falls back to the Worker's secret or variable. `null` disables that fallback. */
 async function resolveOptions(options: MailOptions) {
-  let { binding, from } = options;
-  if (binding === undefined || from === undefined) {
+  let { apiKey, from } = options;
+  if (apiKey === undefined || from === undefined) {
     const { env } = await getCloudflareContext({ async: true });
-    if (binding === undefined) binding = env.EMAIL;
+    if (apiKey === undefined) apiKey = env.RESEND_API_KEY;
     if (from === undefined) from = env.MAIL_FROM;
   }
   return {
-    binding,
+    apiKey,
     from,
     production: options.production ?? process.env.NODE_ENV === "production",
     timeoutMs: options.timeoutMs ?? SEND_TIMEOUT_MS,
+    endpoint: options.endpoint ?? RESEND_ENDPOINT,
   };
 }
 
-function describeMissing({ binding, from }: Awaited<ReturnType<typeof resolveOptions>>) {
-  const missing = [!binding && "the EMAIL binding", !from && "MAIL_FROM"].filter(Boolean);
+function describeMissing({ apiKey, from }: Awaited<ReturnType<typeof resolveOptions>>) {
+  const missing = [!apiKey && "RESEND_API_KEY", !from && "MAIL_FROM"].filter(Boolean);
   return missing.length > 0 ? `Cannot send email: ${missing.join(" and ")} not set.` : null;
+}
+
+/** Include Resend's response, but never the request, which carries the API key. */
+async function describeRejection(response: Response) {
+  const body = await response.text().catch(() => "");
+  let detail = body.slice(0, 200);
+  try {
+    const { message } = JSON.parse(body) as { message?: unknown };
+    if (typeof message === "string") detail = message;
+  } catch {
+    // Keep the response text when Resend does not return JSON.
+  }
+  return `Resend rejected the email (${response.status})${detail ? `: ${detail}` : "."}`;
 }
 
 /**
@@ -79,16 +95,21 @@ export async function mailUnavailableReason(options: MailOptions = {}): Promise<
 
 async function sendMail(message: Message, options: MailOptions = {}): Promise<void> {
   const config = await resolveOptions(options);
-  const { binding, from, production, timeoutMs } = config;
+  const { apiKey, from, production, timeoutMs, endpoint } = config;
 
-  if (binding && from) {
-    const timeout = AbortSignal.timeout(timeoutMs);
-    await Promise.race([
-      binding.send({ from, ...message }),
-      new Promise<never>((_, reject) =>
-        timeout.addEventListener("abort", () => reject(timeout.reason)),
-      ),
-    ]);
+  if (apiKey && from) {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [message.to],
+        subject: message.subject,
+        text: message.text,
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!response.ok) throw new Error(await describeRejection(response));
     return;
   }
 
