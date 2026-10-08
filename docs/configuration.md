@@ -1,37 +1,39 @@
 # Configuration
 
 The app reads no environment variables at runtime. Everything it needs is a
-Cloudflare binding or a variable in [`wrangler.jsonc`](../wrangler.jsonc).
-Local-only settings go in `.env.local`, copied from
-[`.env.example`](../.env.example).
+Cloudflare binding, a variable in [`wrangler.jsonc`](../wrangler.jsonc) or a
+Worker secret. Local-only settings go in `.env.local`, copied from
+[`.env.example`](../.env.example), and local secrets in `.dev.vars`, copied from
+[`.dev.vars.example`](../.dev.vars.example).
 
-## Variables
+## Variables and secrets
 
-| Name            | Where                      | Read by                            | Purpose                                                                                      |
-| --------------- | -------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------- |
-| `MAIL_FROM`     | `vars` in `wrangler.jsonc` | `src/features/auth/core/mailer.ts` | Sender of verification and password reset emails, such as `216 <no-reply@mail.example.com>`. |
-| `SEED_PASSWORD` | environment of `db:seed`   | `src/lib/db/seeds/demo.ts`         | Password of the demo accounts. Default `password123`. Optional.                              |
-| `NODE_ENV`      | set by Next.js             | cookies, mailer                    | `production` marks cookies `Secure` and makes a missing mail setting an error.               |
+| Name             | Where                      | Read by                            | Purpose                                                                                                                 |
+| ---------------- | -------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `MAIL_FROM`      | `vars` in `wrangler.jsonc` | `src/features/auth/core/mailer.ts` | Sender of verification and password reset emails. `onboarding@resend.dev`, which reaches only the Resend account owner. |
+| `RESEND_API_KEY` | Worker secret, `.dev.vars` | `src/features/auth/core/mailer.ts` | Resend API key. Optional in development, where codes are logged.                                                        |
+| `SEED_PASSWORD`  | environment of `db:seed`   | `src/lib/db/seeds/demo.ts`         | Password of the demo accounts. Default `password123`. Optional.                                                         |
+| `NODE_ENV`       | set by Next.js             | cookies, mailer                    | `production` marks cookies `Secure` and makes a missing mail setting an error.                                          |
 
-`MAIL_FROM` is empty until a sending domain exists. See [Email](auth.md#email).
+See [Email](auth.md#email).
 
 ## Cloudflare bindings
 
-| Binding                 | Type       | Used for                                                         |
-| ----------------------- | ---------- | ---------------------------------------------------------------- |
-| `DB`                    | D1         | The database. Database `216`, migrations in `migrations/`.       |
-| `_216_storage`          | R2 bucket  | Book images. Bucket `216-storage`, served by the `/media` route. |
-| `EMAIL`                 | Send Email | Verification and password reset emails.                          |
-| `ASSETS`                | Assets     | Static files from `.open-next/assets`.                           |
-| `WORKER_SELF_REFERENCE` | Service    | The Worker calling itself, used by OpenNext.                     |
+| Binding                 | Type      | Used for                                                         |
+| ----------------------- | --------- | ---------------------------------------------------------------- |
+| `DB`                    | D1        | The database. Database `216`, migrations in `migrations/`.       |
+| `_216_storage`          | R2 bucket | Book images. Bucket `216-storage`, served by the `/media` route. |
+| `ASSETS`                | Assets    | Static files from `.open-next/assets`.                           |
+| `WORKER_SELF_REFERENCE` | Service   | The Worker calling itself, used by OpenNext.                     |
 
 The D1 `database_id` and the R2 `bucket_name` in `wrangler.jsonc` belong to the
 production Cloudflare account. To run your own copy, replace them with resources
 from your account. See [deployment](deployment.md).
 
 `bun run dev` and `bun run preview` simulate all of these locally and keep their
-state in `.wrangler/state`. Sending email is not simulated: the mailer logs the
-message instead. [`src/lib/storage.ts`](../src/lib/storage.ts) and
+state in `.wrangler/state`. Email is not simulated: without `RESEND_API_KEY` in
+`.dev.vars` the mailer logs the message, and with it the mailer calls Resend.
+[`src/lib/storage.ts`](../src/lib/storage.ts) and
 [`src/lib/db/index.ts`](../src/lib/db/index.ts) read the bindings through
 `getCloudflareContext()`.
 

@@ -1,0 +1,3 @@
+# Optional: sends real email through Resend during `bun run dev`.
+# The test sender delivers only to the Resend account owner.
+RESEND_API_KEY=

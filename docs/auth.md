@@ -21,24 +21,30 @@ again. A failed resend leaves the previous code valid.
 ## Email
 
 [`mailer.ts`](../src/features/auth/core/mailer.ts) sends the verification and
-password reset codes through the `EMAIL` Cloudflare Email Service binding. It
-needs that binding and the `MAIL_FROM` variable, described in
+password reset codes through the [Resend](https://resend.com) HTTP API. It needs
+the `RESEND_API_KEY` secret and the `MAIL_FROM` variable, described in
 [configuration](configuration.md) and [deployment](deployment.md#email):
 
-| `EMAIL` and `MAIL_FROM` | `NODE_ENV`     | What happens                                                                     |
-| ----------------------- | -------------- | -------------------------------------------------------------------------------- |
-| Both present            | any            | The email is sent. A provider error, or no answer in 10 seconds, fails the send. |
-| Either missing          | not production | The email is not sent. The message is written to the server log.                 |
-| Either missing          | `production`   | The send fails with an error that names what is missing. The code is not logged. |
+| `RESEND_API_KEY` and `MAIL_FROM` | `NODE_ENV`     | What happens                                                                     |
+| -------------------------------- | -------------- | -------------------------------------------------------------------------------- |
+| Both present                     | any            | The email is sent. A Resend error, or no answer in 10 seconds, fails the send.   |
+| Either missing                   | not production | The email is not sent. The message is written to the server log.                 |
+| Either missing                   | `production`   | The send fails with an error that names what is missing. The code is not logged. |
+
+`MAIL_FROM` is `onboarding@resend.dev`, Resend's test sender. It delivers only
+to the email address of the Resend account owner. Sending to anyone else fails
+with a 403, so on this sender only the owner can sign up or reset a password.
+Sending to other users needs a domain verified in Resend.
 
 In production with a setting missing, sign-up and password reset check this
-before they touch the database. They log `Cannot send email: MAIL_FROM not set.`
-(or the missing binding) and answer that email cannot be sent, with no account
-or reset session created. The password reset answer is the same for every
-address, so it still does not reveal which addresses have an account.
+before they touch the database. They log
+`Cannot send email: RESEND_API_KEY not set.` (or `MAIL_FROM`) and answer that
+email cannot be sent, with no account or reset session created. The password
+reset answer is the same for every address, so it still does not reveal which
+addresses have an account.
 
-In development, `MAIL_FROM` is empty, so read the code in the `bun run dev`
-terminal:
+In development, `RESEND_API_KEY` is not set unless you put it in `.dev.vars`, so
+read the code in the `bun run dev` terminal:
 
 ```text
 [email] To student@example.com: Tu código de verificación es 482913. Expira en 10 minutos.

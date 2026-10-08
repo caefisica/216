@@ -47,15 +47,17 @@ password `password123`. Demo accounts are listed in
 
 ## Configuration
 
-| Name            | Description                                            |
-| --------------- | ------------------------------------------------------ |
-| `SEED_PASSWORD` | Password for demo accounts (default: `password123`)    |
-| `MAIL_FROM`     | Sender address for outgoing email, in `wrangler.jsonc` |
+| Name             | Description                                            |
+| ---------------- | ------------------------------------------------------ |
+| `SEED_PASSWORD`  | Password for demo accounts (default: `password123`)    |
+| `MAIL_FROM`      | Sender address for outgoing email, in `wrangler.jsonc` |
+| `RESEND_API_KEY` | Resend API key, a Worker secret (`.dev.vars` locally)  |
 
 On Cloudflare the database is the `DB` D1 binding, images are in the
-`_216_storage` R2 binding and email goes through the `EMAIL` binding. Without a
-sender, codes are printed to the server log in development. In production,
-sending either email fails until `MAIL_FROM` is set. See
+`_216_storage` R2 binding and email goes through the Resend API. The sender is
+`onboarding@resend.dev`, which delivers only to the Resend account owner.
+Without a key, codes are printed to the server log in development. In
+production, sending either email fails until `RESEND_API_KEY` is set. See
 [configuration](docs/configuration.md) and [deployment](docs/deployment.md).
 
 ## Documentation

@@ -60,7 +60,7 @@ catalogue mutation, including `src/features/books/actions/editor.ts`, uses
 | `src/lib/db/qualified.ts`          | `outer()`: column references for correlated subqueries.                                          |
 | `src/lib/storage.ts`               | R2 helpers over the `_216_storage` binding, and the `/media/` URL of an object.                  |
 | `src/app/media/`                   | Route that serves R2 objects at `/media/<key>`.                                                  |
-| `src/features/auth/core/mailer.ts` | Verification and reset emails through the `EMAIL` binding.                                       |
+| `src/features/auth/core/mailer.ts` | Verification and reset emails through the Resend HTTP API.                                       |
 | `src/lib/result.ts`                | `Ok`/`Err` result type for fallible service calls.                                               |
 | `src/middleware.ts`                | Session cookie refresh and the same-origin check on non-GET requests.                            |
 

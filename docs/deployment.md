@@ -29,28 +29,30 @@ serves the built Worker locally, with local D1 and R2.
 2. Create the bucket: `bunx wrangler r2 bucket create 216-storage`. Keep the
    binding name `_216_storage`.
 3. Run `bun run deploy`. Migrations create the tables and the book categories.
+4. Set the Resend API key: `bunx wrangler secret put RESEND_API_KEY`. See
+   [Email](#email).
 
-There are no secrets to set. The images need no public bucket URL, because the
-Worker serves them.
+The images need no public bucket URL, because the Worker serves them.
 
 ## Email
 
-Verification and password reset emails go through the `EMAIL` binding
-([Cloudflare Email Service](https://developers.cloudflare.com/email-service/)).
-It sends only from a domain that is on Cloudflare DNS and onboarded for sending.
-Until one is set up, `MAIL_FROM` stays empty and sign-up and password reset fail
-in production with a clear error, and the sign-up leaves no account behind.
+Verification and password reset emails go through the
+[Resend](https://resend.com) HTTP API. The Worker needs the `RESEND_API_KEY`
+secret. Without it, sign-up and password reset fail in production with a clear
+error, and the sign-up leaves no account behind.
 
-To enable email:
+`MAIL_FROM` in `wrangler.jsonc` is `onboarding@resend.dev`, Resend's test
+sender. It needs no domain, but it delivers only to the email address of the
+Resend account owner. Anyone else who signs up or asks for a reset gets an
+error, because Resend answers 403.
 
-1. Add a domain to Cloudflare, or use one already there.
-2. Onboard a sending subdomain for it in the dashboard under Email Service, or
-   with `cf email-sending subdomains create`.
-3. Set `MAIL_FROM` in `wrangler.jsonc`, such as
+To send to other users:
+
+1. Verify a domain in the Resend dashboard.
+2. Set `MAIL_FROM` in `wrangler.jsonc` to an address on it, such as
    `216 <no-reply@mail.example.com>`, and deploy again.
 
-Without email nobody can sign up, so create the first admin with the command
-below.
+Create the first admin with the command below. It needs no email.
 
 ## First admin
 
