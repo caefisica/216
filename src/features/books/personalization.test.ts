@@ -4,7 +4,7 @@ import { getDb } from "@/lib/db";
 import { createTestDatabase, type TestDatabase } from "@/lib/db/test-database";
 import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
-import { getBookById, getBooks } from "./actions";
+import { getBookById, getBooks, setHeart } from "./actions";
 import HomePage from "@/app/page";
 import FavoritesPage from "@/app/favorites/page";
 
@@ -77,7 +77,8 @@ async function favoriteBooks() {
 const redirectError = { digest: expect.stringContaining("NEXT_REDIRECT") };
 
 describe("what a verified session sees", () => {
-  it("marks its own favorites in the catalogue, the book page and the home page", async () => {
+  it("sets a favorite and reads it through homeBooks", async () => {
+    await setHeart({ bookId, hearted: true });
     const list = await getBooks();
     expect(list.ok && list.value.items.map((b) => b.isHearted)).toEqual([true]);
 
