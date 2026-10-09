@@ -1,6 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Role } from "@/lib/db/schema";
 
+vi.mock("@/features/books/service", async () => {
+  const actual = await vi.importActual<typeof import("@/features/books/service")>(
+    "@/features/books/service",
+  );
+  return { ...actual, getFavoriteBooksService: async () => [] };
+});
+vi.mock("@/features/users/repository", async () => {
+  const actual = await vi.importActual<typeof import("@/features/users/repository")>(
+    "@/features/users/repository",
+  );
+  return { ...actual, listUserActivity: async () => [] };
+});
+
 // Session cookies need a Next.js request, so the session lookup is the only fake.
 const current = vi.hoisted(() => ({ role: null as Role | null, verified: true }));
 
@@ -54,7 +67,6 @@ const actionPolicies: Record<string, ActionPolicy> = {
   "features/books/actions.ts#getBookById": "public",
   "features/books/actions.ts#getBooks": "public",
   "features/books/actions.ts#getFacets": "public",
-  "features/books/actions.ts#getFavoriteBooks": "authenticated",
   "features/books/actions.ts#setCoverImage": "staff",
   "features/books/actions.ts#setHeart": "authenticated",
   "features/books/actions.ts#updateBook": "staff",
@@ -62,11 +74,7 @@ const actionPolicies: Record<string, ActionPolicy> = {
   "features/books/actions.ts#updateDonor": "staff",
   "features/books/actions.ts#updateLocation": "staff",
   "features/books/actions.ts#uploadBookImage": "staff",
-  "features/donors/actions.ts#getDonatedCopies": "public",
-  "features/donors/actions.ts#getDonationsStats": "public",
-  "features/donors/actions.ts#getDonors": "public",
   "features/users/actions.ts#getAllUsers": "staff",
-  "features/users/actions.ts#getUserActivity": "authenticated",
   "features/users/actions.ts#suspendUser": "admin",
   "features/users/actions.ts#updateUserProfile": "authenticated",
   "features/users/actions.ts#updateUserRole": "admin",

@@ -4,8 +4,9 @@ import { getDb } from "@/lib/db";
 import { createTestDatabase, type TestDatabase } from "@/lib/db/test-database";
 import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
-import { getBookById, getBooks, getFavoriteBooks } from "./actions";
+import { getBookById, getBooks } from "./actions";
 import HomePage from "@/app/page";
+import FavoritesPage from "@/app/favorites/page";
 
 // Session cookies and revalidation need a Next.js request, so these are the only fakes.
 const current = vi.hoisted(() => ({ signedIn: true, verified: true }));
@@ -68,6 +69,13 @@ async function homeBooks() {
   return page.props.children.props.initialPage.items as { isHearted: boolean }[];
 }
 
+async function favoriteBooks() {
+  const page = (await FavoritesPage()) as ReactElement<{ initialBooks: { id: string }[] }>;
+  return page.props.initialBooks;
+}
+
+const redirectError = { digest: expect.stringContaining("NEXT_REDIRECT") };
+
 describe("what a verified session sees", () => {
   it("marks its own favorites in the catalogue, the book page and the home page", async () => {
     const list = await getBooks();
@@ -79,9 +87,8 @@ describe("what a verified session sees", () => {
     expect((await homeBooks()).map((b) => b.isHearted)).toEqual([true]);
   });
 
-  it("lists its favorites", async () => {
-    const result = await getFavoriteBooks({});
-    expect(result.ok && result.value.map((b) => b.id)).toEqual([bookId]);
+  it("lists its favorites on the favorites page", async () => {
+    expect((await favoriteBooks()).map((b) => b.id)).toEqual([bookId]);
   });
 });
 
@@ -102,20 +109,22 @@ describe.each([
     expect(book.ok && book.value.isHearted).toBe(false);
   });
 
-  it("is refused a favorites list, without ever reading it", async () => {
-    const result = await getFavoriteBooks({});
-    expect(result).toMatchObject({ ok: false });
-    expect(JSON.stringify(result)).not.toContain(bookId);
+  it("is sent away from the favorites page", async () => {
+    await expect(FavoritesPage()).rejects.toMatchObject(redirectError);
   });
 });
 
-describe("the favorites list refusal", () => {
-  it("tells an anonymous visitor to sign in and an unverified account to verify", async () => {
+describe("the favorites page refusal", () => {
+  it("sends an anonymous visitor to sign in and an unverified account to verify", async () => {
     asAnonymous();
-    expect(await getFavoriteBooks({})).toMatchObject({ error: { code: "unauthorized" } });
+    await expect(FavoritesPage()).rejects.toMatchObject({
+      digest: expect.stringContaining("/auth/signin"),
+    });
 
     current.signedIn = true;
     asUnverified();
-    expect(await getFavoriteBooks({})).toMatchObject({ error: { code: "unverified" } });
+    await expect(FavoritesPage()).rejects.toMatchObject({
+      digest: expect.stringContaining("/auth/verify-email"),
+    });
   });
 });
