@@ -9,12 +9,14 @@ import {
   addCopyService,
   createBookService,
   createDonorService,
+  createLocationService,
   deleteBookService,
   deleteCopyService,
   getBookByIdService,
   getBooksService,
   updateBookService,
   updateCopyService,
+  updateLocationService,
 } from "./service";
 import type { CopyFields } from "./schemas";
 import type { BookFilters } from "./schemas";
@@ -316,9 +318,35 @@ describe("registering titles and copies", () => {
   });
 
   it("reuses a donor typed twice instead of crediting two people", async () => {
-    const first = await createDonorService("Persona Nueva");
+    const first = await createDonorService("Persona Nueva", "Para la sala de lectura");
     const again = await createDonorService("Persona Nueva");
     expect(again.id).toBe(first.id);
+    expect(first.motivation).toBe("Para la sala de lectura");
+  });
+
+  it("creates and edits a shelf location", async () => {
+    const location = await createLocationService({
+      cabinet: "Prueba",
+      shelf: 9,
+      bay: 9,
+      categoryId: null,
+      holds: "extra",
+    });
+
+    const updated = await updateLocationService(location.id, {
+      cabinet: "Prueba editada",
+      shelf: 10,
+      bay: 2,
+      categoryId: null,
+      holds: "primary",
+    });
+
+    expect(updated).toMatchObject({
+      cabinet: "Prueba editada",
+      shelf: 10,
+      bay: 2,
+      holds: "primary",
+    });
   });
 });
 
