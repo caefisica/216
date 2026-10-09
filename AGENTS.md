@@ -13,4 +13,4 @@
 - Before you finish, run `mise run check`: format check, lint, type check and
   tests.
 - Format Markdown with `bun run format`.
-- Code layout is in `architecture.md`. Behavior is in `docs/`.
+- Code layout is in `docs/architecture.md`. Behavior is in `docs/`.

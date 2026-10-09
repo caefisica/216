@@ -65,7 +65,7 @@ production, sending either email fails until `RESEND_API_KEY` is set. See
 
 - [Manual](docs/readme.md): database, catalogue, configuration, deployment,
   accounts and roles, borrowing.
-- [Architecture](architecture.md): the code map.
+- [Architecture](docs/architecture.md): the code map.
 - [Contributing](contributing.md): setup, checks and conventions.
 
 ## Tests

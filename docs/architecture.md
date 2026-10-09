@@ -1,0 +1,148 @@
+# Architecture
+
+216 is a Next.js App Router application. Pages render on the server, and the
+browser calls server actions for every mutation. There is no REST API and no
+`src/app/api` directory. Cloudflare D1 (SQLite) holds the data and Cloudflare R2
+holds the images.
+
+```text
+browser
+  └─ src/app/**                 routes: server pages + client components
+       ├─ server page read ──── service.ts or repository.ts
+       └─ client mutation ───── actions.ts: validate, authorize
+                                  └─ service.ts: rules and revalidation
+                                       └─ repository.ts: Drizzle queries
+                                            └─ src/lib/db/index.ts: connection
+```
+
+## Layers
+
+Each feature in `src/features/` follows the same shape. Not every feature has
+every layer: `donors` and `readers` have repositories, and `auth` queries
+through `getDb()` in `core/` and has no repository.
+
+| File            | Responsibility                                                   |
+| --------------- | ---------------------------------------------------------------- |
+| `actions.ts`    | Server actions. Parse input with Zod, check the role, call down. |
+| `service.ts`    | Logic that is more than one query, and cache revalidation.       |
+| `repository.ts` | Drizzle queries for the feature.                                 |
+| `schemas.ts`    | Zod schemas for action input.                                    |
+| `types.ts`      | Types shared with components.                                    |
+| `components/`   | Client components that belong to the feature.                    |
+
+Role checks happen in actions through `protectedAction`, `staffAction` and
+`authenticatedAction`
+([`protected-action.ts`](../src/features/auth/protected-action.ts)). A wrapped
+handler runs only after the session, the role and the Zod parse all pass. Every
+catalogue mutation uses `staffAction`. The auth actions do not use the wrappers.
+See [accounts and roles](auth.md).
+
+## Directory map
+
+| Path                                | Owns                                                                                                                 |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `src/app/`                          | Routes. `page.tsx` is `/`: the catalogue, or the dashboard for staff.                                                |
+| `src/app/books/[id]/`               | Book detail page with its own components and hooks.                                                                  |
+| `src/app/admin/books/`              | Staff pages to register and edit a book. They check the role and render `BookEditorLoader`.                          |
+| `src/app/auth/`                     | Sign-in, sign-up, email verification and password reset pages.                                                       |
+| `src/app/about/`, `src/app/donors/` | Server-rendered reader information and donor pages; both query D1 at render. `privacy` and `terms` are MDX.          |
+| `src/features/admin/`               | Dashboard counts, pending requests, loan approval, statistics.                                                       |
+| `src/features/auth/`                | Sessions, password hashing, one-time codes, rate limits. See [accounts and roles](auth.md).                          |
+| `src/features/books/`               | Titles, copies, search and filters, the list and editor components, images, favorites, requests.                     |
+| `src/features/books/search.ts`      | Search text normalisation and code detection. `sql.ts` holds the shared SQL fragments.                               |
+| `src/features/books/location.ts`    | The default location of a new copy. `copy-draft.ts` turns the copy form into action input.                           |
+| `src/features/users/`               | Profile updates, role changes, suspension, user activity.                                                            |
+| `src/features/donors/`              | Read-only donor and donated-copy lists.                                                                              |
+| `src/features/readers/`             | Aggregate reads shared by reader-facing pages, including collection counts.                                          |
+| `src/components/ui/`                | Radix-based primitives in the shadcn style (`components.json`).                                                      |
+| `src/components/layout/`            | Header and footer.                                                                                                   |
+| `src/lib/db/schema/`                | Drizzle table definitions. See [database](database.md).                                                              |
+| `migrations/`                       | SQL migrations for D1, generated by `drizzle-kit` and applied by `wrangler`.                                         |
+| `src/lib/db/seed.ts`                | `bun run db:seed`: demo accounts (`seeds/demo.ts`) and the catalogue (`seeds/catalogue.ts`).                         |
+| `src/lib/db/seed-sql.ts`            | `bun run db:seed:sql`: the catalogue seed as `catalogue.sql` for production.                                         |
+| `scripts/convert-register.py`       | Writes `seeds/catalogue.json` and `seeds/catalogue.review.csv` from the workbook. See [database](database.md#seeds). |
+| `src/lib/db/test-database.ts`       | `createTestDatabase()`: a temporary local D1 with every migration applied, for tests.                                |
+| `src/lib/db/create-admin.ts`        | `bun run admin:create`: creates or promotes an admin. The logic is in `admin.ts`.                                    |
+| `src/lib/db/index.ts`               | `getDb()`: Drizzle over the `DB` D1 binding.                                                                         |
+| `src/lib/db/qualified.ts`           | `outer()`: column references for correlated subqueries.                                                              |
+| `src/lib/storage.ts`                | R2 helpers over the `_216_storage` binding, and the `/media/` URL of an object.                                      |
+| `src/app/media/`                    | Route that serves R2 objects at `/media/<key>`.                                                                      |
+| `src/features/auth/core/mailer.ts`  | Verification and reset emails through the Resend HTTP API.                                                           |
+| `src/lib/result.ts`                 | `Ok`/`Err` result type for fallible service calls.                                                                   |
+| `src/middleware.ts`                 | Session cookie refresh and the same-origin check on non-GET requests.                                                |
+
+`@/` resolves to `src/` (`tsconfig.json`).
+
+## Boundaries
+
+- Server components may import a repository for a page read. Client components
+  never import repositories; they call server actions for mutations.
+- [`getDb()`](../src/lib/db/index.ts) is the only place the D1 binding is read.
+  It builds a Drizzle client per call; D1 has no connection to pool.
+- Only `src/lib/storage.ts` and the `/media` route touch the R2 binding.
+- Stored image URLs are `/media/<key>` paths, never absolute URLs, so the bucket
+  needs no public address.
+- Password and session code uses Web Crypto and `@oslojs`, not Node-only APIs,
+  so it runs on Workers.
+
+## Shared state
+
+Several requests and Worker instances change the same rows at once. Every
+transition below is one SQL statement or one `db.batch` (D1 runs a batch as a
+transaction), with its precondition in the `WHERE` clause. A service never reads
+a state, decides, and then writes. A transition whose precondition fails changes
+nothing and reports that it did not happen.
+
+**Loan** (`borrow_requests.status`). Only `features/admin` and
+`features/books/repository.ts` change it.
+
+| From       | To         | Owner                         | Condition                                                                        |
+| ---------- | ---------- | ----------------------------- | -------------------------------------------------------------------------------- |
+| (none)     | `pending`  | `createBorrowRequestRecord`   | The title has a lendable copy; no `pending` request by that user. One statement. |
+| `pending`  | `approved` | `approvePendingBorrowRequest` | The chosen copy belongs to the title and is lendable. Sets `copy_id`.            |
+| `pending`  | `rejected` | `resolvePendingBorrowRequest` | Request is still `pending`.                                                      |
+| `approved` | `returned` | `returnApprovedLoan`          | Request is `approved`.                                                           |
+
+`returned` and `rejected` are final. The unique index
+`borrow_requests_pending_idx` allows one `pending` request per user and book,
+and `borrow_requests_active_copy_idx` allows one `approved` loan per copy.
+
+**Copy** (`copies.status`). A librarian sets `present`, `maintenance` or
+`missing` from the title page or the editor; a loan never changes it. Whether a
+copy is on loan is not stored: a copy is lendable when it is `present` and no
+`approved` loan has its `copy_id`, so approving a loan takes the copy and
+returning it frees the copy in the same statement that closes the loan.
+
+**Codes** (`categories.next_number`, `books.next_copy`). A new book code or copy
+number is taken by one `UPDATE ... RETURNING` on the counter, so two requests
+never receive the same code. A failed insert leaves a gap.
+
+**Favorite** (`user_book_hearts`, owned by `setHeartRecord`). A user has the
+book as a favorite or not, and the action says which state it wants: `setHeart`
+takes `hearted`, not a toggle. Adding is an insert that does nothing when the
+row exists or the book does not, and removing is a delete, so repeating a call
+changes nothing and simultaneous calls end in the last state asked for. The
+unique index `user_book_hearts_user_book_idx` allows one row per user and book.
+
+**Book images.** `books.image_url` is the URL of the image with `is_cover`. The
+image writes in `features/books/repository.ts` change both in one batch, and
+`book_images_image_url_idx` keeps one image row per stored object.
+
+**Rate limits** (`rate_limit`, owned by `features/auth/core/rate-limit.ts`). A
+row is `(key, count, stamped_at, expires_at)`. Each limiter changes it with one
+upsert whose `WHERE` holds the allow condition, and every attempt first deletes
+rows past `expires_at`. Only the limiter that owns a key prefix writes it. See
+[accounts and roles](auth.md#rate-limits) for the limits.
+
+## Build and runtime
+
+`next dev` runs with the Workers bindings simulated locally
+(`initOpenNextCloudflareForDev` in `next.config.ts`).
+`opennextjs-cloudflare build` turns the Next.js output into
+`.open-next/worker.js`, which `wrangler.jsonc` names as the Worker entry. See
+[deployment](deployment.md).
+
+Tooling configuration at the root: `oxfmt.config.ts` (formatter, including
+Markdown), `oxlint.config.ts` (linter), `knip.ts` (unused code and
+dependencies), `drizzle.config.ts` (schema path and migration folder for
+`drizzle-kit`).
