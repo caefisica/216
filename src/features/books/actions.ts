@@ -30,7 +30,6 @@ import { setHeartRecord } from "./repository";
 import {
   getBooksService,
   getFacetsService,
-  getFavoriteBooksService,
   getBookByIdService,
   uploadBookImageService,
   deleteBookImageService,
@@ -63,10 +62,6 @@ export async function getBooks(
   const staff = isVerifiedStaff(user);
   return Ok(await getBooksService(parsed.data, user?.emailVerified ? user.id : null, staff));
 }
-
-export const getFavoriteBooks = authenticatedAction(z.object({}), async (_input, { user }) =>
-  getFavoriteBooksService(user.id),
-);
 
 export async function getBookById(id: string) {
   const parsed = BookIdSchema.safeParse({ bookId: id });
