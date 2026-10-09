@@ -94,7 +94,9 @@ async function searchCover(
 ) {
   const url = new URL(searchUrl);
   url.searchParams.set("title", title);
-  url.searchParams.set("author", firstAuthor(author));
+  const first = firstAuthor(author);
+  // Open Library answers an empty author parameter with a 500.
+  if (first) url.searchParams.set("author", first);
   url.searchParams.set("fields", "cover_i,title,author_name,isbn");
   url.searchParams.set("limit", "10");
   const response = await fetcher(url, { headers: { "User-Agent": USER_AGENT } });

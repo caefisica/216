@@ -40,6 +40,41 @@ describe("cover matching", () => {
 });
 
 describe("the cover fetch entry point", () => {
+  it("leaves the author out of the search when the book has none, as Open Library answers an empty author with a 500", async () => {
+    const server = createServer((request, response) => {
+      const params = new URL(request.url ?? "", "http://127.0.0.1").searchParams;
+      if (params.get("author") === "") {
+        response.statusCode = 500;
+        response.end("upstream failure");
+        return;
+      }
+      response.setHeader("Content-Type", "application/json");
+      response.end(JSON.stringify({ docs: [{ cover_i: 7, title: "Untitled shelf book" }] }));
+    }).listen(0);
+    servers.push(server);
+    await new Promise<void>((resolve) => server.once("listening", () => resolve()));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("stub server did not start");
+    const directory = await mkdtemp(join(tmpdir(), "216-covers-test-"));
+
+    try {
+      const result = await fetchCovers({
+        books: [{ id: "anon", title: "Untitled shelf book", author: null, imageUrl: null }],
+        db: null as never,
+        bucket: {} as R2Bucket,
+        fetcher: fetch,
+        searchUrl: `http://127.0.0.1:${address.port}/search`,
+        cacheFile: join(directory, "results.json"),
+        missFile: join(directory, "misses.json"),
+        dryRun: true,
+      });
+      expect(result.errors).toBe(0);
+      expect(result.found).toBe(1);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   it("sends the project user agent, caches misses but not failures, and rejects results without author data", async () => {
     let searches = 0;
     let images = 0;
