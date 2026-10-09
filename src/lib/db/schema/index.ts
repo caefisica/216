@@ -1,12 +1,16 @@
 export { user, session, emailVerificationRequest, passwordResetSession, Role } from "./auth";
 export {
-  BookStatus,
+  CopyOrigin,
+  CopyStatus,
+  CopyCondition,
+  LocationHolds,
   categories,
   books,
+  locations,
+  donors,
+  copies,
   userBookHearts,
   borrowRequests,
   bookImages,
-  bookCategories,
 } from "./library";
-export { donors, donations } from "./donations";
 export { rateLimit } from "./rate-limit";
