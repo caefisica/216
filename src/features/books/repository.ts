@@ -502,13 +502,16 @@ export async function setCoverImageRecord(imageId: string, bookId: string) {
  * Adds the image, as the cover when `isCover`. Returns false when another image row already
  * stores that URL.
  */
-export async function addBookImageRecord(input: {
-  bookId: string;
-  imageUrl: string;
-  isCover: boolean;
-  displayOrder: number;
-}) {
-  const db = await getDb();
+export async function addBookImageRecord(
+  input: {
+    bookId: string;
+    imageUrl: string;
+    isCover: boolean;
+    displayOrder: number;
+  },
+  database?: Database,
+) {
+  const db = database ?? (await getDb());
   const id = crypto.randomUUID();
   const insert = db
     .insert(bookImages)

@@ -19,14 +19,25 @@ export async function uploadFile(
   contentType?: string,
 ) {
   const bucket = await getBucket();
-  return await bucket.put(key, body, {
-    httpMetadata: { contentType },
-  });
+  return putFileInBucket(bucket, key, body, contentType);
+}
+
+export function putFileInBucket(
+  bucket: R2Bucket,
+  key: string,
+  body: Buffer | Uint8Array | Blob | ReadableStream | string,
+  contentType?: string,
+) {
+  return bucket.put(key, body, { httpMetadata: { contentType } });
+}
+
+export function deleteFileFromBucket(bucket: R2Bucket, key: string) {
+  return bucket.delete(key);
 }
 
 export async function deleteFile(key: string) {
   const bucket = await getBucket();
-  return await bucket.delete(key);
+  return deleteFileFromBucket(bucket, key);
 }
 
 export async function fileExists(key: string) {
