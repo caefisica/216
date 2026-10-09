@@ -25,7 +25,7 @@ import {
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { codeRange, derivedTitleColumns, looksLikeCode, normalizeSearch } from "./search";
-import { activeLoanId, copyCount, copyIsLendable, hasLendableCopy, lendableCopyCount } from "./sql";
+import { activeLoanId, copyCount, hasLendableCopy, lendableCopyCount } from "./sql";
 import {
   PAGE_SIZE,
   type BookFields,
@@ -291,36 +291,6 @@ export async function listCopies(bookId: string): Promise<CopyView[]> {
     .where(eq(copies.bookId, bookId))
     .orderBy(asc(copies.number));
   return rows.map(asCopyView);
-}
-
-/** Returns the lendable copies of every title with a pending request, lowest number first. */
-export async function listLendableCopiesForPending(): Promise<CopyView[]> {
-  const db = await getDb();
-  const rows = await db
-    .select(copyViewSelect())
-    .from(copies)
-    .leftJoin(locations, eq(copies.locationId, locations.id))
-    .leftJoin(donors, eq(copies.donorId, donors.id))
-    .where(
-      and(
-        sql`"copies"."book_id" IN (SELECT "book_id" FROM "borrow_requests" WHERE "status" = 'pending')`,
-        sql`${copyIsLendable}`,
-      ),
-    )
-    .orderBy(asc(copies.number));
-  return rows.map(asCopyView);
-}
-
-/** The id of the lowest-numbered copy of the title that can be lent now. */
-export async function firstLendableCopyId(bookId: string) {
-  const db = await getDb();
-  const [row] = await db
-    .select({ id: copies.id })
-    .from(copies)
-    .where(and(eq(copies.bookId, bookId), sql`${copyIsLendable}`))
-    .orderBy(asc(copies.number))
-    .limit(1);
-  return row?.id;
 }
 
 /**

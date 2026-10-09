@@ -32,6 +32,7 @@ export async function listUserActivity(userId: string) {
       dueDate: borrowRequests.dueDate,
       returnDate: borrowRequests.returnDate,
       notes: borrowRequests.notes,
+      rejectionReason: borrowRequests.rejectionReason,
       librarianId: borrowRequests.librarianId,
       createdAt: borrowRequests.createdAt,
       updatedAt: borrowRequests.updatedAt,

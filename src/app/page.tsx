@@ -1,8 +1,7 @@
 import { getSession, getVerifiedUserId, isVerifiedStaff } from "@/features/auth/protected-action";
 import { SearchSchema } from "@/features/books/schemas";
 import { getBooksService, getFacetsService } from "@/features/books/service";
-import { listActiveLoans } from "@/features/admin/repository";
-import { getPendingRequestsService } from "@/features/admin/service";
+import { getLoanCounts } from "@/features/loans/repository";
 import { BookCatalog } from "@/features/books/components/book-catalog";
 import { AdminDashboard } from "@/features/admin/components/admin-dashboard";
 import { getLibraryCounts } from "@/features/readers/repository";
@@ -34,18 +33,12 @@ export default async function HomePage({
   );
 
   if (staff) {
-    const [initialPendingRequests, initialActiveLoans] = await Promise.all([
-      getPendingRequestsService(),
-      listActiveLoans(),
-    ]);
-
     return (
       <main className="container mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8">
         <AdminDashboard
           catalogue={catalogue}
           facets={facets}
-          initialPendingRequests={initialPendingRequests}
-          initialActiveLoans={initialActiveLoans}
+          loanCounts={await getLoanCounts(new Date())}
         />
       </main>
     );

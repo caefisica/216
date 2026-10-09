@@ -88,7 +88,14 @@ export function LoanHistory({ borrowHistory }: { borrowHistory: BorrowRequest[] 
                       {req.book?.title}
                     </span>
                   </td>
-                  <td className="px-8 py-6">{getStatusBadge(req.status)}</td>
+                  <td className="px-8 py-6">
+                    {getStatusBadge(req.status)}
+                    {req.rejectionReason && (
+                      <p className="mt-2 max-w-xs text-xs text-gray-700">
+                        Motivo: {req.rejectionReason}
+                      </p>
+                    )}
+                  </td>
                   <td className="px-8 py-6 font-mono text-xs text-gray-600">{copyLabel(req)}</td>
                   <td className="px-8 py-6 text-gray-600">
                     {req.dueDate ? new Date(req.dueDate).toLocaleDateString() : "—"}
