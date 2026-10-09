@@ -1,33 +1,38 @@
 import { mkdir } from "node:fs/promises";
-import { chromium } from "playwright";
+import { chromium, type Page } from "playwright";
 
 const baseUrl = process.env.SCREENSHOT_BASE_URL ?? "http://localhost:3000";
 const outputDirectory = "docs/ui";
 const dark = process.argv.includes("--dark");
 const suffix = dark ? "-dark" : "";
 const widths = [375, 1280] as const;
+const maxPages = 200;
 
-async function bookLinks(page: import("playwright").Page) {
-  return page
-    .locator('a[href^="/books/"]')
-    .evaluateAll((links) =>
-      [...new Set(links.map((link) => link.getAttribute("href")))].filter(
-        (href): href is string => href !== null,
-      ),
-    );
+async function showGrid(page: Page, pageNumber: number) {
+  await page.goto(`${baseUrl}/?page=${pageNumber}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Vista de cuadrícula" }).click();
+  return page.locator('[role="list"] article');
 }
 
-async function findBook(page: import("playwright").Page, generated: boolean) {
-  for (const href of await bookLinks(page)) {
-    await page.goto(`${baseUrl}${href}`, { waitUntil: "networkidle" });
-    const hasStoredCover = (await page.locator('main img, [role="main"] img').count()) > 0;
-    if (hasStoredCover !== generated) return href;
+async function findBooks(page: Page) {
+  let stored: string | null = null;
+  let generated: string | null = null;
+  for (let pageNumber = 1; pageNumber <= maxPages && !(stored && generated); pageNumber++) {
+    const cards = await showGrid(page, pageNumber);
+    if ((await cards.count()) === 0) break;
+    const links = await cards.evaluateAll((items) =>
+      items.map((item) => ({
+        href: item.querySelector("a")?.getAttribute("href") ?? null,
+        hasImage: item.querySelector("img") !== null,
+      })),
+    );
+    for (const { href, hasImage } of links) {
+      if (!href) continue;
+      if (hasImage) stored ??= href;
+      else generated ??= href;
+    }
   }
-  throw new Error(
-    generated
-      ? "No se encontró un libro sin portada en el catálogo local."
-      : "No se encontró un libro con portada almacenada en el catálogo local.",
-  );
+  return { stored, generated };
 }
 
 async function capture() {
@@ -35,11 +40,16 @@ async function capture() {
   const browser = await chromium.launch();
   try {
     const discovery = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-    await discovery.goto(baseUrl, { waitUntil: "networkidle" });
-    const realBook = await findBook(discovery, false);
-    await discovery.goto(baseUrl, { waitUntil: "networkidle" });
-    const generatedBook = await findBook(discovery, true);
+    const { stored, generated } = await findBooks(discovery);
     await discovery.close();
+    if (!stored) {
+      console.warn("Ningún libro tiene portada almacenada: se omiten las capturas book-real.");
+    }
+    if (!generated) {
+      console.warn(
+        "Todos los libros tienen portada almacenada: se omiten las capturas book-generated.",
+      );
+    }
 
     for (const width of widths) {
       const page = await browser.newPage({
@@ -56,16 +66,17 @@ async function capture() {
         path: `${outputDirectory}/catalogue-grid-${width}${suffix}.png`,
         fullPage: true,
       });
-      await page.goto(`${baseUrl}${realBook}`, { waitUntil: "networkidle" });
-      await page.screenshot({
-        path: `${outputDirectory}/book-real-${width}${suffix}.png`,
-        fullPage: true,
-      });
-      await page.goto(`${baseUrl}${generatedBook}`, { waitUntil: "networkidle" });
-      await page.screenshot({
-        path: `${outputDirectory}/book-generated-${width}${suffix}.png`,
-        fullPage: true,
-      });
+      for (const [name, href] of [
+        ["book-real", stored],
+        ["book-generated", generated],
+      ] as const) {
+        if (!href) continue;
+        await page.goto(`${baseUrl}${href}`, { waitUntil: "networkidle" });
+        await page.screenshot({
+          path: `${outputDirectory}/${name}-${width}${suffix}.png`,
+          fullPage: true,
+        });
+      }
       await page.close();
     }
   } finally {
