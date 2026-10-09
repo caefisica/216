@@ -1,18 +1,14 @@
 import { revalidatePath } from "next/cache";
 import { deleteFile, fileExists, getFileKey, getFileUrl, uploadFile } from "@/lib/storage";
-import { IMAGE_EXTENSIONS, type BookFields, type BookFilters } from "./schemas";
+import { IMAGE_EXTENSIONS, type BookFields, type BookFilters, type CopyFields } from "./schemas";
 import { Ok, Err } from "@/lib/result";
 import { UserError } from "@/lib/action";
 import {
   listBooks,
-  listBooksByIds,
-  listBookImages,
-  listBookCategories,
-  listHeartedBookIds,
+  listFavoriteBooks,
   getBookById,
   listBookImagesByBookId,
-  listBookCategoriesByBookId,
-  hasHeart,
+  listCopies,
   getBookImageById,
   deleteBookImageRecord,
   setCoverImageRecord,
@@ -21,72 +17,50 @@ import {
   deleteBookRecord,
   updateBookRecord,
   createBookRecord,
+  createCopyRecord,
+  updateCopyRecord,
+  deleteCopyRecord,
+  allocateBookCode,
+  allocateCopy,
+  isLeafCategory,
+  ensureDonor,
+  listFacets,
+  listLocations,
 } from "./repository";
+import type { BookDetailed, BookPage } from "./types";
 
-export async function getBooksService(filters: BookFilters, userId?: string | null) {
-  const booksData = await listBooks(filters);
-  const bookIds = booksData.map((b) => b.id);
-  if (bookIds.length === 0) return [];
-
-  const [imagesData, categoriesData, heartedBookIds] = await Promise.all([
-    listBookImages(bookIds),
-    listBookCategories(bookIds),
-    userId ? listHeartedBookIds(userId) : Promise.resolve<string[]>([]),
-  ]);
-
-  return booksData.map((book) => {
-    const bookImgs = imagesData.filter((img) => img.bookId === book.id);
-    const bookCats = categoriesData.filter((bc) => bc.bookId === book.id).map((bc) => bc.category);
-    return {
-      ...book,
-      images: bookImgs,
-      coverImage: bookImgs.find((img) => img.isCover) || bookImgs[0],
-      categories: bookCats,
-      isHearted: heartedBookIds.includes(book.id),
-    };
-  });
+/** The unlabelled and unplaced filters are for staff; anyone else's are ignored. */
+export function getBooksService(
+  filters: BookFilters,
+  userId?: string | null,
+  staff = false,
+): Promise<BookPage> {
+  const allowed = staff ? filters : { ...filters, unlabelled: undefined, unplaced: undefined };
+  return listBooks(allowed, userId);
 }
 
-export async function getFavoriteBooksService(userId: string) {
-  const bookIds = await listHeartedBookIds(userId);
-  if (bookIds.length === 0) return [];
-
-  const [booksData, imagesData, categoriesData] = await Promise.all([
-    listBooksByIds(bookIds),
-    listBookImages(bookIds),
-    listBookCategories(bookIds),
-  ]);
-
-  return booksData.map((book) => {
-    const bookImgs = imagesData.filter((img) => img.bookId === book.id);
-    const bookCats = categoriesData.filter((bc) => bc.bookId === book.id).map((bc) => bc.category);
-    return {
-      ...book,
-      images: bookImgs,
-      coverImage: bookImgs.find((img) => img.isCover) || bookImgs[0],
-      categories: bookCats,
-      isHearted: true,
-    };
-  });
+export function getFavoriteBooksService(userId: string) {
+  return listFavoriteBooks(userId);
 }
 
 export async function getBookByIdService(id: string, userId?: string | null) {
-  const book = await getBookById(id);
+  const book = await getBookById(id, userId);
   if (!book) return Err("not_found");
 
-  const [imagesData, categoriesData, isHearted] = await Promise.all([
-    listBookImagesByBookId(id),
-    listBookCategoriesByBookId(id),
-    userId ? hasHeart(id, userId) : Promise.resolve(false),
-  ]);
+  const [images, copies] = await Promise.all([listBookImagesByBookId(id), listCopies(id)]);
 
-  return Ok({
+  const detailed: BookDetailed = {
     ...book,
-    images: imagesData,
-    coverImage: imagesData.find((img) => img.isCover) || imagesData[0],
-    categories: categoriesData.map((c) => c.category),
-    isHearted,
-  });
+    images,
+    coverImage: images.find((img) => img.isCover) || images[0],
+    copies,
+  };
+  return Ok(detailed);
+}
+
+export async function getFacetsService() {
+  const [facets, locations] = await Promise.all([listFacets(), listLocations()]);
+  return { ...facets, locations };
 }
 
 /** `prefix` ends in a slash. The name comes from the file type, never from the client's file name. */
@@ -139,6 +113,7 @@ export async function addBookImageService(input: {
   revalidatePath(`/books/${input.bookId}`);
 }
 
+/** Deletes the title with its copies, images and loan history. */
 export async function deleteBookService(bookId: string) {
   const images = await listBookImagesByBookId(bookId);
   for (const img of images) {
@@ -150,17 +125,64 @@ export async function deleteBookService(bookId: string) {
   revalidatePath("/");
 }
 
+async function requireLeafCategory(categoryId: string) {
+  if (!(await isLeafCategory(categoryId))) {
+    throw new UserError(
+      "Elige una subcategoría: las categorías con subcategorías no tienen libros.",
+    );
+  }
+}
+
 export async function updateBookService(id: string, data: BookFields) {
+  await requireLeafCategory(data.categoryId);
   if (!(await updateBookRecord(id, data))) throw new UserError("Libro no encontrado.");
   revalidatePath(`/books/${id}`);
   revalidatePath("/");
 }
 
-export async function createBookService(data: BookFields) {
-  const bookId = crypto.randomUUID();
-  await createBookRecord(bookId, data);
+/** Issues the book code and the first copy's code; the librarian never types either. */
+export async function createBookService(data: BookFields, copy: CopyFields) {
+  await requireLeafCategory(data.categoryId);
+  const code = await allocateBookCode(data.categoryId);
+  if (!code) throw new UserError("Categoría no encontrada.");
+
+  const created = await createBookRecord({ ...data, code }, copy);
   revalidatePath("/");
-  return { id: bookId };
+  return { id: created.id, code, copyCode: created.copyCode };
+}
+
+export async function addCopyService(bookId: string, data: CopyFields) {
+  const next = await allocateCopy(bookId);
+  if (!next) throw new UserError("Libro no encontrado.");
+
+  await createCopyRecord(bookId, next.number, next.code, data);
+  revalidatePath(`/books/${bookId}`);
+  revalidatePath("/");
+  return { code: next.code };
+}
+
+export async function updateCopyService(copyId: string, data: CopyFields) {
+  const bookId = await updateCopyRecord(copyId, data);
+  if (!bookId) throw new UserError("Ejemplar no encontrado.");
+  revalidatePath(`/books/${bookId}`);
+  revalidatePath("/");
+}
+
+export async function deleteCopyService(copyId: string) {
+  const bookId = await deleteCopyRecord(copyId);
+  if (!bookId) {
+    throw new UserError(
+      "Este ejemplar tiene préstamos en su historial. Márcalo como extraviado en vez de borrarlo.",
+    );
+  }
+  revalidatePath(`/books/${bookId}`);
+  revalidatePath("/");
+}
+
+export async function createDonorService(name: string) {
+  const donor = await ensureDonor(name);
+  revalidatePath("/donors");
+  return { id: donor.id, name: donor.name };
 }
 
 export async function createBorrowRequestService(
@@ -172,7 +194,7 @@ export async function createBorrowRequestService(
     // The insert refused; the book is read only to say why.
     const book = await getBookById(bookId);
     if (!book) throw new UserError("Libro no encontrado.");
-    if (book.status !== "available") throw new UserError("El libro no está disponible.");
+    if (book.lendableCount === 0) throw new UserError("El libro no está disponible.");
     throw new UserError("Ya tienes una solicitud pendiente para este libro.");
   }
 

@@ -1,15 +1,27 @@
 import { z } from "zod";
-import { BookStatus } from "@/lib/db/schema";
+import { CopyCondition, CopyOrigin, CopyStatus } from "@/lib/db/schema";
 
 export const BookIdSchema = z.object({ bookId: z.uuid() });
 
 export const SetHeartSchema = z.object({ bookId: z.uuid(), hearted: z.boolean() });
 
+/** The catalogue filters. They are also the URL search parameters of the list, so all are text. */
 export const SearchSchema = z.object({
-  search: z.string().max(100).optional(),
-  categoryId: z.string().optional(),
-  status: z.enum([...BookStatus, "all"]).optional(),
+  search: z.string().trim().max(100).optional(),
+  /** A category code. A top-level code includes its subcategories. */
+  category: z.string().max(20).optional(),
+  cabinet: z.string().max(60).optional(),
+  shelf: z.coerce.number().int().min(0).max(99).optional(),
+  donor: z.uuid().optional(),
+  availability: z.enum(["available", "unavailable"]).optional(),
+  /** Staff filters: a copy whose code is not on the spine yet, a copy with no place. */
+  unlabelled: z.literal("1").optional(),
+  unplaced: z.literal("1").optional(),
+  sort: z.enum(["title", "code"]).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
 });
+
+export const PAGE_SIZE = 50;
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -54,29 +66,56 @@ const optionalText = (max: number) =>
     .nullish()
     .transform((value) => value || null);
 
-const optionalCount = (max: number) =>
-  z
-    .number()
-    .int()
-    .min(1)
-    .max(max)
-    .nullish()
-    .transform((value) => value ?? null);
+const optionalId = z
+  .uuid()
+  .nullish()
+  .transform((value) => value ?? null);
 
+/** The title. Its code and counters are never typed in; the app issues them. */
 export const BookFieldsSchema = z.object({
   title: z.string().trim().min(1).max(300),
-  author: z.string().trim().min(1).max(300),
+  author: optionalText(300),
   isbn: optionalText(20),
-  publisher: optionalText(200),
-  publicationYear: optionalCount(9999),
-  pages: optionalCount(100_000),
-  location: optionalText(100),
   description: optionalText(5000),
-  status: z.enum(BookStatus),
-  categoryId: optionalText(100),
+  categoryId: z.uuid(),
 });
 
+export const CopyFieldsSchema = z.object({
+  origin: z.enum(CopyOrigin),
+  volume: optionalText(40),
+  pieces: z.number().int().min(1).max(1000),
+  edition: optionalText(40),
+  year: z
+    .number()
+    .int()
+    .min(1400)
+    .max(2100)
+    .nullish()
+    .transform((value) => value ?? null),
+  country: optionalText(60),
+  publisher: optionalText(120),
+  locationId: optionalId,
+  donorId: optionalId,
+  status: z.enum(CopyStatus),
+  condition: z
+    .enum(CopyCondition)
+    .nullish()
+    .transform((value) => value ?? null),
+  labelled: z.boolean(),
+  notes: optionalText(1000),
+});
+
+export const CreateBookSchema = BookFieldsSchema.extend({ copy: CopyFieldsSchema });
+
 export const UpdateBookSchema = BookFieldsSchema.extend({ id: z.uuid() });
+
+export const AddCopySchema = CopyFieldsSchema.extend({ bookId: z.uuid() });
+
+export const UpdateCopySchema = CopyFieldsSchema.extend({ copyId: z.uuid() });
+
+export const CopyIdSchema = z.object({ copyId: z.uuid() });
+
+export const CreateDonorSchema = z.object({ name: z.string().trim().min(1).max(120) });
 
 export const BorrowRequestSchema = z.object({
   bookId: z.uuid(),
@@ -84,4 +123,5 @@ export const BorrowRequestSchema = z.object({
 });
 
 export type BookFields = z.output<typeof BookFieldsSchema>;
+export type CopyFields = z.output<typeof CopyFieldsSchema>;
 export type BookFilters = z.output<typeof SearchSchema>;

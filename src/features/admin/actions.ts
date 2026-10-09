@@ -2,9 +2,10 @@
 
 import { z } from "zod";
 import { staffAction } from "@/features/auth/protected-action";
-import { listActiveLoans, listPendingBorrowRequests, listBorrowHistory } from "./repository";
+import { listActiveLoans, listBorrowHistory } from "./repository";
 import {
   getDetailedAdminStatsService,
+  getPendingRequestsService,
   returnLoanService,
   updateBorrowStatusService,
 } from "./service";
@@ -12,10 +13,11 @@ import {
 const BorrowStatusSchema = z.object({
   requestId: z.uuid(),
   status: z.enum(["approved", "rejected"]),
+  copyId: z.uuid().optional(),
 });
 
 export const getPendingBorrowRequests = staffAction(z.void(), async () => {
-  return listPendingBorrowRequests();
+  return getPendingRequestsService();
 });
 
 export const getActiveLoans = staffAction(z.void(), async () => {
@@ -37,7 +39,7 @@ export const getBorrowingHistory = staffAction(
 
 export const updateBorrowStatus = staffAction(
   BorrowStatusSchema,
-  async ({ requestId, status }, session) => {
-    return updateBorrowStatusService(requestId, status, session.user.id);
+  async ({ requestId, status, copyId }, session) => {
+    return updateBorrowStatusService(requestId, status, session.user.id, copyId);
   },
 );

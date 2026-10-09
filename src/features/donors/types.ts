@@ -1,16 +1,9 @@
-import { donors, donations } from "@/lib/db/schema";
+import type { listDonatedCopies, listDonors } from "./repository";
 
-export type Donor = typeof donors.$inferSelect;
-type DonationBase = typeof donations.$inferSelect;
-
-export interface Donation extends DonationBase {
-  donor: {
-    id: string;
-    name: string;
-  } | null;
-}
+export type Donor = Awaited<ReturnType<typeof listDonors>>[number];
+export type DonatedCopy = Awaited<ReturnType<typeof listDonatedCopies>>[number];
 
 export interface DonationStats {
-  totalBooks: number;
+  totalCopies: number;
   totalDonors: number;
 }

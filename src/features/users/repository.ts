@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db";
-import { user, borrowRequests, books, type Role } from "@/lib/db/schema";
+import { user, borrowRequests, books, copies, type Role } from "@/lib/db/schema";
+import { bookSummaryColumns } from "@/features/books/repository";
 import { eq, desc } from "drizzle-orm";
 
 /** Every `user` column except the password hash. Select this, never the whole table, for data that reaches the browser. */
@@ -9,7 +10,6 @@ export const publicUserColumns = {
   name: user.name,
   emailVerified: user.emailVerified,
   role: user.role,
-  totalDonations: user.totalDonations,
   createdAt: user.createdAt,
 };
 
@@ -25,6 +25,7 @@ export async function listUserActivity(userId: string) {
       id: borrowRequests.id,
       userId: borrowRequests.userId,
       bookId: borrowRequests.bookId,
+      copyId: borrowRequests.copyId,
       status: borrowRequests.status,
       requestDate: borrowRequests.requestDate,
       approvedDate: borrowRequests.approvedDate,
@@ -34,10 +35,12 @@ export async function listUserActivity(userId: string) {
       librarianId: borrowRequests.librarianId,
       createdAt: borrowRequests.createdAt,
       updatedAt: borrowRequests.updatedAt,
-      book: books,
+      book: bookSummaryColumns,
+      copy: { id: copies.id, code: copies.code, volume: copies.volume },
     })
     .from(borrowRequests)
     .leftJoin(books, eq(borrowRequests.bookId, books.id))
+    .leftJoin(copies, eq(borrowRequests.copyId, copies.id))
     .where(eq(borrowRequests.userId, userId))
     .orderBy(desc(borrowRequests.requestDate));
 }

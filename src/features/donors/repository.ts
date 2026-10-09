@@ -1,43 +1,49 @@
 import { getDb } from "@/lib/db";
-import { donors, donations } from "@/lib/db/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { books, copies, donors } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 
 export async function listDonors() {
   const db = await getDb();
-  return db.select().from(donors).orderBy(desc(donors.createdAt));
+  return db
+    .select({
+      id: donors.id,
+      name: donors.name,
+      motivation: donors.motivation,
+      copyCount: sql<number>`count(${copies.id})`.mapWith(Number),
+    })
+    .from(donors)
+    .innerJoin(copies, eq(copies.donorId, donors.id))
+    .groupBy(donors.id)
+    .orderBy(sql`count(${copies.id}) DESC`, donors.name);
 }
 
-export async function listDonations() {
+export async function listDonatedCopies() {
   const db = await getDb();
   return db
     .select({
-      id: donations.id,
-      donorId: donations.donorId,
-      bookTitle: donations.bookTitle,
-      bookAuthor: donations.bookAuthor,
-      donationDate: donations.donationDate,
-      status: donations.status,
-      notes: donations.notes,
-      donor: {
-        id: donors.id,
-        name: donors.name,
-      },
-      createdAt: donations.createdAt,
-      updatedAt: donations.updatedAt,
+      id: copies.id,
+      code: copies.code,
+      volume: copies.volume,
+      bookId: books.id,
+      title: books.title,
+      author: books.author,
+      donor: { id: donors.id, name: donors.name },
     })
-    .from(donations)
-    .leftJoin(donors, eq(donations.donorId, donors.id))
-    .orderBy(desc(donations.donationDate));
+    .from(copies)
+    .innerJoin(books, eq(copies.bookId, books.id))
+    .innerJoin(donors, eq(copies.donorId, donors.id))
+    .orderBy(donors.name, copies.code);
 }
 
 export async function getDonationStats() {
   const db = await getDb();
   const [stats] = await db
     .select({
-      totalBooks: sql<number>`count(${donations.id})`,
-      totalDonors: sql<number>`count(distinct ${donations.donorId})`,
+      totalCopies: sql<number>`count(${copies.id})`.mapWith(Number),
+      totalDonors: sql<number>`count(distinct ${copies.donorId})`.mapWith(Number),
     })
-    .from(donations);
+    .from(copies)
+    .where(sql`${copies.donorId} IS NOT NULL`);
 
   return stats;
 }

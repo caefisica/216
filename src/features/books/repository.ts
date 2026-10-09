@@ -1,90 +1,216 @@
-import { getDb } from "@/lib/db";
+import { getDb, type Database } from "@/lib/db";
 import {
   books,
   categories,
   bookImages,
-  bookCategories,
+  copies,
+  locations,
+  donors,
   userBookHearts,
   borrowRequests,
 } from "@/lib/db/schema";
 import { outer } from "@/lib/db/qualified";
-import { eq, or, and, sql, desc, inArray, type AnyColumn } from "drizzle-orm";
-import type { BookFields, BookFilters } from "./schemas";
+import {
+  eq,
+  and,
+  or,
+  sql,
+  asc,
+  count,
+  gte,
+  lt,
+  getTableColumns,
+  type SQL,
+  type AnyColumn,
+} from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
+import { codeRange, derivedTitleColumns, looksLikeCode, normalizeSearch } from "./search";
+import { activeLoanId, copyCount, copyIsLendable, hasLendableCopy, lendableCopyCount } from "./sql";
+import { PAGE_SIZE, type BookFields, type BookFilters, type CopyFields } from "./schemas";
+import type {
+  BookListItem,
+  BookPage,
+  CatalogueFacets,
+  CategoryNode,
+  CategoryRef,
+  CopyView,
+  LocationOption,
+} from "./types";
 
-export async function listBooks(filters: BookFilters) {
-  const db = await getDb();
-  const query = db
-    .select({
-      id: books.id,
-      title: books.title,
-      author: books.author,
-      isbn: books.isbn,
-      description: books.description,
-      imageUrl: books.imageUrl,
-      categoryId: books.categoryId,
-      status: books.status,
-      publicationYear: books.publicationYear,
-      publisher: books.publisher,
-      pages: books.pages,
-      location: books.location,
-      createdAt: books.createdAt,
-      updatedAt: books.updatedAt,
-      heartsCount:
-        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${outer("books", "id")})`.mapWith(
-          Number,
-        ),
-    })
-    .from(books);
+export const bookSummaryColumns = {
+  id: books.id,
+  code: books.code,
+  title: books.title,
+  author: books.author,
+  imageUrl: books.imageUrl,
+};
+const bookIdRef = outer("books", "id");
 
-  const conditions = [];
-  if (filters.search) {
-    const pattern = `%${filters.search.replace(/[\\%_]/g, "\\$&")}%`;
-    const matches = (column: AnyColumn) => sql`${column} LIKE ${pattern} ESCAPE '\\'`;
-    conditions.push(or(matches(books.title), matches(books.author), matches(books.description)));
-  }
-  if (filters.status && filters.status !== "all") conditions.push(eq(books.status, filters.status));
-  if (filters.categoryId && filters.categoryId !== "all")
-    conditions.push(eq(books.categoryId, filters.categoryId));
-  if (conditions.length > 0) query.where(and(...conditions));
+const heartsOf = sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${bookIdRef})`;
 
-  return query.orderBy(desc(books.createdAt));
+const isHeartedBy = (userId: string | null | undefined) =>
+  userId
+    ? sql<boolean>`EXISTS (SELECT 1 FROM ${userBookHearts} WHERE ${userBookHearts.userId} = ${userId} AND ${userBookHearts.bookId} = ${bookIdRef})`.mapWith(
+        Boolean,
+      )
+    : sql<boolean>`0`.mapWith(Boolean);
+
+const escapeLike = (text: string) => text.replace(/[\\%_]/g, "\\$&");
+const like = (column: AnyColumn | SQL, pattern: string) =>
+  sql`${column} LIKE ${pattern} ESCAPE '\\'`;
+
+/** Tests whether a title has a copy matching `where`. The planner can drive this semi-join from the copy index. */
+const hasCopy = (where: SQL) =>
+  sql`${bookIdRef} IN (SELECT "copies"."book_id" FROM "copies" WHERE ${where})`;
+
+function categoryRef(
+  category: { id: string; code: string; name: string },
+  parent: { id: string | null; code: string | null; name: string | null } | null,
+): CategoryRef {
+  return {
+    ...category,
+    parent: parent?.id ? { id: parent.id, code: parent.code!, name: parent.name! } : null,
+  };
 }
 
-export async function listBooksByIds(bookIds: string[]) {
-  const db = await getDb();
+function listConditions(filters: BookFilters) {
+  const conditions: SQL[] = [];
+
+  if (filters.search) {
+    if (looksLikeCode(filters.search)) {
+      const [from, to] = codeRange(filters.search);
+      conditions.push(
+        or(
+          and(gte(books.code, from), lt(books.code, to)),
+          hasCopy(sql`"copies"."code" >= ${from} AND "copies"."code" < ${to}`),
+        )!,
+      );
+    } else {
+      for (const token of normalizeSearch(filters.search).split(" ")) {
+        conditions.push(like(books.search, `%${escapeLike(token)}%`));
+      }
+    }
+  }
+
+  if (filters.category) {
+    conditions.push(
+      sql`${books.categoryId} IN (SELECT "id" FROM "categories" WHERE "code" = ${filters.category} OR "parent_id" = (SELECT "id" FROM "categories" WHERE "code" = ${filters.category}))`,
+    );
+  }
+
+  if (filters.cabinet || filters.shelf !== undefined) {
+    const place: SQL[] = [];
+    if (filters.cabinet) place.push(sql`"cabinet" = ${filters.cabinet}`);
+    if (filters.shelf !== undefined) place.push(sql`"shelf" = ${filters.shelf}`);
+    conditions.push(
+      hasCopy(sql`"copies"."location_id" IN (SELECT "id" FROM "locations" WHERE ${and(...place)})`),
+    );
+  }
+
+  if (filters.donor) conditions.push(hasCopy(sql`"copies"."donor_id" = ${filters.donor}`));
+
+  if (filters.availability === "available") conditions.push(hasLendableCopy(bookIdRef));
+  if (filters.availability === "unavailable")
+    conditions.push(sql`NOT ${hasLendableCopy(bookIdRef)}`);
+
+  if (filters.unlabelled) conditions.push(hasCopy(sql`"copies"."labelled" = 0`));
+  if (filters.unplaced) conditions.push(hasCopy(sql`"copies"."location_id" IS NULL`));
+
+  return conditions;
+}
+
+export function bookWhere(filters: BookFilters) {
+  const conditions = listConditions(filters);
+  return conditions.length > 0 ? and(...conditions) : undefined;
+}
+
+/**
+ * One row per title with its counts, in one statement. Availability comes from index lookups on
+ * the copies of the rows returned, never from a read per title, and `LIMIT` stops the scan of
+ * the title index before the counts are computed for the rest.
+ */
+export function bookListQuery(
+  db: Database,
+  options: {
+    where?: SQL;
+    userId?: string | null;
+    sort?: BookFilters["sort"];
+    limit: number;
+    offset: number;
+  },
+) {
+  const parent = alias(categories, "parent");
   return db
     .select({
       id: books.id,
+      code: books.code,
       title: books.title,
       author: books.author,
-      isbn: books.isbn,
-      description: books.description,
       imageUrl: books.imageUrl,
-      categoryId: books.categoryId,
-      status: books.status,
-      publicationYear: books.publicationYear,
-      publisher: books.publisher,
-      pages: books.pages,
-      location: books.location,
-      createdAt: books.createdAt,
-      updatedAt: books.updatedAt,
-      heartsCount:
-        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${outer("books", "id")})`.mapWith(
-          Number,
-        ),
+      category: { id: categories.id, code: categories.code, name: categories.name },
+      parent: { id: parent.id, code: parent.code, name: parent.name },
+      copyCount: copyCount(bookIdRef),
+      lendableCount: lendableCopyCount(bookIdRef),
+      isHearted: isHeartedBy(options.userId),
     })
     .from(books)
-    .where(inArray(books.id, bookIds))
-    .orderBy(desc(books.createdAt));
+    .innerJoin(categories, eq(books.categoryId, categories.id))
+    .leftJoin(parent, eq(categories.parentId, parent.id))
+    .where(options.where)
+    .orderBy(...(options.sort === "code" ? [books.code] : [books.titleKey, books.code]))
+    .limit(options.limit)
+    .offset(options.offset);
 }
 
-export async function listBookImages(bookIds: string[]) {
+/** SQLite reads a negative `LIMIT` as "no limit". */
+const NO_LIMIT = -1;
+
+export function bookCountQuery(db: Database, where: SQL | undefined) {
+  return db.select({ total: count() }).from(books).where(where);
+}
+
+const toListItem = ({
+  category,
+  parent,
+  ...rest
+}: Awaited<ReturnType<typeof bookListQuery>>[number]): BookListItem => ({
+  ...rest,
+  category: categoryRef(category, parent),
+});
+
+export async function listBooks(filters: BookFilters, userId?: string | null): Promise<BookPage> {
   const db = await getDb();
-  return db
-    .select()
-    .from(bookImages)
-    .where(inArray(bookImages.bookId, bookIds))
-    .orderBy(bookImages.displayOrder);
+  const where = bookWhere(filters);
+  const query = (page: number) =>
+    bookListQuery(db, {
+      where,
+      userId,
+      sort: filters.sort,
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
+    });
+
+  let page = filters.page ?? 1;
+  // Not `db.batch`: Drizzle maps a batched join by column name and mixes up the same name from two tables.
+  const [[{ total }], firstRows] = await Promise.all([bookCountQuery(db, where), query(page)]);
+  let rows = firstRows;
+  const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (page > lastPage) {
+    page = lastPage;
+    rows = await query(page);
+  }
+  return { items: rows.map(toListItem), total, page, pageSize: PAGE_SIZE };
+}
+
+export async function listFavoriteBooks(userId: string): Promise<BookListItem[]> {
+  const db = await getDb();
+  const rows = await bookListQuery(db, {
+    where: sql`${bookIdRef} IN (SELECT "book_id" FROM "user_book_hearts" WHERE "user_id" = ${userId})`,
+    userId,
+    limit: NO_LIMIT,
+    offset: 0,
+  });
+  return rows.map(toListItem);
 }
 
 export async function listBookImagesByBookId(bookId: string) {
@@ -96,70 +222,99 @@ export async function listBookImagesByBookId(bookId: string) {
     .orderBy(bookImages.displayOrder);
 }
 
-export async function listBookCategories(bookIds: string[]) {
+export async function getBookById(id: string, userId?: string | null) {
   const db = await getDb();
-  return db
-    .select({ bookId: bookCategories.bookId, category: categories })
-    .from(bookCategories)
-    .innerJoin(categories, eq(bookCategories.categoryId, categories.id))
-    .where(inArray(bookCategories.bookId, bookIds));
-}
-
-export async function listBookCategoriesByBookId(bookId: string) {
-  const db = await getDb();
-  return db
-    .select({ category: categories })
-    .from(bookCategories)
-    .innerJoin(categories, eq(bookCategories.categoryId, categories.id))
-    .where(eq(bookCategories.bookId, bookId));
-}
-
-export async function listHeartedBookIds(userId: string) {
-  const db = await getDb();
-  const hearts = await db
-    .select({ bookId: userBookHearts.bookId })
-    .from(userBookHearts)
-    .where(eq(userBookHearts.userId, userId));
-  return hearts.map((h) => h.bookId);
-}
-
-export async function getBookById(id: string) {
-  const db = await getDb();
-  const rows = await db
+  const parent = alias(categories, "parent");
+  const [row] = await db
     .select({
-      id: books.id,
-      title: books.title,
-      author: books.author,
-      isbn: books.isbn,
-      description: books.description,
-      imageUrl: books.imageUrl,
-      categoryId: books.categoryId,
-      status: books.status,
-      publicationYear: books.publicationYear,
-      publisher: books.publisher,
-      pages: books.pages,
-      location: books.location,
-      createdAt: books.createdAt,
-      updatedAt: books.updatedAt,
-      heartsCount:
-        sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${outer("books", "id")})`.mapWith(
-          Number,
-        ),
+      book: getTableColumns(books),
+      category: { id: categories.id, code: categories.code, name: categories.name },
+      parent: { id: parent.id, code: parent.code, name: parent.name },
+      lendableCount: lendableCopyCount(bookIdRef),
+      heartsCount: heartsOf.mapWith(Number),
+      isHearted: isHeartedBy(userId),
     })
     .from(books)
+    .innerJoin(categories, eq(books.categoryId, categories.id))
+    .leftJoin(parent, eq(categories.parentId, parent.id))
     .where(eq(books.id, id))
     .limit(1);
-  return rows[0] ?? null;
+  if (!row) return null;
+  return {
+    ...row.book,
+    category: categoryRef(row.category, row.parent),
+    lendableCount: row.lendableCount,
+    heartsCount: row.heartsCount,
+    isHearted: row.isHearted,
+  };
 }
 
-export async function hasHeart(bookId: string, userId: string) {
+const copyViewSelect = () => ({
+  ...getTableColumns(copies),
+  location: {
+    id: locations.id,
+    cabinet: locations.cabinet,
+    shelf: locations.shelf,
+    bay: locations.bay,
+  },
+  donor: { id: donors.id, name: donors.name },
+  loanId: activeLoanId(sql`"copies"."id"`),
+});
+
+type CopyRow = Omit<CopyView, "location" | "donor"> & {
+  location: { id: string | null } & Record<string, unknown>;
+  donor: { id: string | null; name: string | null };
+};
+
+const asCopyView = (row: unknown): CopyView => {
+  const copy = row as CopyRow;
+  return {
+    ...copy,
+    location: copy.location?.id ? (copy.location as CopyView["location"]) : null,
+    donor: copy.donor?.id ? (copy.donor as CopyView["donor"]) : null,
+  };
+};
+
+export async function listCopies(bookId: string): Promise<CopyView[]> {
   const db = await getDb();
   const rows = await db
-    .select()
-    .from(userBookHearts)
-    .where(and(eq(userBookHearts.bookId, bookId), eq(userBookHearts.userId, userId)))
+    .select(copyViewSelect())
+    .from(copies)
+    .leftJoin(locations, eq(copies.locationId, locations.id))
+    .leftJoin(donors, eq(copies.donorId, donors.id))
+    .where(eq(copies.bookId, bookId))
+    .orderBy(asc(copies.number));
+  return rows.map(asCopyView);
+}
+
+/** Returns the lendable copies of every title with a pending request, lowest number first. */
+export async function listLendableCopiesForPending(): Promise<CopyView[]> {
+  const db = await getDb();
+  const rows = await db
+    .select(copyViewSelect())
+    .from(copies)
+    .leftJoin(locations, eq(copies.locationId, locations.id))
+    .leftJoin(donors, eq(copies.donorId, donors.id))
+    .where(
+      and(
+        sql`"copies"."book_id" IN (SELECT "book_id" FROM "borrow_requests" WHERE "status" = 'pending')`,
+        sql`${copyIsLendable}`,
+      ),
+    )
+    .orderBy(asc(copies.number));
+  return rows.map(asCopyView);
+}
+
+/** The id of the lowest-numbered copy of the title that can be lent now. */
+export async function firstLendableCopyId(bookId: string) {
+  const db = await getDb();
+  const [row] = await db
+    .select({ id: copies.id })
+    .from(copies)
+    .where(and(eq(copies.bookId, bookId), sql`${copyIsLendable}`))
+    .orderBy(asc(copies.number))
     .limit(1);
-  return rows.length > 0;
+  return row?.id;
 }
 
 /**
@@ -181,9 +336,10 @@ export async function setHeartRecord(bookId: string, userId: string, hearted: bo
 }
 
 /**
- * Inserts a pending request in one statement that only matches an available book, and returns
- * whether it did. It does not insert when the book is not available or the user already has a
- * pending request for it, however many requests arrive at once.
+ * Inserts a pending request in one statement that only matches a title with a lendable copy, and
+ * returns whether it did. It does not insert when every copy is on loan, missing or in
+ * maintenance, or when the user already has a pending request for the title, however many
+ * requests arrive at once.
  */
 export async function createBorrowRequestRecord(
   bookId: string,
@@ -194,15 +350,89 @@ export async function createBorrowRequestRecord(
   const rows = await db.all(sql`
     INSERT INTO ${borrowRequests} (${sql.identifier("id")}, ${sql.identifier("user_id")}, ${sql.identifier("book_id")}, ${sql.identifier("status")}, ${sql.identifier("notes")})
     SELECT ${crypto.randomUUID()}, ${userId}, ${books.id}, 'pending', ${note}
-    FROM ${books} WHERE ${books.id} = ${bookId} AND ${books.status} = 'available'
+    FROM ${books} WHERE ${books.id} = ${bookId} AND ${lendableCopyCount(sql`"books"."id"`)} > 0
     ON CONFLICT DO NOTHING
     RETURNING ${sql.identifier("id")}`);
   return rows.length > 0;
 }
 
-export async function listCategories() {
+/** True when the category exists and has no subcategories: only those hold titles. */
+export async function isLeafCategory(categoryId: string) {
   const db = await getDb();
-  return db.select().from(categories).orderBy(categories.name);
+  const [row] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(
+      and(
+        eq(categories.id, categoryId),
+        sql`NOT EXISTS (SELECT 1 FROM "categories" AS "child" WHERE "child"."parent_id" = ${categoryId})`,
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
+}
+
+export async function listLocations(): Promise<LocationOption[]> {
+  const db = await getDb();
+  return db
+    .select({ ...getTableColumns(locations), categoryCode: categories.code })
+    .from(locations)
+    .leftJoin(categories, eq(locations.categoryId, categories.id))
+    .orderBy(locations.cabinet, locations.shelf, locations.bay);
+}
+
+export async function listFacets(): Promise<CatalogueFacets> {
+  const db = await getDb();
+  const [rows, places, donorRows] = await Promise.all([
+    db
+      .select({
+        ...getTableColumns(categories),
+        bookCount:
+          sql<number>`(SELECT count(*) FROM ${books} WHERE ${books.categoryId} = ${outer("categories", "id")})`.mapWith(
+            Number,
+          ),
+      })
+      .from(categories)
+      .orderBy(categories.code),
+    db
+      .selectDistinct({ cabinet: locations.cabinet, shelf: locations.shelf })
+      .from(locations)
+      .orderBy(locations.cabinet, locations.shelf),
+    db
+      .select({
+        id: donors.id,
+        name: donors.name,
+        copyCount: sql<number>`count(${copies.id})`.mapWith(Number),
+      })
+      .from(donors)
+      .leftJoin(copies, eq(copies.donorId, donors.id))
+      .groupBy(donors.id)
+      .orderBy(donors.name),
+  ]);
+
+  const nodes = new Map<string, CategoryNode>(
+    rows.map((row) => [row.id, { ...row, children: [] }]),
+  );
+  const roots: CategoryNode[] = [];
+  for (const node of nodes.values()) {
+    const parent = node.parentId ? nodes.get(node.parentId) : undefined;
+    if (parent) {
+      parent.children.push(node);
+      parent.bookCount += node.bookCount;
+    } else {
+      roots.push(node);
+    }
+  }
+  roots.sort((a, b) => a.name.localeCompare(b.name, "es"));
+
+  const cabinets: CatalogueFacets["cabinets"] = [];
+  for (const { cabinet, shelf } of places) {
+    const last = cabinets[cabinets.length - 1];
+    if (last?.cabinet === cabinet) last.shelves.push(shelf);
+    else cabinets.push({ cabinet, shelves: [shelf] });
+  }
+
+  return { categories: roots, cabinets, donors: donorRows };
 }
 
 export async function getBookImageById(imageId: string, bookId: string) {
@@ -319,13 +549,101 @@ export async function updateBookRecord(id: string, data: BookFields) {
   const db = await getDb();
   const rows = await db
     .update(books)
-    .set({ ...data, updatedAt: new Date() })
+    .set({ ...data, ...derivedTitleColumns(data.title, data.author), updatedAt: new Date() })
     .where(eq(books.id, id))
     .returning({ id: books.id });
   return rows.length > 0;
 }
 
-export async function createBookRecord(id: string, data: BookFields) {
+/**
+ * Takes the next book number of the leaf category in one statement, so two titles added at once
+ * never share a number. Returns the new book code, or null when the category is missing or has
+ * subcategories. A number whose insert later fails is not reused; the gap is harmless.
+ */
+export async function allocateBookCode(categoryId: string) {
   const db = await getDb();
-  await db.insert(books).values({ id, ...data });
+  const [row] = await db
+    .update(categories)
+    .set({ nextNumber: sql`${categories.nextNumber} + 1` })
+    .where(
+      and(
+        eq(categories.id, categoryId),
+        sql`NOT EXISTS (SELECT 1 FROM "categories" AS "child" WHERE "child"."parent_id" = ${categoryId})`,
+      ),
+    )
+    .returning({ code: categories.code, number: sql<number>`"next_number" - 1`.mapWith(Number) });
+  if (!row) return null;
+  const separator = row.code.includes(".") ? "." : "";
+  return `CA${row.code}${separator}${String(row.number).padStart(2, "0")}`;
+}
+
+/** Takes the next copy number of the title in one statement and returns the new copy code. */
+export async function allocateCopy(bookId: string) {
+  const db = await getDb();
+  const [row] = await db
+    .update(books)
+    .set({ nextCopy: sql`${books.nextCopy} + 1` })
+    .where(eq(books.id, bookId))
+    .returning({ code: books.code, number: sql<number>`"next_copy" - 1`.mapWith(Number) });
+  return row ? { number: row.number, code: `${row.code}.${row.number}` } : null;
+}
+
+/** Inserts the title with its first copy in one batch, so a title never exists without it. */
+export async function createBookRecord(book: BookFields & { code: string }, copy: CopyFields) {
+  const db = await getDb();
+  const bookId = crypto.randomUUID();
+  const { categoryId, ...fields } = book;
+  await db.batch([
+    db.insert(books).values({
+      id: bookId,
+      ...fields,
+      categoryId,
+      ...derivedTitleColumns(book.title, book.author),
+      nextCopy: 2,
+    }),
+    db.insert(copies).values({ bookId, number: 1, code: `${book.code}.1`, ...copy }),
+  ]);
+  return { id: bookId, copyCode: `${book.code}.1` };
+}
+
+export async function createCopyRecord(
+  bookId: string,
+  number: number,
+  code: string,
+  copy: CopyFields,
+) {
+  const db = await getDb();
+  await db.insert(copies).values({ bookId, number, code, ...copy });
+}
+
+export async function updateCopyRecord(copyId: string, copy: CopyFields) {
+  const db = await getDb();
+  const rows = await db
+    .update(copies)
+    .set({ ...copy, updatedAt: new Date() })
+    .where(eq(copies.id, copyId))
+    .returning({ bookId: copies.bookId });
+  return rows[0]?.bookId ?? null;
+}
+
+/**
+ * Deletes a copy that no loan has ever named and returns its book id. A copy with loan history
+ * stays, so the history keeps its copy, and the result is null.
+ */
+export async function deleteCopyRecord(copyId: string) {
+  const db = await getDb();
+  const rows = await db.all<{ book_id: string }>(sql`
+    DELETE FROM ${copies}
+    WHERE ${copies.id} = ${copyId}
+      AND NOT EXISTS (SELECT 1 FROM ${borrowRequests} WHERE ${borrowRequests.copyId} = ${copyId})
+    RETURNING ${sql.identifier("book_id")}`);
+  return rows[0]?.book_id ?? null;
+}
+
+/** Inserts the donor unless the name exists, and returns the row either way. */
+export async function ensureDonor(name: string) {
+  const db = await getDb();
+  await db.insert(donors).values({ name }).onConflictDoNothing();
+  const [donor] = await db.select().from(donors).where(eq(donors.name, name)).limit(1);
+  return donor;
 }

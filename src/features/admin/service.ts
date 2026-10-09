@@ -1,5 +1,7 @@
 import { revalidatePath } from "next/cache";
+import { firstLendableCopyId, listLendableCopiesForPending } from "@/features/books/repository";
 import {
+  listPendingBorrowRequests,
   getBookActivity,
   getActiveUsers,
   getMonthlyActivity,
@@ -14,15 +16,7 @@ const LOAN_DAYS = 14;
 const UNRESOLVABLE = "La solicitud no existe o ya fue resuelta.";
 
 export async function getDetailedAdminStatsService() {
-  const bookActivity = await getBookActivity();
-
-  const popularBooks = bookActivity
-    .map((book) => ({
-      ...book,
-      popularityScore: book.borrowCount * 3 + book.heartsCount,
-    }))
-    .filter((book) => book.popularityScore > 0)
-    .sort((a, b) => b.popularityScore - a.popularityScore);
+  const popularBooks = await getBookActivity();
 
   const activeUsers = await getActiveUsers();
 
@@ -61,24 +55,44 @@ export async function getDetailedAdminStatsService() {
   };
 }
 
+/** Returns pending requests with the copies of each title that can be lent now. */
+export async function getPendingRequestsService() {
+  const [requests, lendable] = await Promise.all([
+    listPendingBorrowRequests(),
+    listLendableCopiesForPending(),
+  ]);
+  return requests.map((request) => ({
+    ...request,
+    lendableCopies: lendable.filter((copy) => copy.bookId === request.bookId),
+  }));
+}
+
+/**
+ * Approving assigns a copy: the one the librarian chose, or the lowest-numbered lendable copy.
+ */
 export async function updateBorrowStatusService(
   requestId: string,
   status: "approved" | "rejected",
   librarianId: string,
+  copyId?: string,
 ) {
   const now = new Date();
   const existing = await getBorrowRequest(requestId);
   if (existing?.status !== "pending") throw new UserError(UNRESOLVABLE);
 
   if (status === "approved") {
+    const chosen = copyId ?? (await firstLendableCopyId(existing.bookId));
+    if (!chosen) throw new UserError("Ningún ejemplar de este libro está disponible.");
+
     const dueDate = new Date(now.getTime() + LOAN_DAYS * 24 * 60 * 60 * 1000);
-    const approved = await approvePendingBorrowRequest(requestId, existing.bookId, {
+    const approved = await approvePendingBorrowRequest(requestId, chosen, {
       librarianId,
       approvedDate: now,
       dueDate,
     });
-    if (!approved)
-      throw new UserError("El libro no está disponible o la solicitud ya fue resuelta.");
+    if (!approved) {
+      throw new UserError("El ejemplar no está disponible o la solicitud ya fue resuelta.");
+    }
   } else if (
     !(await resolvePendingBorrowRequest(requestId, { status, librarianId, updatedAt: now }))
   ) {
@@ -90,7 +104,7 @@ export async function updateBorrowStatusService(
 
 export async function returnLoanService(requestId: string) {
   const loan = await getBorrowRequest(requestId);
-  if (loan?.status !== "approved" || !(await returnApprovedLoan(requestId, loan.bookId))) {
+  if (loan?.status !== "approved" || !(await returnApprovedLoan(requestId))) {
     throw new UserError("El préstamo no existe o ya fue devuelto.");
   }
 

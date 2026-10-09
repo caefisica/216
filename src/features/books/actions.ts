@@ -4,22 +4,29 @@ import { z } from "zod";
 import {
   authenticatedAction,
   staffAction,
+  getSession,
   getVerifiedUserId,
+  isVerifiedStaff,
 } from "@/features/auth/protected-action";
 import {
   AddBookImageSchema,
-  BookFieldsSchema,
+  AddCopySchema,
   BookIdSchema,
   BorrowRequestSchema,
+  CopyIdSchema,
+  CreateBookSchema,
+  CreateDonorSchema,
   ImageRefSchema,
   ImageUploadSchema,
   SearchSchema,
   SetHeartSchema,
   UpdateBookSchema,
+  UpdateCopySchema,
 } from "./schemas";
-import { listCategories, setHeartRecord } from "./repository";
+import { setHeartRecord } from "./repository";
 import {
   getBooksService,
+  getFacetsService,
   getFavoriteBooksService,
   getBookByIdService,
   uploadBookImageService,
@@ -29,20 +36,26 @@ import {
   deleteBookService,
   updateBookService,
   createBookService,
+  addCopyService,
+  updateCopyService,
+  deleteCopyService,
+  createDonorService,
   createBorrowRequestService,
 } from "./service";
 import { Err, Ok } from "@/lib/result";
 import type { ActionResult } from "@/lib/action";
-import type { BookDetailed } from "./types";
+import type { BookPage } from "./types";
 
 export async function getBooks(
   filters?: z.input<typeof SearchSchema>,
-): Promise<ActionResult<BookDetailed[]>> {
+): Promise<ActionResult<BookPage>> {
   const parsed = SearchSchema.safeParse(filters ?? {});
   if (!parsed.success) {
     return Err({ code: "invalid", message: "Los filtros de búsqueda no son válidos." });
   }
-  return Ok(await getBooksService(parsed.data, await getVerifiedUserId()));
+  const { user } = await getSession();
+  const staff = isVerifiedStaff(user);
+  return Ok(await getBooksService(parsed.data, user?.emailVerified ? user.id : null, staff));
 }
 
 export const getFavoriteBooks = authenticatedAction(z.object({}), async (_input, { user }) =>
@@ -68,8 +81,8 @@ export const createBorrowRequest = authenticatedAction(
   async ({ bookId, note }, session) => createBorrowRequestService(bookId, session.user.id, note),
 );
 
-export async function getCategories() {
-  return listCategories();
+export async function getFacets() {
+  return getFacetsService();
 }
 
 export const uploadBookImage = staffAction(ImageUploadSchema, async (file) =>
@@ -88,14 +101,30 @@ export const addBookImage = staffAction(AddBookImageSchema, async (input) =>
   addBookImageService(input),
 );
 
-export const deleteBook = staffAction(BookIdSchema, async ({ bookId }) => {
-  return deleteBookService(bookId);
-});
+export const deleteBook = staffAction(BookIdSchema, async ({ bookId }) =>
+  deleteBookService(bookId),
+);
 
-export const updateBook = staffAction(UpdateBookSchema, async ({ id, ...data }) => {
-  return updateBookService(id, data);
-});
+export const updateBook = staffAction(UpdateBookSchema, async ({ id, ...data }) =>
+  updateBookService(id, data),
+);
 
-export const createBook = staffAction(BookFieldsSchema, async (data) => {
-  return createBookService(data);
-});
+export const createBook = staffAction(CreateBookSchema, async ({ copy, ...data }) =>
+  createBookService(data, copy),
+);
+
+export const addCopy = staffAction(AddCopySchema, async ({ bookId, ...data }) =>
+  addCopyService(bookId, data),
+);
+
+export const updateCopy = staffAction(UpdateCopySchema, async ({ copyId, ...data }) =>
+  updateCopyService(copyId, data),
+);
+
+export const deleteCopy = staffAction(CopyIdSchema, async ({ copyId }) =>
+  deleteCopyService(copyId),
+);
+
+export const createDonor = staffAction(CreateDonorSchema, async ({ name }) =>
+  createDonorService(name),
+);
