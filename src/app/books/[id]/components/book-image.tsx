@@ -5,26 +5,29 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BookCover } from "@/components/catalogue/book-cover";
+import { cn } from "@/lib/utils";
 
 interface BookImageProps {
   images?: Array<{ imageUrl: string; altText?: string | null; isCover?: boolean }>;
   title?: string;
   author?: string | null;
   category?: string;
+  className?: string;
 }
 
-export function BookImage({ images = [], title = "Book cover", author, category }: BookImageProps) {
+export function BookImage({
+  images = [],
+  title = "Book cover",
+  author,
+  category,
+  className,
+}: BookImageProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const frame = cn("mx-auto mb-6 max-w-[15rem] lg:max-w-none", className);
 
   if (!images || images.length === 0) {
     return (
-      <BookCover
-        title={title}
-        author={author}
-        category={category}
-        className="mx-auto mb-6 max-w-[15rem] lg:max-w-none"
-        priority
-      />
+      <BookCover title={title} author={author} category={category} className={frame} priority />
     );
   }
 
@@ -35,7 +38,7 @@ export function BookImage({ images = [], title = "Book cover", author, category 
         author={author}
         category={category}
         imageUrl={images[0].imageUrl}
-        className="mx-auto mb-6 max-w-[15rem] lg:max-w-none"
+        className={frame}
         priority
       />
     );
@@ -43,7 +46,7 @@ export function BookImage({ images = [], title = "Book cover", author, category 
 
   // Multiple images - show carousel
   return (
-    <div className="mx-auto mb-6 max-w-[15rem] space-y-2 lg:max-w-none">
+    <div className={cn(frame, "space-y-2")}>
       <div className="relative">
         <BookCover
           title={title}

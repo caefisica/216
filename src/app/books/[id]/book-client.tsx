@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { BookImage } from "./components/book-image";
 import { BookActions } from "./components/book-actions";
 import { BookHeader } from "./components/book-header";
 import { BookDetails } from "./components/book-details";
-import { LIST_STORAGE_KEY } from "@/features/books/components/book-catalog";
+import { LIST_STORAGE_KEY } from "@/features/books/catalogue-state";
 import type { BookDetailed } from "@/features/books/types";
 import type { AuthUser } from "@/features/auth/core/session";
 import { useBookActions } from "./hooks/use-book-actions";
@@ -14,11 +17,14 @@ import { useBookActions } from "./hooks/use-book-actions";
 interface BookClientProps {
   book: BookDetailed;
   user: AuthUser | null;
+  variant?: "page" | "pane";
+  onClose?: () => void;
 }
 
-export default function BookClient({ book, user }: BookClientProps) {
+export default function BookClient({ book, user, variant = "page", onClose }: BookClientProps) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const inPane = variant === "pane";
 
   const {
     borrowing,
@@ -37,6 +43,7 @@ export default function BookClient({ book, user }: BookClientProps) {
   const canEdit = user?.role === "librarian" || user?.role === "admin";
 
   useEffect(() => {
+    if (inPane) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
       if (["INPUT", "TEXTAREA", "SELECT"].includes((event.target as HTMLElement).tagName)) return;
@@ -49,7 +56,53 @@ export default function BookClient({ book, user }: BookClientProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [book.id, router]);
+  }, [book.id, inPane, router]);
+
+  if (inPane) {
+    return (
+      <div
+        data-testid="catalogue-detail-pane"
+        className="surface flex min-h-[38rem] flex-col overflow-hidden"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <p className="eyebrow">Detalle del título</p>
+          <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/books/${book.id}`}>Abrir página</Link>
+            </Button>
+            <Button variant="ghost" size="icon" aria-label="Cerrar detalle" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-4 p-4">
+          <div className="grid grid-cols-[8rem_minmax(0,1fr)] items-start gap-4">
+            <BookImage
+              images={book.images}
+              title={book.title}
+              author={book.author}
+              category={book.category.name}
+              className="mb-0 max-w-none"
+            />
+            <BookHeader book={book} canEdit={canEdit} compact />
+          </div>
+          <BookActions
+            book={book}
+            isHearted={isHearted}
+            heartsCount={heartsCount}
+            onHeart={handleToggleHeart}
+            dialogOpen={dialogOpen}
+            setDialogOpen={setDialogOpen}
+            borrowNote={borrowNote}
+            setBorrowNote={setBorrowNote}
+            borrowing={borrowing}
+            onBorrowRequest={handleBorrowRequest}
+          />
+          <BookDetails book={book} canEdit={canEdit} copiesLayout="stacked" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -6,9 +6,10 @@ import type { BookDetailed } from "@/features/books/types";
 interface BookDetailsProps {
   book: BookDetailed;
   canEdit: boolean;
+  copiesLayout?: "table" | "stacked";
 }
 
-export function BookDetails({ book, canEdit }: BookDetailsProps) {
+export function BookDetails({ book, canEdit, copiesLayout }: BookDetailsProps) {
   return (
     <>
       {book.description && (
@@ -28,10 +29,11 @@ export function BookDetails({ book, canEdit }: BookDetailsProps) {
         <div className="mb-3 flex items-end justify-between gap-3">
           <h3 className="text-base font-semibold">Ejemplares</h3>
           <p className="text-xs text-muted-foreground">
-            {book.lendableCount} disponibles de {book.copies.length}
+            {book.lendableCount} disponible{book.lendableCount === 1 ? "" : "s"} de{" "}
+            {book.copies.length}
           </p>
         </div>
-        <CopiesTable copies={book.copies} canEdit={canEdit} />
+        <CopiesTable copies={book.copies} canEdit={canEdit} layout={copiesLayout} />
         {book.isbn && <p className="mt-4 text-sm text-muted-foreground">ISBN {book.isbn}</p>}
       </div>
     </>

@@ -56,21 +56,27 @@ export function BookCover({
   return (
     <div
       role="img"
-      className={cn(frame, paletteFor(category), "flex flex-col justify-between p-4 sm:p-5")}
+      className={cn(frame, paletteFor(category), "@container")}
       aria-label={`Portada generada de ${title}`}
     >
-      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] opacity-65">
-        Biblioteca 216
-      </span>
-      <div>
-        <p className="line-clamp-5 font-serif text-[clamp(1rem,3vw,1.55rem)] font-semibold leading-[1.08] tracking-tight">
-          {title}
-        </p>
-        {author && <p className="mt-3 line-clamp-2 text-xs font-medium opacity-75">{author}</p>}
+      <div className="absolute inset-0 flex flex-col justify-between p-[clamp(0.5rem,9cqi,1.25rem)]">
+        <span className="truncate text-[0.6rem] font-semibold uppercase tracking-[0.18em] opacity-65">
+          Biblioteca 216
+        </span>
+        <div className="min-w-0">
+          <p className="line-clamp-5 font-serif text-[clamp(0.8rem,10.5cqi,1.55rem)] font-semibold leading-[1.08] tracking-tight break-words">
+            {title}
+          </p>
+          {author && (
+            <p className="mt-[6cqi] line-clamp-2 text-[clamp(0.6rem,5.5cqi,0.75rem)] font-medium opacity-75">
+              {author}
+            </p>
+          )}
+        </div>
+        <span className="line-clamp-3 text-[clamp(0.55rem,4.5cqi,0.65rem)] font-semibold uppercase tracking-[0.16em] opacity-60">
+          {category}
+        </span>
       </div>
-      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] opacity-60">
-        {category}
-      </span>
     </div>
   );
 }

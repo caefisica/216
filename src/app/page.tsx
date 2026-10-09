@@ -1,10 +1,11 @@
 import { getSession, getVerifiedUserId, isVerifiedStaff } from "@/features/auth/protected-action";
 import { SearchSchema } from "@/features/books/schemas";
-import { getBooksService, getFacetsService } from "@/features/books/service";
+import { getBookByIdService, getBooksService, getFacetsService } from "@/features/books/service";
 import { getLoanCounts } from "@/features/loans/repository";
 import { BookCatalog } from "@/features/books/components/book-catalog";
 import { AdminDashboard } from "@/features/admin/components/admin-dashboard";
 import { getLibraryCounts } from "@/features/readers/repository";
+import { isErr } from "@/lib/result";
 
 export default async function HomePage({
   searchParams,
@@ -12,14 +13,17 @@ export default async function HomePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { user } = await getSession();
-  const parsed = SearchSchema.safeParse(await searchParams);
+  const params = await searchParams;
+  const parsed = SearchSchema.safeParse(params);
   const filters = parsed.success ? parsed.data : {};
   const staff = isVerifiedStaff(user);
+  const selectedBookId = typeof params.book === "string" ? params.book : undefined;
 
-  const [initialPage, facets, counts] = await Promise.all([
+  const [initialPage, facets, counts, selectedBookResult] = await Promise.all([
     getBooksService(filters, await getVerifiedUserId(), staff),
     getFacetsService(),
     staff ? null : getLibraryCounts(),
+    selectedBookId ? getBookByIdService(selectedBookId, await getVerifiedUserId()) : null,
   ]);
 
   const catalogue = (
@@ -29,6 +33,10 @@ export default async function HomePage({
       facets={facets}
       staff={staff}
       counts={counts}
+      user={user?.emailVerified ? user : null}
+      initialSelectedBook={
+        selectedBookResult && !isErr(selectedBookResult) ? selectedBookResult.value : null
+      }
     />
   );
 
