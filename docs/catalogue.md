@@ -298,10 +298,10 @@ the existing-title editor uses
   ejemplar_, which adds a default copy to that title, so a second copy does not
   become a duplicate title.
 - Intake asks for the title, author, ISBN, category and number of copies. It
-  shows a generated cover until a stored cover exists. Codes and default copy
-  data, including the category's default location when one is unambiguous, are
-  generated when the form is saved. Later copies use the category's extra bay
-  when one is configured.
+  shows a generated cover, because a new title has no stored cover. Codes and
+  default copy data, including the category's default location when one is
+  unambiguous, are generated when the form is saved. Later copies use the
+  category's extra bay when one is configured.
 - Saving shows the issued copy code in large type, for the librarian to write on
   the spine and offers _Agregar otro_.
 - Edit changes the title fields, adds, edits and deletes copies, manages the

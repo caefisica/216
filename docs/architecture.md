@@ -81,8 +81,12 @@ See [accounts and roles](auth.md).
 
 - Server components may import a repository for a page read. Client components
   never import repositories; they call server actions for mutations.
-- `scripts/fetch-covers.ts` reads the D1 and R2 bindings through the Wrangler
-  proxy; application code accesses those bindings through its existing helpers.
+- Application code reaches D1 only through `getDb` in
+  [`src/lib/db/index.ts`](../src/lib/db/index.ts) and R2 only through
+  [`src/lib/storage.ts`](../src/lib/storage.ts), whose objects are served at
+  `/media`. `src/lib/db/seed.ts` and `scripts/fetch-covers.ts` run outside the
+  Worker and read `env.DB` through `getPlatformProxy`; `scripts/fetch-covers.ts`
+  also reads the R2 bucket binding that way.
 - Stored image URLs are `/media/<key>` paths, never absolute URLs, so the bucket
   needs no public address.
 - Password and session code uses Web Crypto and `@oslojs`, not Node-only APIs,

@@ -16,8 +16,9 @@ The public interface uses a short, consistent scale:
 
 Admin pages use the same type scale, spacing, surfaces, borders and buttons. The
 loans desk keeps the queue dense on wide screens and stacks each row below 768
-pixels. Intake shows the generated or stored cover beside the fields, with one
-primary action and an inline error under each invalid field.
+pixels. Intake shows a generated cover beside the fields, because a new title
+has no stored cover, with one primary action and an inline error under each
+invalid field.
 
 ## Components
 
