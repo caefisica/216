@@ -23,9 +23,8 @@ bun run db:seed
 ```
 
 `bun run dev` applies the migrations in [`migrations/`](migrations) to the local
-database, which also adds the book categories, then starts Next.js.
-`bun run db:seed` adds three demo accounts and two books to that database, and
-is safe to repeat.
+database, then starts Next.js. `bun run db:seed` adds three demo accounts and
+the librarians' catalogue to that database, and is safe to repeat.
 
 Open <http://localhost:3000> and sign in as `admin@unmsm.edu.pe` with the
 password `password123`. Demo accounts are listed in
@@ -34,12 +33,14 @@ password `password123`. Demo accounts are listed in
 
 ## What you can do
 
-- Search the catalogue by title, author or description, and filter by category
-  and status.
+- Search the catalogue by title, author or copy code, and filter by category,
+  cabinet, donor and availability.
 - Favorite books and request a loan with a note.
-- Approve or reject loan requests as a librarian. An approved request sets a
-  14-day due date.
-- Create, edit and delete books and upload cover images as a librarian.
+- Approve or reject loan requests as a librarian, choosing which copy goes out.
+  An approved request sets a 14-day due date.
+- Register titles and their physical copies (each with a code for the spine, a
+  place, a donor and a condition), edit them and upload cover images as a
+  librarian.
 - Change user roles and suspend users as an admin.
 - Read the activity dashboard: popular books, active users, monthly borrows.
 - Sign up and confirm the account with a six-digit code, and reset a password
@@ -62,8 +63,8 @@ production, sending either email fails until `RESEND_API_KEY` is set. See
 
 ## Documentation
 
-- [Manual](docs/readme.md): database, configuration, deployment, accounts and
-  roles, borrowing.
+- [Manual](docs/readme.md): database, catalogue, configuration, deployment,
+  accounts and roles, borrowing.
 - [Architecture](architecture.md): the code map.
 - [Contributing](contributing.md): setup, checks and conventions.
 

@@ -22,17 +22,39 @@ for a moment.
 `bun run pages:build` builds without uploading. After it, `bun run preview`
 serves the built Worker locally, with local D1 and R2.
 
-## Before the first deploy in a new account
+## First deploy in a new account
 
 1. Create the database: `bunx wrangler d1 create 216`. Put the returned
    `database_id` in `wrangler.jsonc` under `d1_databases`.
 2. Create the bucket: `bunx wrangler r2 bucket create 216-storage`. Keep the
    binding name `_216_storage`.
-3. Run `bun run deploy`. Migrations create the tables and the book categories.
-4. Set the Resend API key: `bunx wrangler secret put RESEND_API_KEY`. See
+3. Run `bun run deploy`. Migrations create the tables, but no categories or
+   books: staff cannot register a title until the categories exist.
+4. [Load the catalogue](#load-the-catalogue).
+5. Set the Resend API key: `bunx wrangler secret put RESEND_API_KEY`. See
    [Email](#email).
+6. [Create the first admin](#first-admin).
 
 The images need no public bucket URL, because the Worker serves them.
+
+## Load the catalogue
+
+`bun run db:seed` writes to the local database only. To fill the production
+database, render the same seed as one SQL file and apply it with Wrangler, after
+the migrations:
+
+```bash
+bun run db:seed:sql
+bunx wrangler d1 execute DB --remote --file catalogue.sql
+```
+
+`catalogue.sql` is ignored by git. It holds the categories, locations, donors,
+titles and copies of the register, and no accounts. Every insert skips rows that
+exist, so the file is safe to apply again and keeps edits the librarians made
+since. Run it after any migration that empties the catalogue, such as
+`0003_catalogue`, which deletes the books, loans, favorites and images, so
+export a copy first (see [Production database](#production-database)). What the
+seed holds is in [database](database.md#seeds).
 
 ## Email
 
@@ -69,7 +91,8 @@ same in the local database.
 ## Production database
 
 Deploying applies migrations and nothing else. The demo seed never runs in
-production. To look at the data:
+production, and the catalogue is loaded by hand (see
+[Load the catalogue](#load-the-catalogue)). To look at the data:
 
 ```bash
 bunx wrangler d1 execute DB --remote --command "SELECT count(*) FROM books"

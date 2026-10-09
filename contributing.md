@@ -11,8 +11,9 @@ bun run db:seed
 ```
 
 `bun run dev` applies the migrations to a local D1 database in `.wrangler/state`
-and starts Next.js. `bun run db:seed` adds demo accounts and books. Neither
-touches production. See [database](docs/database.md).
+and starts Next.js. `bun run db:seed` adds demo accounts and the catalogue.
+Neither touches production; [deployment](docs/deployment.md#load-the-catalogue)
+loads the catalogue there. See [database](docs/database.md).
 
 Read [architecture](architecture.md) for where code lives.
 

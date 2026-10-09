@@ -11,7 +11,8 @@ schema is defined in `src/lib/db/schema/`. The SQL that creates it is in
 | `bun run db:migrate`            | Apply pending migrations to the local database.                |
 | `bun run db:migrate:production` | Apply pending migrations to the production database.           |
 | `bun run db:generate`           | Write a new migration from the difference to the schema files. |
-| `bun run db:seed`               | Add the demo accounts and books to the local database.         |
+| `bun run db:seed`               | Add the demo accounts and the catalogue to the local database. |
+| `bun run db:seed:sql`           | Write the catalogue as `catalogue.sql` for production.         |
 | `bun run admin:create`          | Create or promote an admin. `--remote` targets production.     |
 
 `bun run dev` runs `db:migrate` first. The local database lives in
@@ -32,16 +33,68 @@ each file once, in order. A migration that fails is rolled back.
 4. Commit the schema change with the migration. Never edit a migration that has
    been applied in production; add a new one.
 
-The book categories are inserted by `migrations/0001_categories.sql`, so every
-database has them, including production.
+Migrations change structure. The categories and the rest of the catalogue come
+from the seed below; production gets them as
+[a SQL file](deployment.md#load-the-catalogue). Migration `0003_catalogue`
+replaces the catalogue tables instead of altering them: it deletes the books,
+loans, favorites and images that existed, because the old rows have no copy to
+bind to. Run it on a database whose catalogue you can load again from the seed.
 
 ## Seeds
 
-[`seeds/demo.ts`](../src/lib/db/seeds/demo.ts) inserts three accounts and two
-books through `bun run db:seed`, which only ever writes to the local database.
-Every insert does nothing when the row exists, so the seed is safe to repeat.
-Changing `SEED_PASSWORD` does not change the password of an account that already
-exists.
+[`seed.ts`](../src/lib/db/seed.ts) is the entry point of `bun run db:seed`. It
+runs two seeds and only ever writes to the local database. Every insert does
+nothing when the row exists, so the seed is safe to repeat and never overwrites
+an edit.
+
+- [`seeds/demo.ts`](../src/lib/db/seeds/demo.ts) inserts three accounts.
+  Changing `SEED_PASSWORD` does not change the password of an account that
+  already exists.
+- [`seeds/catalogue.ts`](../src/lib/db/seeds/catalogue.ts) inserts the
+  librarians' register: 36 categories, 28 locations, 40 donors, 524 titles and
+  579 copies. Ids are version 5 UUIDs derived from codes and names
+  ([`seeds/ids.ts`](../src/lib/db/seeds/ids.ts)), so every host gets the same
+  rows. D1 allows 100 bound parameters per statement, so the inserts are chunked
+  to stay under it.
+
+The catalogue seed reads
+[`seeds/catalogue.json`](../src/lib/db/seeds/catalogue.json), a normalised copy
+of the register, so no host needs the workbook or Python. Regenerate it, and
+read the review file, when the librarians change the register:
+
+```bash
+python3 -I scripts/convert-register.py "<path to the register>.xlsx"
+```
+
+[`convert-register.py`](../scripts/convert-register.py) uses the Python standard
+library and writes `catalogue.json` and
+[`catalogue.review.csv`](../src/lib/db/seeds/catalogue.review.csv). The
+converter:
+
+- reads each sheet's header row, so column order does not matter, and each block
+  (`COPIAS`, `PERDIDOS`, `metadata`) separately;
+- skips the superseded `Matemática Básica` and `Matemática Básica 1` sheets;
+- trims text and repairs the spellings it knows (`tipo`, donors, accents);
+- drops blank rows, placeholder codes (`CALB00.1`), repeated rows and rows with
+  no title, and gives uncoded rows a new code from the category counter;
+- repairs codes whose subcategory disagrees with the subcategory column;
+- applies a small table of per-row overrides for what a rule cannot fix (title
+  and author swapped, a publisher in the donor column).
+
+The review file has one row per decision: `kind`, `sheet`, `row`, `code`, `what`
+and `detail`. The kinds are `skipped sheet`, `dropped`, `repaired`, `merged`,
+`guess`, `condition`, `proposal` and `check`. The librarians read it to confirm
+the guesses and the subcategory names.
+
+### Seeding production
+
+`bun run db:seed:sql` writes the catalogue seed, and only that, to the
+git-ignored `catalogue.sql` ([`seed-sql.ts`](../src/lib/db/seed-sql.ts)). It
+builds the statements with the same code as `db:seed` and writes their values
+into the SQL, because `wrangler d1 execute --file` takes no bound parameters. A
+test applies the file to an empty database with Wrangler and checks that it
+holds the same rows as `db:seed`. The commands to apply it are in
+[deployment](deployment.md#load-the-catalogue).
 
 ### Demo data
 
@@ -52,8 +105,7 @@ exists.
 | `student@unmsm.edu.pe`   | user      |
 
 All three share one password: `SEED_PASSWORD`, or `password123` when it is
-unset. The accounts are created already email-verified. The demo books are
-_Principles of Quantum Mechanics_ and _Cosmos_.
+unset. The accounts are created already email-verified.
 
 ## Types and defaults
 
@@ -61,9 +113,15 @@ _Principles of Quantum Mechanics_ and _Cosmos_.
 - Timestamps are integers in milliseconds, which Drizzle reads as `Date`.
   Columns the app does not set default to the current time in SQL.
 - Booleans are `0` or `1`, which Drizzle reads as `boolean`.
-- Book and loan statuses are text with a `CHECK` constraint.
-- Search is case-insensitive through SQLite's `LIKE`, which ignores case for
-  ASCII letters only. A search for `ángel` does not match `Ángel`.
+- Copy and loan statuses, a copy's origin and condition, and a location's
+  `holds` are text with a `CHECK` constraint.
+- Search runs `LIKE` on `books.search`, the title and author lowercased with
+  accents removed, because `LIKE` ignores case for ASCII letters only.
+  `books.title_key` is the normalised title the list orders by. The app sets
+  both columns on every write
+  ([`derivedTitleColumns`](../src/features/books/search.ts)).
+- D1 allows 100 bound parameters per statement. Code that selects rows "in a
+  list of ids" uses a subquery or a join, not `IN (?, ?, …)`.
 - A subquery that counts rows for the outer table must name the outer column
   with `outer()` from [`qualified.ts`](../src/lib/db/qualified.ts). Drizzle
   drops the table name in a single-table query, and an unqualified `id` inside
@@ -71,18 +129,36 @@ _Principles of Quantum Mechanics_ and _Cosmos_.
 
 ## Tables
 
-| Table                                                   | Holds                           |
-| ------------------------------------------------------- | ------------------------------- |
-| `user`, `session`                                       | Accounts and sign-in sessions.  |
-| `email_verification_request`, `password_reset_session`  | One-time codes.                 |
-| `books`, `categories`, `book_categories`, `book_images` | The catalogue.                  |
-| `user_book_hearts`                                      | Favorites.                      |
-| `borrow_requests`                                       | Loan requests and their status. |
-| `rate_limit`                                            | Counters behind rate limits.    |
-| `donors`, `donations`                                   | The donors page.                |
+| Table                                                  | Holds                                       |
+| ------------------------------------------------------ | ------------------------------------------- |
+| `user`, `session`                                      | Accounts and sign-in sessions.              |
+| `email_verification_request`, `password_reset_session` | One-time codes.                             |
+| `categories`                                           | Categories, two levels deep.                |
+| `books`, `book_images`                                 | Titles and their images.                    |
+| `copies`                                               | Physical copies of a title.                 |
+| `locations`                                            | Bays of cabinets, where copies stand.       |
+| `donors`                                               | Credit lines for the people who gave books. |
+| `user_book_hearts`                                     | Favorites.                                  |
+| `borrow_requests`                                      | Loan requests and their status.             |
+| `rate_limit`                                           | Counters behind rate limits.                |
+
+The columns and the reasons for the catalogue tables are in
+[catalogue](catalogue.md).
 
 Unique indexes enforce rules that concurrent requests could otherwise break: one
-`pending` request per user and book (`borrow_requests_pending_idx`), one image
-row per stored object (`book_images_image_url_idx`) and one favorite per user
-and book (`user_book_hearts_user_book_idx`). Code that writes these tables
-inserts and handles the conflict instead of checking first.
+`pending` request per user and book (`borrow_requests_pending_idx`), one
+`approved` loan per copy (`borrow_requests_active_copy_idx`), one image row per
+stored object (`book_images_image_url_idx`) and one favorite per user and book
+(`user_book_hearts_user_book_idx`). Code that writes these tables inserts and
+handles the conflict instead of checking first.
+
+Plain indexes serve the reads that run on every page:
+`books_title_key_idx (title_key, code)` for the list order, `books_code_unique`,
+`copies_code_unique` and `copies_book_number_unique (book_id, number)` for code
+lookups and the per-title copy reads, `copies_location_idx` and
+`copies_donor_idx` for the place and donor filters,
+`borrow_requests_user_idx (user_id, request_date)`, `borrow_requests_book_idx`
+and `borrow_requests_date_idx` for the loan lists and the activity report, and
+`book_images_book_idx` and `user_book_hearts_book_idx` for the per-title images
+and favorite counts. A foreign key column without an index is a scan on every
+cascade delete, so each one that a screen or a delete reads has one.
