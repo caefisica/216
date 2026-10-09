@@ -32,9 +32,10 @@ export default async function HomePage({
     ]);
 
     return (
-      <main className="container mx-auto px-6 py-12">
+      <main className="container mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8">
         <AdminDashboard
           catalogue={catalogue}
+          facets={facets}
           initialPendingRequests={initialPendingRequests}
           initialActiveLoans={initialActiveLoans}
         />
@@ -42,5 +43,5 @@ export default async function HomePage({
     );
   }
 
-  return <main className="container mx-auto px-6 py-12">{catalogue}</main>;
+  return <main className="container mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8">{catalogue}</main>;
 }

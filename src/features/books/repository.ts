@@ -26,7 +26,13 @@ import {
 import { alias } from "drizzle-orm/sqlite-core";
 import { codeRange, derivedTitleColumns, looksLikeCode, normalizeSearch } from "./search";
 import { activeLoanId, copyCount, copyIsLendable, hasLendableCopy, lendableCopyCount } from "./sql";
-import { PAGE_SIZE, type BookFields, type BookFilters, type CopyFields } from "./schemas";
+import {
+  PAGE_SIZE,
+  type BookFields,
+  type BookFilters,
+  type CopyFields,
+  type LocationFields,
+} from "./schemas";
 import type {
   BookListItem,
   BookPage,
@@ -383,7 +389,7 @@ export async function listLocations(): Promise<LocationOption[]> {
 
 export async function listFacets(): Promise<CatalogueFacets> {
   const db = await getDb();
-  const [rows, places, donorRows] = await Promise.all([
+  const [rows, places, donorRows, healthRows] = await Promise.all([
     db
       .select({
         ...getTableColumns(categories),
@@ -402,12 +408,20 @@ export async function listFacets(): Promise<CatalogueFacets> {
       .select({
         id: donors.id,
         name: donors.name,
+        motivation: donors.motivation,
         copyCount: sql<number>`count(${copies.id})`.mapWith(Number),
       })
       .from(donors)
       .leftJoin(copies, eq(copies.donorId, donors.id))
       .groupBy(donors.id)
       .orderBy(donors.name),
+    db
+      .select({
+        status: copies.status,
+        count: count(),
+      })
+      .from(copies)
+      .groupBy(copies.status),
   ]);
 
   const nodes = new Map<string, CategoryNode>(
@@ -432,7 +446,25 @@ export async function listFacets(): Promise<CatalogueFacets> {
     else cabinets.push({ cabinet, shelves: [shelf] });
   }
 
-  return { categories: roots, cabinets, donors: donorRows };
+  const copyHealth = {
+    present: 0,
+    maintenance: 0,
+    missing: 0,
+    unlabelled: 0,
+    unplaced: 0,
+  };
+  for (const row of healthRows) copyHealth[row.status] = Number(row.count);
+  const [[{ count: unlabelled }], [{ count: unplaced }]] = await Promise.all([
+    db.select({ count: count() }).from(copies).where(eq(copies.labelled, false)),
+    db
+      .select({ count: count() })
+      .from(copies)
+      .where(sql`${copies.locationId} IS NULL`),
+  ]);
+  copyHealth.unlabelled = Number(unlabelled);
+  copyHealth.unplaced = Number(unplaced);
+
+  return { categories: roots, cabinets, donors: donorRows, copyHealth };
 }
 
 export async function getBookImageById(imageId: string, bookId: string) {
@@ -641,9 +673,41 @@ export async function deleteCopyRecord(copyId: string) {
 }
 
 /** Inserts the donor unless the name exists, and returns the row either way. */
-export async function ensureDonor(name: string) {
+export async function ensureDonor(name: string, motivation: string | null = null) {
   const db = await getDb();
-  await db.insert(donors).values({ name }).onConflictDoNothing();
+  await db.insert(donors).values({ name, motivation }).onConflictDoNothing();
   const [donor] = await db.select().from(donors).where(eq(donors.name, name)).limit(1);
   return donor;
+}
+
+export async function createLocationRecord(data: LocationFields) {
+  const db = await getDb();
+  const [location] = await db
+    .insert(locations)
+    .values({ id: crypto.randomUUID(), ...data })
+    .returning();
+  return location;
+}
+
+export async function updateDonorRecord(
+  id: string,
+  data: { name: string; motivation: string | null },
+) {
+  const db = await getDb();
+  const [donor] = await db
+    .update(donors)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(donors.id, id))
+    .returning({ id: donors.id, name: donors.name, motivation: donors.motivation });
+  return donor;
+}
+
+export async function updateLocationRecord(id: string, data: LocationFields) {
+  const db = await getDb();
+  const [location] = await db
+    .update(locations)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(locations.id, id))
+    .returning();
+  return location;
 }

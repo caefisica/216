@@ -19,13 +19,14 @@ interface CopyFormProps {
 }
 
 export function CopyForm({ draft, onChange, locations, donors }: CopyFormProps) {
-  const donorList = useId();
+  const fieldId = useId();
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       <div>
-        <Label>Origen</Label>
+        <Label htmlFor={`${fieldId}-origin`}>Origen</Label>
         <select
+          id={`${fieldId}-origin`}
           className={selectClass}
           value={draft.origin}
           onChange={(e) => onChange({ origin: e.target.value as CopyOrigin })}
@@ -38,12 +39,17 @@ export function CopyForm({ draft, onChange, locations, donors }: CopyFormProps) 
         </select>
       </div>
       <div>
-        <Label>Tomo</Label>
-        <Input value={draft.volume} onChange={(e) => onChange({ volume: e.target.value })} />
+        <Label htmlFor={`${fieldId}-volume`}>Tomo</Label>
+        <Input
+          id={`${fieldId}-volume`}
+          value={draft.volume}
+          onChange={(e) => onChange({ volume: e.target.value })}
+        />
       </div>
       <div>
-        <Label>Piezas</Label>
+        <Label htmlFor={`${fieldId}-pieces`}>Piezas</Label>
         <Input
+          id={`${fieldId}-pieces`}
           type="number"
           min={1}
           value={draft.pieces}
@@ -51,28 +57,42 @@ export function CopyForm({ draft, onChange, locations, donors }: CopyFormProps) 
         />
       </div>
       <div>
-        <Label>Edición</Label>
-        <Input value={draft.edition} onChange={(e) => onChange({ edition: e.target.value })} />
+        <Label htmlFor={`${fieldId}-edition`}>Edición</Label>
+        <Input
+          id={`${fieldId}-edition`}
+          value={draft.edition}
+          onChange={(e) => onChange({ edition: e.target.value })}
+        />
       </div>
       <div>
-        <Label>Año</Label>
+        <Label htmlFor={`${fieldId}-year`}>Año</Label>
         <Input
+          id={`${fieldId}-year`}
           type="number"
           value={draft.year}
           onChange={(e) => onChange({ year: e.target.value })}
         />
       </div>
       <div>
-        <Label>País</Label>
-        <Input value={draft.country} onChange={(e) => onChange({ country: e.target.value })} />
+        <Label htmlFor={`${fieldId}-country`}>País</Label>
+        <Input
+          id={`${fieldId}-country`}
+          value={draft.country}
+          onChange={(e) => onChange({ country: e.target.value })}
+        />
       </div>
       <div className="col-span-2">
-        <Label>Editorial</Label>
-        <Input value={draft.publisher} onChange={(e) => onChange({ publisher: e.target.value })} />
+        <Label htmlFor={`${fieldId}-publisher`}>Editorial</Label>
+        <Input
+          id={`${fieldId}-publisher`}
+          value={draft.publisher}
+          onChange={(e) => onChange({ publisher: e.target.value })}
+        />
       </div>
       <div className="col-span-2">
-        <Label>Ubicación</Label>
+        <Label htmlFor={`${fieldId}-location`}>Ubicación</Label>
         <select
+          id={`${fieldId}-location`}
           className={selectClass}
           value={draft.locationId}
           onChange={(e) => onChange({ locationId: e.target.value })}
@@ -87,22 +107,24 @@ export function CopyForm({ draft, onChange, locations, donors }: CopyFormProps) 
         </select>
       </div>
       <div className="col-span-2">
-        <Label>Donante</Label>
+        <Label htmlFor={`${fieldId}-donor`}>Donante</Label>
         <Input
-          list={donorList}
+          id={`${fieldId}-donor`}
+          list={`${fieldId}-donors`}
           placeholder="Sin donante"
           value={draft.donorName}
           onChange={(e) => onChange({ donorName: e.target.value })}
         />
-        <datalist id={donorList}>
+        <datalist id={`${fieldId}-donors`}>
           {donors.map((donor) => (
             <option key={donor.id} value={donor.name} />
           ))}
         </datalist>
       </div>
       <div>
-        <Label>Estado</Label>
+        <Label htmlFor={`${fieldId}-status`}>Estado</Label>
         <select
+          id={`${fieldId}-status`}
           className={selectClass}
           value={draft.status}
           onChange={(e) => onChange({ status: e.target.value as CopyStatus })}
@@ -115,8 +137,9 @@ export function CopyForm({ draft, onChange, locations, donors }: CopyFormProps) 
         </select>
       </div>
       <div>
-        <Label>Condición</Label>
+        <Label htmlFor={`${fieldId}-condition`}>Condición</Label>
         <select
+          id={`${fieldId}-condition`}
           className={selectClass}
           value={draft.condition}
           onChange={(e) => onChange({ condition: e.target.value as CopyCondition | "" })}
@@ -138,8 +161,12 @@ export function CopyForm({ draft, onChange, locations, donors }: CopyFormProps) 
         Código escrito en el lomo
       </label>
       <div className="col-span-2 md:col-span-4">
-        <Label>Notas</Label>
-        <Input value={draft.notes} onChange={(e) => onChange({ notes: e.target.value })} />
+        <Label htmlFor={`${fieldId}-notes`}>Notas</Label>
+        <Input
+          id={`${fieldId}-notes`}
+          value={draft.notes}
+          onChange={(e) => onChange({ notes: e.target.value })}
+        />
       </div>
     </div>
   );

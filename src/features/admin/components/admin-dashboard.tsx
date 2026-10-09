@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AdminStats } from "./admin-stats";
 import { UserManagement } from "./user-management";
 import { BorrowingTimeline } from "./borrowing-timeline";
+import { CatalogueManagement } from "../../books/components/catalogue-management";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +20,7 @@ import {
   CheckCircle2,
   XCircle,
   Undo2,
+  MapPin,
 } from "lucide-react";
 import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
@@ -30,15 +32,18 @@ import {
   updateBorrowStatus,
 } from "../actions";
 import type { ActiveLoan, PendingRequest } from "../types";
+import type { CatalogueFacets, LocationOption } from "../../books/types";
 
 interface AdminDashboardProps {
   catalogue: ReactNode;
+  facets: CatalogueFacets & { locations: LocationOption[] };
   initialPendingRequests: PendingRequest[];
   initialActiveLoans: ActiveLoan[];
 }
 
 export function AdminDashboard({
   catalogue,
+  facets,
   initialPendingRequests,
   initialActiveLoans,
 }: AdminDashboardProps) {
@@ -88,32 +93,32 @@ export function AdminDashboard({
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
+    <div className="space-y-5">
+      <div className="flex flex-col items-start justify-between gap-3 border-b pb-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">
-            Gestión de Biblioteca
-          </h1>
-          <p className="text-gray-500 mt-1 font-medium">Panel de administración v2.0</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+            216 · gestión
+          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">Colección</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Inventario, préstamos y tareas de sala en un solo lugar.
+          </p>
         </div>
-        <Button
-          asChild
-          className="shadow-lg hover:shadow-xl transition-all duration-200 h-11 px-6 text-sm font-semibold"
-        >
+        <Button asChild className="h-10 px-4 text-sm font-semibold">
           <Link href="/admin/books/create">
-            <Plus className="h-5 w-5 mr-1" /> Nuevo Libro
+            <Plus /> Nuevo título
           </Link>
         </Button>
       </div>
 
       <Tabs defaultValue="books" className="space-y-8">
-        <div className="flex flex-col xl:flex-row justify-between gap-6 overflow-x-auto pb-2 scrollbar-hide">
-          <TabsList className="h-12 p-1.5 bg-gray-100/80 rounded-2xl border">
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="h-10 rounded-lg border bg-gray-100 p-1">
             {[
               { value: "books", label: "Colección", icon: <BookOpen className="h-4 w-4" /> },
               {
                 value: "requests",
-                label: `Préstamos (${pendingRequests.length + activeLoans.length})`,
+                label: `Préstamos · ${pendingRequests.length + activeLoans.length}`,
                 icon: <Clock className="h-4 w-4" />,
               },
               { value: "users", label: "Usuarios", icon: <UserCog className="h-4 w-4" /> },
@@ -123,11 +128,12 @@ export function AdminDashboard({
                 label: "Estadísticas",
                 icon: <BarChart3 className="h-4 w-4" />,
               },
+              { value: "management", label: "Sala", icon: <MapPin className="h-4 w-4" /> },
             ].map((tab) => (
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-xs data-[state=active]:text-blue-600 transition-all font-semibold text-xs"
+                className="rounded-md px-3 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-xs sm:px-4"
               >
                 {tab.icon}
                 <span className="ml-2 hidden sm:inline">{tab.label}</span>
@@ -304,6 +310,10 @@ export function AdminDashboard({
 
         <TabsContent value="analytics" className="focus-visible:outline-hidden">
           <AdminStats />
+        </TabsContent>
+
+        <TabsContent value="management" className="focus-visible:outline-hidden">
+          <CatalogueManagement facets={facets} />
         </TabsContent>
       </Tabs>
     </div>

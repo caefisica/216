@@ -11,7 +11,7 @@ interface BookHeaderProps {
 export function BookHeader({ book, canEdit }: BookHeaderProps) {
   const { category } = book;
   return (
-    <div className="flex justify-between items-start mb-6">
+    <div className="mb-5 flex items-start justify-between gap-3 border-b pb-5">
       <div className="flex-1">
         <p className="mb-2 text-sm text-gray-500">
           <Link
@@ -30,19 +30,21 @@ export function BookHeader({ book, canEdit }: BookHeaderProps) {
           )}
           <span className="ml-3 font-mono text-xs">{book.code}</span>
         </p>
-        <h1 className="text-3xl font-bold tracking-tight mb-3">{book.title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">
+          {book.title}
+        </h1>
         {book.author && (
-          <div className="flex items-center text-lg text-gray-600 mb-4">
+          <div className="mb-2 flex items-center text-base text-gray-600">
             <User className="h-5 w-5 mr-2" />
             {book.author}
           </div>
         )}
       </div>
       {canEdit && (
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" size="sm">
           <Link href={`/admin/books/${book.id}`}>
             <Edit className="h-4 w-4 mr-2" />
-            Editar
+            Editar título
           </Link>
         </Button>
       )}

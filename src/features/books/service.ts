@@ -1,6 +1,12 @@
 import { revalidatePath } from "next/cache";
 import { deleteFile, fileExists, getFileKey, getFileUrl, uploadFile } from "@/lib/storage";
-import { IMAGE_EXTENSIONS, type BookFields, type BookFilters, type CopyFields } from "./schemas";
+import {
+  IMAGE_EXTENSIONS,
+  type BookFields,
+  type BookFilters,
+  type CopyFields,
+  type LocationFields,
+} from "./schemas";
 import { Ok, Err } from "@/lib/result";
 import { UserError } from "@/lib/action";
 import {
@@ -26,6 +32,9 @@ import {
   ensureDonor,
   listFacets,
   listLocations,
+  createLocationRecord,
+  updateLocationRecord,
+  updateDonorRecord,
 } from "./repository";
 import type { BookDetailed, BookPage } from "./types";
 
@@ -179,10 +188,55 @@ export async function deleteCopyService(copyId: string) {
   revalidatePath("/");
 }
 
-export async function createDonorService(name: string) {
-  const donor = await ensureDonor(name);
+export async function createDonorService(name: string, motivation: string | null = null) {
+  const donor = await ensureDonor(name, motivation);
   revalidatePath("/donors");
-  return { id: donor.id, name: donor.name };
+  return { id: donor.id, name: donor.name, motivation: donor.motivation };
+}
+
+export async function updateDonorService(
+  id: string,
+  data: { name: string; motivation: string | null },
+) {
+  try {
+    const donor = await updateDonorRecord(id, data);
+    if (!donor) throw new UserError("Donante no encontrado.");
+    revalidatePath("/");
+    revalidatePath("/donors");
+    return donor;
+  } catch (error) {
+    if (String(error).includes("donors_name_unique")) {
+      throw new UserError("Ya existe un donante con ese nombre.");
+    }
+    throw error;
+  }
+}
+
+export async function createLocationService(data: LocationFields) {
+  try {
+    const location = await createLocationRecord(data);
+    revalidatePath("/");
+    return location;
+  } catch (error) {
+    if (String(error).includes("locations_place_unique")) {
+      throw new UserError("Ese mueble, estante y tramo ya existen.");
+    }
+    throw error;
+  }
+}
+
+export async function updateLocationService(id: string, data: LocationFields) {
+  try {
+    const location = await updateLocationRecord(id, data);
+    if (!location) throw new UserError("Ubicación no encontrada.");
+    revalidatePath("/");
+    return location;
+  } catch (error) {
+    if (String(error).includes("locations_place_unique")) {
+      throw new UserError("Ese mueble, estante y tramo ya existen.");
+    }
+    throw error;
+  }
 }
 
 export async function createBorrowRequestService(

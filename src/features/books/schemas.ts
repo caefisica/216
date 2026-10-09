@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CopyCondition, CopyOrigin, CopyStatus } from "@/lib/db/schema";
+import { CopyCondition, CopyOrigin, CopyStatus, LocationHolds } from "@/lib/db/schema";
 
 export const BookIdSchema = z.object({ bookId: z.uuid() });
 
@@ -115,7 +115,26 @@ export const UpdateCopySchema = CopyFieldsSchema.extend({ copyId: z.uuid() });
 
 export const CopyIdSchema = z.object({ copyId: z.uuid() });
 
-export const CreateDonorSchema = z.object({ name: z.string().trim().min(1).max(120) });
+export const CreateDonorSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  motivation: optionalText(500),
+});
+export const UpdateDonorSchema = z.object({
+  id: z.uuid(),
+  name: z.string().trim().min(1).max(120),
+  motivation: optionalText(500),
+});
+
+const LocationFieldsSchema = z.object({
+  cabinet: z.string().trim().min(1).max(60),
+  shelf: z.coerce.number().int().min(0).max(99),
+  bay: z.coerce.number().int().min(0).max(99),
+  categoryId: optionalId,
+  holds: z.enum(LocationHolds),
+});
+
+export const CreateLocationSchema = LocationFieldsSchema;
+export const UpdateLocationSchema = LocationFieldsSchema.extend({ id: z.uuid() });
 
 export const BorrowRequestSchema = z.object({
   bookId: z.uuid(),
@@ -125,3 +144,4 @@ export const BorrowRequestSchema = z.object({
 export type BookFields = z.output<typeof BookFieldsSchema>;
 export type CopyFields = z.output<typeof CopyFieldsSchema>;
 export type BookFilters = z.output<typeof SearchSchema>;
+export type LocationFields = z.output<typeof LocationFieldsSchema>;

@@ -74,5 +74,12 @@ export interface LocationOption extends Location {
 export interface CatalogueFacets {
   categories: CategoryNode[];
   cabinets: { cabinet: string; shelves: number[] }[];
-  donors: { id: string; name: string; copyCount: number }[];
+  donors: { id: string; name: string; motivation: string | null; copyCount: number }[];
+  copyHealth: {
+    present: number;
+    maintenance: number;
+    missing: number;
+    unlabelled: number;
+    unplaced: number;
+  };
 }

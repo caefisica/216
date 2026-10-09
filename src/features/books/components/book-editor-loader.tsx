@@ -13,7 +13,7 @@ export async function BookEditorLoader({ bookId }: { bookId?: string }) {
 
   if (!book) {
     return (
-      <div className="container mx-auto max-w-4xl px-6 py-8">
+      <div className="container mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
         <BookEditor facets={facets} />
       </div>
     );
@@ -21,7 +21,7 @@ export async function BookEditorLoader({ bookId }: { bookId?: string }) {
   if (isErr(book)) return <NotFoundState />;
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-4 px-6 py-8">
+    <div className="container mx-auto max-w-5xl space-y-4 px-3 py-5 sm:px-6 sm:py-8">
       <Link href={`/books/${book.value.id}`} className="text-sm text-blue-600 hover:underline">
         ← {book.value.code} · {book.value.title}
       </Link>

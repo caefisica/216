@@ -62,12 +62,9 @@ export function CopiesTable({ copies, canEdit }: CopiesTableProps) {
         <thead>
           <tr className="border-b text-xs uppercase tracking-wide text-gray-500">
             <th className="py-2 pr-3 font-medium">Código</th>
-            <th className="py-2 pr-3 font-medium">Origen</th>
-            <th className="py-2 pr-3 font-medium">Tomo</th>
-            <th className="py-2 pr-3 font-medium">Edición</th>
+            <th className="py-2 pr-3 font-medium">Ejemplar e imprint</th>
             <th className="py-2 pr-3 font-medium">Ubicación</th>
-            <th className="py-2 pr-3 font-medium">Donante</th>
-            <th className="py-2 pr-3 font-medium">Estado</th>
+            <th className="py-2 pr-3 font-medium">Disponibilidad</th>
             <th className="py-2 font-medium">Condición</th>
           </tr>
         </thead>
@@ -75,20 +72,24 @@ export function CopiesTable({ copies, canEdit }: CopiesTableProps) {
           {copies.map((copy) => (
             <tr key={copy.id} className="align-top">
               <td className="py-2 pr-3 font-mono text-xs">{copy.code}</td>
-              <td className="py-2 pr-3">{ORIGIN_LABELS[copy.origin]}</td>
               <td className="py-2 pr-3">
-                {copy.volume ?? "—"}
-                {copy.pieces > 1 ? ` (${copy.pieces} piezas)` : ""}
-              </td>
-              <td className="py-2 pr-3">
-                {[copy.edition, copy.year, copy.publisher, copy.country]
-                  .filter(Boolean)
-                  .join(" · ") || "—"}
+                <span className="block text-gray-700">
+                  {ORIGIN_LABELS[copy.origin]}
+                  {copy.volume ? ` · ${copy.volume}` : ""}
+                  {copy.pieces > 1 ? ` · ${copy.pieces} piezas` : ""}
+                </span>
+                <span className="mt-0.5 block text-xs text-gray-500">
+                  {[copy.edition, copy.year, copy.publisher, copy.country]
+                    .filter(Boolean)
+                    .join(" · ") || "Sin datos de edición"}
+                </span>
+                <span className="block text-xs text-gray-500">
+                  Donante: {copy.donor?.name ?? "—"}
+                </span>
               </td>
               <td className="py-2 pr-3">
                 {copy.location ? locationLabel(copy.location) : "Sin ubicación"}
               </td>
-              <td className="py-2 pr-3">{copy.donor?.name ?? "—"}</td>
               <td className="py-2 pr-3">
                 {canEdit ? (
                   <select
@@ -105,7 +106,9 @@ export function CopiesTable({ copies, canEdit }: CopiesTableProps) {
                     ))}
                   </select>
                 ) : copy.loanId ? (
-                  "Prestado"
+                  <span className="font-medium text-amber-700">Prestado</span>
+                ) : copy.status === "present" ? (
+                  <span className="font-medium text-emerald-700">Disponible</span>
                 ) : (
                   STATUS_LABELS[copy.status]
                 )}

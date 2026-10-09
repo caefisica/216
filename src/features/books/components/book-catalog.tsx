@@ -24,7 +24,7 @@ interface BookCatalogProps {
 export const LIST_STORAGE_KEY = "catalogue:list";
 
 const selectClass =
-  "h-9 rounded-md border border-gray-200 bg-white px-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500";
+  "h-9 w-full rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-600 sm:w-auto";
 
 function filtersToQuery(filters: BookFilters) {
   const query = new URLSearchParams();
@@ -154,8 +154,18 @@ export function BookCatalog({ initialPage, initialFilters, facets, staff }: Book
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-64 flex-1">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Catálogo</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-950">Encuentra un título</h1>
+        </div>
+        <p className="hidden text-right text-xs text-gray-500 sm:block">
+          {pageData.total} títulos · página {pageData.page}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-white p-2 shadow-xs">
+        <div className="relative min-w-0 flex-1 basis-full sm:min-w-64 sm:basis-auto">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             ref={searchRef}
@@ -253,6 +263,16 @@ export function BookCatalog({ initialPage, initialFilters, facets, staff }: Book
           <option value="unavailable">No disponibles</option>
         </select>
 
+        <select
+          aria-label="Ordenar catálogo"
+          className={selectClass}
+          value={filters.sort ?? "title"}
+          onChange={(e) => update({ sort: e.target.value as BookFilters["sort"] })}
+        >
+          <option value="title">Orden: título</option>
+          <option value="code">Orden: código</option>
+        </select>
+
         {staff && (
           <>
             <label className="flex items-center gap-1.5 text-sm text-gray-700">
@@ -271,7 +291,7 @@ export function BookCatalog({ initialPage, initialFilters, facets, staff }: Book
               />
               Sin ubicación
             </label>
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="w-full sm:w-auto">
               <Link href="/admin/books/create">
                 <Plus className="mr-1 h-4 w-4" /> Nuevo libro
               </Link>
@@ -326,21 +346,27 @@ export function BookCatalog({ initialPage, initialFilters, facets, staff }: Book
           )}
         </div>
       ) : (
-        <div role="listbox" aria-label="Libros" className="divide-y rounded border bg-white">
+        <div
+          role="listbox"
+          aria-label="Libros"
+          className="divide-y rounded-lg border bg-white shadow-xs"
+        >
           {books.map((book, index) => (
             <div
               key={book.id}
               role="option"
               aria-selected={index === selected}
               onMouseEnter={() => setSelected(index)}
-              className={`grid grid-cols-[7rem_1fr_auto] items-center gap-3 px-3 py-2 text-sm md:grid-cols-[7rem_1fr_14rem_12rem_auto] ${
+              className={`grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-2 px-2 py-2.5 text-sm sm:gap-3 sm:px-3 md:grid-cols-[7rem_1fr_14rem_12rem_auto] ${
                 index === selected ? "bg-blue-50" : "hover:bg-gray-50"
               }`}
             >
-              <span className="font-mono text-xs text-gray-500">{book.code}</span>
+              <span className="truncate font-mono text-[11px] text-gray-500">{book.code}</span>
               <Link href={`/books/${book.id}`} className="min-w-0">
                 <span className="block truncate font-medium text-gray-900">{book.title}</span>
-                <span className="block truncate text-gray-500">{book.author}</span>
+                {book.author && (
+                  <span className="block truncate text-xs text-gray-500">{book.author}</span>
+                )}
               </Link>
               <span className="hidden truncate text-gray-600 md:block">
                 {book.category.parent
@@ -381,7 +407,10 @@ export function BookCatalog({ initialPage, initialFilters, facets, staff }: Book
       )}
 
       {lastPage > 1 && (
-        <nav aria-label="Páginas" className="flex items-center justify-between text-sm">
+        <nav
+          aria-label="Páginas"
+          className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+        >
           <span className="text-gray-500">
             {(pageData.page - 1) * pageData.pageSize + 1}–
             {(pageData.page - 1) * pageData.pageSize + books.length} de {pageData.total}

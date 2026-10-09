@@ -16,12 +16,15 @@ import {
   CopyIdSchema,
   CreateBookSchema,
   CreateDonorSchema,
+  CreateLocationSchema,
+  UpdateDonorSchema,
   ImageRefSchema,
   ImageUploadSchema,
   SearchSchema,
   SetHeartSchema,
   UpdateBookSchema,
   UpdateCopySchema,
+  UpdateLocationSchema,
 } from "./schemas";
 import { setHeartRecord } from "./repository";
 import {
@@ -40,6 +43,9 @@ import {
   updateCopyService,
   deleteCopyService,
   createDonorService,
+  createLocationService,
+  updateDonorService,
+  updateLocationService,
   createBorrowRequestService,
 } from "./service";
 import { Err, Ok } from "@/lib/result";
@@ -125,6 +131,18 @@ export const deleteCopy = staffAction(CopyIdSchema, async ({ copyId }) =>
   deleteCopyService(copyId),
 );
 
-export const createDonor = staffAction(CreateDonorSchema, async ({ name }) =>
-  createDonorService(name),
+export const createDonor = staffAction(CreateDonorSchema, async ({ name, motivation }) =>
+  createDonorService(name, motivation),
+);
+
+export const createLocation = staffAction(CreateLocationSchema, async (data) =>
+  createLocationService(data),
+);
+
+export const updateDonor = staffAction(UpdateDonorSchema, async ({ id, ...data }) =>
+  updateDonorService(id, data),
+);
+
+export const updateLocation = staffAction(UpdateLocationSchema, async ({ id, ...data }) =>
+  updateLocationService(id, data),
 );

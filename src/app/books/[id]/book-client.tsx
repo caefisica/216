@@ -52,11 +52,11 @@ export default function BookClient({ book, user }: BookClientProps) {
   }, [book.id, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
-            <div className="sticky top-24">
+    <div className="bg-gray-50/70">
+      <div className="container mx-auto max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[18rem_1fr] lg:gap-8">
+          <div>
+            <div className="lg:sticky lg:top-24">
               <BookImage images={book.images} title={book.title} />
               <BookActions
                 book={book}
@@ -72,8 +72,8 @@ export default function BookClient({ book, user }: BookClientProps) {
               />
             </div>
           </div>
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-lg border p-6">
+          <div className="space-y-5">
+            <div className="rounded-lg border bg-white p-4 shadow-xs sm:p-6">
               <BookHeader book={book} canEdit={canEdit} />
               <BookDetails book={book} canEdit={canEdit} />
               <p className="mt-6 text-xs text-gray-400">

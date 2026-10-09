@@ -15,7 +15,7 @@ export function BookDetails({ book, canEdit }: BookDetailsProps) {
         <>
           <Separator className="my-6" />
           <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center">
+            <h3 className="mb-3 flex items-center text-base font-semibold">
               <FileText className="h-5 w-5 mr-2" />
               Descripción
             </h3>
@@ -27,7 +27,12 @@ export function BookDetails({ book, canEdit }: BookDetailsProps) {
       <Separator className="my-6" />
 
       <div>
-        <h3 className="text-lg font-semibold mb-4">Ejemplares ({book.copies.length})</h3>
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <h3 className="text-base font-semibold">Ejemplares</h3>
+          <p className="text-xs text-gray-500">
+            {book.lendableCount} disponibles de {book.copies.length}
+          </p>
+        </div>
         <CopiesTable copies={book.copies} canEdit={canEdit} />
         {book.isbn && <p className="mt-4 text-sm text-gray-500">ISBN {book.isbn}</p>}
       </div>
