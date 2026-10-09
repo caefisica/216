@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getDb } from "@/lib/db";
 import { createTestDatabase, type TestDatabase } from "@/lib/db/test-database";
+import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
 import { listPendingBorrowRequests } from "@/features/admin/repository";
 import { listUsers } from "./repository";
@@ -75,7 +76,7 @@ describe("what staff can read about users", () => {
 
   it("never includes a password hash in pending loan requests", async () => {
     const db = await getDb();
-    const [book] = await db.insert(schema.books).values({ title: "T", author: "A" }).returning();
+    const book = await insertBook();
     await db.insert(schema.borrowRequests).values({ bookId: book.id, userId: "reader" });
 
     const pending = await listPendingBorrowRequests();

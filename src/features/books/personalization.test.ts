@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import type { ReactElement } from "react";
 import { getDb } from "@/lib/db";
 import { createTestDatabase, type TestDatabase } from "@/lib/db/test-database";
+import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
 import { getBookById, getBooks, getFavoriteBooks } from "./actions";
 import HomePage from "@/app/page";
@@ -39,10 +40,7 @@ beforeAll(async () => {
     passwordHash: "h",
     createdAt: new Date(),
   });
-  [{ id: bookId }] = await db
-    .insert(schema.books)
-    .values({ title: "T", author: "A" })
-    .returning({ id: schema.books.id });
+  ({ id: bookId } = await insertBook());
   await db.insert(schema.userBookHearts).values({ userId: "ana", bookId });
 }, 120_000);
 
@@ -64,16 +62,16 @@ const asUnverified = () => {
 
 /** The catalogue the home page hands to its client component. */
 async function homeBooks() {
-  const page = (await HomePage()) as ReactElement<{
-    children: ReactElement<{ initialBooks: unknown[] }>;
+  const page = (await HomePage({ searchParams: Promise.resolve({}) })) as ReactElement<{
+    children: ReactElement<{ initialPage: { items: unknown[] } }>;
   }>;
-  return page.props.children.props.initialBooks as { isHearted: boolean }[];
+  return page.props.children.props.initialPage.items as { isHearted: boolean }[];
 }
 
 describe("what a verified session sees", () => {
   it("marks its own favorites in the catalogue, the book page and the home page", async () => {
     const list = await getBooks();
-    expect(list.ok && list.value.map((b) => b.isHearted)).toEqual([true]);
+    expect(list.ok && list.value.items.map((b) => b.isHearted)).toEqual([true]);
 
     const book = await getBookById(bookId);
     expect(book.ok && book.value.isHearted).toBe(true);
@@ -95,7 +93,7 @@ describe.each([
 
   it("gets the catalogue without personal favorites", async () => {
     const list = await getBooks();
-    expect(list.ok && list.value.map((b) => b.isHearted)).toEqual([false]);
+    expect(list.ok && list.value.items.map((b) => b.isHearted)).toEqual([false]);
     expect((await homeBooks()).map((b) => b.isHearted)).toEqual([false]);
   });
 

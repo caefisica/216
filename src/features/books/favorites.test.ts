@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getDb } from "@/lib/db";
 import { createTestDatabase, type TestDatabase } from "@/lib/db/test-database";
+import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
 import { setHeartRecord } from "./repository";
 
@@ -19,10 +20,7 @@ beforeAll(async () => {
       createdAt: new Date(),
     })),
   );
-  [{ id: bookId }] = await db
-    .insert(schema.books)
-    .values({ title: "T", author: "A" })
-    .returning({ id: schema.books.id });
+  ({ id: bookId } = await insertBook());
 }, 120_000);
 
 afterAll(async () => {

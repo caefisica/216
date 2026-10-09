@@ -4,6 +4,7 @@ import {
   AddBookImageSchema,
   BookFieldsSchema,
   BorrowRequestSchema,
+  CopyFieldsSchema,
   ImageUploadSchema,
   MAX_IMAGE_BYTES,
   SearchSchema,
@@ -95,36 +96,63 @@ describe("ImageUploadSchema", () => {
 });
 
 describe("BookFieldsSchema", () => {
-  const valid = { title: "T", author: "A", status: "available" };
+  const valid = { title: "T", author: "A", categoryId: bookId };
 
   it("stores empty optional text as null so an emptied field clears the column", () => {
-    const parsed = BookFieldsSchema.parse({ ...valid, isbn: "", publisher: "  ", location: null });
-    expect(parsed).toMatchObject({ isbn: null, publisher: null, location: null, pages: null });
+    const parsed = BookFieldsSchema.parse({ ...valid, author: " ", isbn: "", description: null });
+    expect(parsed).toMatchObject({ author: null, isbn: null, description: null });
   });
 
   it("trims text", () => {
     expect(BookFieldsSchema.parse({ ...valid, title: "  T  " }).title).toBe("T");
   });
 
-  it("rejects a status the database would refuse", () => {
-    for (const status of ["reserved", "lost", ""]) {
-      expect(BookFieldsSchema.safeParse({ ...valid, status }).success, status).toBe(false);
-    }
-  });
-
-  it("rejects a blank title or author", () => {
+  it("rejects a blank title, but not a missing author", () => {
     expect(BookFieldsSchema.safeParse({ ...valid, title: "  " }).success).toBe(false);
-    expect(BookFieldsSchema.safeParse({ ...valid, author: "" }).success).toBe(false);
+    expect(BookFieldsSchema.safeParse({ ...valid, author: undefined }).success).toBe(true);
   });
 
-  it("rejects counts that are not positive whole numbers", () => {
-    for (const pages of [0, -3, 1.5, Number.NaN]) {
-      expect(BookFieldsSchema.safeParse({ ...valid, pages }).success, String(pages)).toBe(false);
-    }
+  it("rejects a category that is not an id", () => {
+    expect(BookFieldsSchema.safeParse({ ...valid, categoryId: "FG.1" }).success).toBe(false);
   });
 
   it("rejects text longer than its limit", () => {
     expect(BookFieldsSchema.safeParse({ ...valid, title: "x".repeat(301) }).success).toBe(false);
+  });
+});
+
+describe("CopyFieldsSchema", () => {
+  const valid = {
+    origin: "original",
+    pieces: 1,
+    status: "present",
+    labelled: false,
+  };
+
+  it("fills the optional fields with null", () => {
+    expect(CopyFieldsSchema.parse({ ...valid, volume: "", year: undefined })).toMatchObject({
+      volume: null,
+      year: null,
+      locationId: null,
+      donorId: null,
+      condition: null,
+      notes: null,
+    });
+  });
+
+  it("rejects an origin, status or condition the database would refuse", () => {
+    expect(CopyFieldsSchema.safeParse({ ...valid, origin: "borrowed" }).success).toBe(false);
+    expect(CopyFieldsSchema.safeParse({ ...valid, status: "lost" }).success).toBe(false);
+    expect(CopyFieldsSchema.safeParse({ ...valid, condition: "mint" }).success).toBe(false);
+  });
+
+  it("rejects counts and years that are not whole numbers in range", () => {
+    for (const pieces of [0, -3, 1.5, Number.NaN]) {
+      expect(CopyFieldsSchema.safeParse({ ...valid, pieces }).success, String(pieces)).toBe(false);
+    }
+    for (const year of [999, 2101, 1990.5]) {
+      expect(CopyFieldsSchema.safeParse({ ...valid, year }).success, String(year)).toBe(false);
+    }
   });
 });
 
@@ -140,13 +168,23 @@ describe("BorrowRequestSchema", () => {
 });
 
 describe("SearchSchema", () => {
-  it("accepts the filter values the catalogue sends", () => {
-    expect(SearchSchema.safeParse({ search: "", categoryId: "all", status: "all" }).success).toBe(
-      true,
-    );
+  it("accepts the filter values the catalogue sends, shelf numbers arriving as text", () => {
+    expect(
+      SearchSchema.parse({
+        search: " cálculo ",
+        category: "FG.1",
+        cabinet: "A",
+        shelf: "2",
+        availability: "available",
+        unlabelled: "1",
+        sort: "code",
+      }),
+    ).toMatchObject({ search: "cálculo", shelf: 2, availability: "available" });
   });
 
-  it("rejects an unknown status", () => {
-    expect(SearchSchema.safeParse({ status: "reserved" }).success).toBe(false);
+  it("rejects an unknown availability, sort or flag", () => {
+    expect(SearchSchema.safeParse({ availability: "reserved" }).success).toBe(false);
+    expect(SearchSchema.safeParse({ sort: "random" }).success).toBe(false);
+    expect(SearchSchema.safeParse({ unplaced: "yes" }).success).toBe(false);
   });
 });

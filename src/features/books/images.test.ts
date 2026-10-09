@@ -2,13 +2,13 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getDb } from "@/lib/db";
 import { createTestDatabase, type TestDatabase } from "@/lib/db/test-database";
+import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
 import {
   addBookImageService,
   deleteBookImageService,
   deleteBookService,
   setCoverImageService,
-  updateBookService,
   uploadBookImageService,
 } from "./service";
 
@@ -26,9 +26,7 @@ afterAll(async () => {
 });
 
 async function newBook() {
-  const db = await getDb();
-  const [book] = await db.insert(schema.books).values({ title: "T", author: "A" }).returning();
-  return book.id;
+  return (await insertBook()).id;
 }
 
 async function addImage(bookId: string, isCover: boolean, displayOrder: number) {
@@ -205,48 +203,5 @@ describe("cover images", () => {
     await deleteBookImageService(image.id, bookId);
 
     expect(await images(bookId)).toEqual([]);
-  });
-});
-
-describe("editing a book", () => {
-  it("clears a field the form emptied", async () => {
-    const bookId = await newBook();
-    const base = {
-      title: "T",
-      author: "A",
-      isbn: "123",
-      publisher: null,
-      publicationYear: 1999,
-      pages: null,
-      location: null,
-      description: null,
-      status: "available" as const,
-      categoryId: null,
-    };
-    await updateBookService(bookId, base);
-    await updateBookService(bookId, { ...base, isbn: null, publicationYear: null });
-
-    const [row] = await testDb.query(
-      "SELECT isbn, publication_year FROM books WHERE id = ?",
-      bookId,
-    );
-    expect(row).toEqual({ isbn: null, publication_year: null });
-  });
-
-  it("reports a book that does not exist", async () => {
-    await expect(
-      updateBookService(crypto.randomUUID(), {
-        title: "T",
-        author: "A",
-        isbn: null,
-        publisher: null,
-        publicationYear: null,
-        pages: null,
-        location: null,
-        description: null,
-        status: "available",
-        categoryId: null,
-      }),
-    ).rejects.toThrow("Libro no encontrado.");
   });
 });
