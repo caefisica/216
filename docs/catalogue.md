@@ -237,9 +237,10 @@ the file holds no contact data.
 `/` shows the list
 ([`book-catalog.tsx`](../src/features/books/components/book-catalog.tsx)).
 
-- One row per title: code, title, author, category and subcategory, availability
-  (_Disponible_, with lendable and total copies when the title has several, _No
-  disponible_ or _Sin ejemplares_). The code is monospace in the first column.
+- One row per title: code, title, author, availability (_Disponible_, with
+  lendable and total copies when the title has several, _No disponible_ or _Sin
+  ejemplares_), and, at 1536 pixels and wider, category and subcategory. The
+  code is monospace in the first column.
 - Filters sit in one bar above the list: category, cabinet and shelf, donor,
   availability. The category and donor lists show how many titles or copies each
   has.
@@ -251,8 +252,20 @@ the file holds no contact data.
 - When a search returns nothing, the empty state names the query and the filters
   and offers _Limpiar filtros_. An empty catalogue says so and, for staff,
   offers _Registrar el primer libro_.
-- Keys: `/` focuses the search, `↑` and `↓` move the selected row, `Enter` opens
-  it, `←` and `→` change the page, and `Esc` in the search clears it. A footer
+- At 1024 pixels and wider, list view has a detail pane on the right. Selecting
+  a row keeps the list, its scroll position and filters, and shows the title's
+  cover, header, borrow action and copies in the pane, with each copy as label
+  and value rows. The previous title stays in the pane, dimmed, until the next
+  one loads. The URL's `book` parameter stores the selection, so a reload or a
+  shared link opens the same pane; when that title is not on the current page,
+  the pane shows it and no row is highlighted. Below 1024 pixels, selecting a
+  row opens `/books/<id>`.
+- Grid view has no pane: its cards link to the book page, and switching to the
+  grid closes the pane.
+- Keys: `/` focuses the search, `↑` and `↓` move the highlighted row, `←` and
+  `→` change page, `Enter` opens the full page, and `Esc` clears the search when
+  it is focused or closes the detail pane otherwise. In list view at 1024 pixels
+  and wider, `↑` and `↓` also show the highlighted title in the pane. A footer
   line names the keys.
 - The page keeps the ids of the titles on screen in `sessionStorage`, so the
   detail page's previous and next titles follow the current page.

@@ -18,12 +18,27 @@ The public interface uses a short, consistent scale:
 ratio. A stored image uses `/media/`; when absent, the component renders a
 typographic cover with title, author, category, and a deterministic color
 derived from the category. A grid therefore does not depend on a complete image
-collection.
+collection. The typographic cover sizes its text and padding from its own width,
+so the same component fits a grid card, the book page, and the narrow detail
+pane.
 
 The cover uses `loading="lazy"` below the first visible section and fixed
-dimensions. The catalogue offers a dense list and a grid. The list keeps the
-`/`, arrow, and Enter shortcuts; search updates results without losing focus.
-Category and availability filters remain visible.
+dimensions. The catalogue offers a dense list and a grid. At 1024 pixels and
+wider, list view splits into the list and a sticky detail pane of fixed width
+(`24rem`, `28rem` from 1280 pixels); the list takes the rest. Selecting a title
+keeps the list's filters and scroll position. The selected title is in the
+`book` URL parameter, so a reload or shared link opens the same pane. Grid view
+has no pane; its cards link to the book page. Below 1024 pixels, selecting a
+title opens its page. The list keeps the `/`, arrow, Enter, and Escape
+shortcuts; search updates results without losing focus. Category and
+availability filters remain visible.
+
+The pane renders the book page's own components:
+[`BookClient`](../src/app/books/[id]/book-client.tsx) with `variant="pane"`, a
+compact `BookHeader`, and `CopiesTable` with `layout="stacked"`, which lists
+each copy as label and value rows instead of table columns.
+
+![Catalogue split view at 1280 pixels](ui/catalogue-split-1280.png)
 
 A book page places the cover and borrow action beside the title, author, code,
 category, and copy table. Availability remains owned by the shared
@@ -47,9 +62,9 @@ database.
 
 `bun run screenshots` opens a running site, `http://localhost:3000` unless
 `SCREENSHOT_BASE_URL` says otherwise, and writes the home page, the catalogue
-grid, and a book with a stored cover and one without to `docs/ui/` at 375 and
-1280 pixels. It looks for those two books through every catalogue page and only
-reads the site; when no book has a stored cover (or none lacks one) it prints a
-warning and skips that book's captures. `bun run screenshots -- --dark` writes
-the same files with a `-dark` suffix. The command requires Chromium, installed
-with `bunx playwright install chromium`.
+grid, the 1280-pixel split catalogue, and a book with a stored cover and one
+without to `docs/ui/` at 375 and 1280 pixels. It looks for those two books
+through every catalogue page and only reads the site. When no book has a stored
+cover, or none lacks one, it prints a warning and skips that book's captures.
+`bun run screenshots -- --dark` writes the same files with a `-dark` suffix. The
+command requires Chromium, installed with `bunx playwright install chromium`.

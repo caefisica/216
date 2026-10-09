@@ -8,24 +8,36 @@ const suffix = dark ? "-dark" : "";
 const widths = [375, 1280] as const;
 const maxPages = 200;
 
+async function waitForCatalogueSearch(page: Page) {
+  await page.waitForTimeout(300);
+  await page.waitForFunction(
+    () => !document.querySelector('[aria-live="polite"]')?.textContent?.includes("Buscando…"),
+  );
+}
+
 async function showGrid(page: Page, pageNumber: number) {
   await page.goto(`${baseUrl}/?page=${pageNumber}`, { waitUntil: "networkidle" });
+  await waitForCatalogueSearch(page);
   await page.getByRole("button", { name: "Vista de cuadrícula" }).click();
+  await waitForCatalogueSearch(page);
   return page.locator('[role="list"] article');
 }
 
 async function findBooks(page: Page) {
   let stored: string | null = null;
   let generated: string | null = null;
+  const seen = new Set<string>();
   for (let pageNumber = 1; pageNumber <= maxPages && !(stored && generated); pageNumber++) {
     const cards = await showGrid(page, pageNumber);
-    if ((await cards.count()) === 0) break;
     const links = await cards.evaluateAll((items) =>
       items.map((item) => ({
         href: item.querySelector("a")?.getAttribute("href") ?? null,
         hasImage: item.querySelector("img") !== null,
       })),
     );
+    const firstHref = links[0]?.href;
+    if (!firstHref || seen.has(firstHref)) break;
+    seen.add(firstHref);
     for (const { href, hasImage } of links) {
       if (!href) continue;
       if (hasImage) stored ??= href;
@@ -50,6 +62,8 @@ async function capture() {
         "Todos los libros tienen portada almacenada: se omiten las capturas book-generated.",
       );
     }
+    const splitHref = stored ?? generated;
+    const splitBookId = splitHref ? new URL(splitHref, baseUrl).pathname.split("/").pop() : null;
 
     for (const width of widths) {
       const page = await browser.newPage({
@@ -57,15 +71,27 @@ async function capture() {
         colorScheme: dark ? "dark" : "light",
       });
       await page.goto(baseUrl, { waitUntil: "networkidle" });
+      await waitForCatalogueSearch(page);
       await page.screenshot({
         path: `${outputDirectory}/home-${width}${suffix}.png`,
         fullPage: true,
       });
       await page.getByRole("button", { name: "Vista de cuadrícula" }).click();
+      await waitForCatalogueSearch(page);
       await page.screenshot({
         path: `${outputDirectory}/catalogue-grid-${width}${suffix}.png`,
         fullPage: true,
       });
+      if (width === 1280 && splitBookId) {
+        await page.goto(`${baseUrl}/?book=${splitBookId}`, { waitUntil: "networkidle" });
+        await waitForCatalogueSearch(page);
+        await page
+          .getByRole("listbox", { name: "Libros" })
+          .evaluate((list) =>
+            window.scrollTo(0, list.getBoundingClientRect().top + window.scrollY - 180),
+          );
+        await page.screenshot({ path: `${outputDirectory}/catalogue-split-${width}${suffix}.png` });
+      }
       for (const [name, href] of [
         ["book-real", stored],
         ["book-generated", generated],
