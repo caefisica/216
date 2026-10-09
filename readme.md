@@ -36,8 +36,9 @@ password `password123`. Demo accounts are listed in
 - Search the catalogue by title, author or copy code, and filter by category,
   cabinet, donor and availability.
 - Favorite books and request a loan with a note.
-- Approve or reject loan requests as a librarian, choosing which copy goes out.
-  An approved request sets a 14-day due date.
+- Work the loan desk as a librarian: approve a request by choosing the copy that
+  goes out (14-day due date), reject it with a reason the reader sees, mark a
+  loan returned, and see overdue loans first.
 - Register titles and their physical copies (each with a code for the spine, a
   place, a donor and a condition), edit them and upload cover images as a
   librarian.

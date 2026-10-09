@@ -155,4 +155,5 @@ The sign-in, sign-up, verification and reset actions in
 role to check.
 
 The admin dashboard is the home page (`/`) for a librarian or admin. It has tabs
-for books, loan requests and users.
+for the collection, users, activity, statistics and the room, and a link to the
+[loan desk](borrowing.md#loan-desk).

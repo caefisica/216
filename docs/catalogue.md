@@ -143,8 +143,12 @@ request is `pending` or `rejected` and set when it is approved. See
 [borrowing](borrowing.md) for the flow.
 
 - A reader asks for a title, not a copy.
-- The librarian who approves picks the copy, defaulting to the lowest-numbered
+- The librarian who approves picks the copy on the
+  [loan desk](borrowing.md#loan-desk), defaulting to the lowest-numbered
   lendable one.
+- A `rejected` row carries a `rejection_reason`, and the check
+  `borrow_requests_rejection_check` refuses a rejected row whose reason is null,
+  empty or only whitespace.
 - A check constraint rejects `approved` or `returned` rows without a `copy_id`.
 - A composite foreign key `(book_id, copy_id)` to `copies (book_id, id)` stops a
   loan from naming a copy of another title.
@@ -265,7 +269,8 @@ the file holds no contact data.
   shelf, bay), donor, status and condition. Staff change status and condition
   from selects that save on change; readers see a copy on loan as _Prestado_.
 - Readers can request the title when it is available. The pending request shows
-  the lendable copies to staff, who pick one when they approve it.
+  the lendable copies to staff on the [loan desk](borrowing.md#loan-desk), who
+  pick one when they approve it.
 
 ### Intake and edit
 

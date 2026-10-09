@@ -46,7 +46,9 @@ See [accounts and roles](auth.md).
 | `src/app/admin/books/`              | Staff pages to register and edit a book. They check the role and render `BookEditorLoader`.                          |
 | `src/app/auth/`                     | Sign-in, sign-up, email verification and password reset pages.                                                       |
 | `src/app/about/`, `src/app/donors/` | Server-rendered reader information and donor pages; both query D1 at render. `privacy` and `terms` are MDX.          |
-| `src/features/admin/`               | Dashboard counts, pending requests, loan approval, statistics.                                                       |
+| `src/features/admin/`               | Dashboard statistics and the activity timeline.                                                                      |
+| `src/features/loans/`               | The loan desk: pending requests, approval, rejection, returns and the overdue list.                                  |
+| `src/app/admin/loans/`              | Staff page of the loan desk.                                                                                         |
 | `src/features/auth/`                | Sessions, password hashing, one-time codes, rate limits. See [accounts and roles](auth.md).                          |
 | `src/features/books/`               | Titles, copies, search and filters, the list and editor components, images, favorites, requests.                     |
 | `src/features/books/search.ts`      | Search text normalisation and code detection. `sql.ts` holds the shared SQL fragments.                               |
@@ -93,15 +95,15 @@ transaction), with its precondition in the `WHERE` clause. A service never reads
 a state, decides, and then writes. A transition whose precondition fails changes
 nothing and reports that it did not happen.
 
-**Loan** (`borrow_requests.status`). Only `features/admin` and
+**Loan** (`borrow_requests.status`). Only `features/loans/repository.ts` and
 `features/books/repository.ts` change it.
 
-| From       | To         | Owner                         | Condition                                                                        |
-| ---------- | ---------- | ----------------------------- | -------------------------------------------------------------------------------- |
-| (none)     | `pending`  | `createBorrowRequestRecord`   | The title has a lendable copy; no `pending` request by that user. One statement. |
-| `pending`  | `approved` | `approvePendingBorrowRequest` | The chosen copy belongs to the title and is lendable. Sets `copy_id`.            |
-| `pending`  | `rejected` | `resolvePendingBorrowRequest` | Request is still `pending`.                                                      |
-| `approved` | `returned` | `returnApprovedLoan`          | Request is `approved`.                                                           |
+| From       | To         | Owner                       | Condition                                                                        |
+| ---------- | ---------- | --------------------------- | -------------------------------------------------------------------------------- |
+| (none)     | `pending`  | `createBorrowRequestRecord` | The title has a lendable copy; no `pending` request by that user. One statement. |
+| `pending`  | `approved` | `approvePendingRequest`     | The chosen copy belongs to the title and is lendable. Sets `copy_id`.            |
+| `pending`  | `rejected` | `rejectPendingRequest`      | Request is still `pending`. Sets `rejection_reason`.                             |
+| `approved` | `returned` | `returnApprovedLoan`        | Request is `approved`.                                                           |
 
 `returned` and `rejected` are final. The unique index
 `borrow_requests_pending_idx` allows one `pending` request per user and book,

@@ -157,11 +157,19 @@ Plain indexes serve the reads that run on every page:
 `copies_code_unique` and `copies_book_number_unique (book_id, number)` for code
 lookups and the per-title copy reads, `copies_location_idx`, `copies_donor_idx`
 and `copies_status_idx` for the place, donor and collection availability reads,
+`copies_book_status_idx (book_id, status)` for the lendable copies of one title,
 `borrow_requests_user_idx (user_id, request_date)`, `borrow_requests_book_idx`
 and `borrow_requests_date_idx` for the loan lists and the activity report, and
 `book_images_book_idx` and `user_book_hearts_book_idx` for the per-title images
 and favorite counts. A foreign key column without an index is a scan on every
 cascade delete, so each one that a screen or a delete reads has one.
+
+Two partial indexes serve the loan desk:
+`borrow_requests_queue_idx (request_date, id)` where `status = 'pending'` and
+`borrow_requests_due_idx (due_date, id)` where `status = 'approved'`. A query
+that binds the status, as the desk queries do, uses them.
+
+The rule for `rejection_reason` is in [catalogue](catalogue.md#loans).
 
 ## Reader collection counts
 
@@ -186,4 +194,44 @@ The donors page uses one grouped read that inner-joins `donors`, `copies` and
 `books`, so a donor without copies is not listed. It orders donors by their
 total copies and groups the returned rows in memory to show each donor's titles.
 The favorites and profile pages each use one authenticated read. The profile
-read joins each loan to its title and assigned copy, including its due date.
+read joins each loan to its title and assigned copy, including its due date and,
+for a rejected request, the reason.
+
+## Loan desk queries
+
+The [loan desk](borrowing.md#loan-desk) runs two statements per page, whatever
+the page size, in
+[`features/loans/repository.ts`](../src/features/loans/repository.ts):
+
+- `getLoanCounts` returns the size of every view as three scalar subqueries:
+  pending requests, approved loans and overdue loans.
+- `listPendingRequests` or `listActiveLoans` returns one page of the chosen
+  view, `LIMIT 25 OFFSET (page - 1) * 25`. Each pending request carries the
+  lendable copies of its title as a JSON array built by a correlated subquery
+  over `copyIsLendable`, ordered by copy number, so no row triggers a further
+  query.
+
+`EXPLAIN QUERY PLAN` on a migrated database reports:
+
+| Statement       | Plan                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| Requests page   | `SCAN borrow_requests USING INDEX borrow_requests_queue_idx`                              |
+| per request row | `SEARCH books USING INDEX sqlite_autoindex_books_1 (id=?)`                                |
+|                 | `SEARCH user USING INDEX sqlite_autoindex_user_1 (id=?)`                                  |
+|                 | `USE TEMP B-TREE FOR json_group_array(ORDER BY)`                                          |
+|                 | `SEARCH copies USING INDEX copies_book_status_idx (book_id=? AND status=?)`               |
+|                 | `SEARCH borrow_requests USING COVERING INDEX borrow_requests_active_copy_idx (copy_id=?)` |
+|                 | `SEARCH locations USING INDEX sqlite_autoindex_locations_1 (id=?) LEFT-JOIN`              |
+| Loans page      | `SCAN borrow_requests USING INDEX borrow_requests_due_idx`                                |
+| per loan row    | `SEARCH books`, `SEARCH copies` and `SEARCH user`, each by primary key                    |
+| Pending count   | `SCAN borrow_requests USING COVERING INDEX borrow_requests_queue_idx`                     |
+| Approved count  | `SCAN borrow_requests USING COVERING INDEX borrow_requests_active_copy_idx`               |
+| Overdue count   | `SEARCH borrow_requests USING COVERING INDEX borrow_requests_due_idx (due_date<?)`        |
+
+Both partial indexes already hold the rows in display order, so neither page
+sorts its rows: `due_date` ascending puts overdue loans first, and the oldest
+request is first in the queue. The only temporary B-tree is the one SQLite
+builds for `json_group_array(... ORDER BY copies.number)`, which sorts the
+lendable copies of a single title. A test in
+[`desk.test.ts`](../src/features/loans/desk.test.ts) asserts these plans and the
+two-statement count.
