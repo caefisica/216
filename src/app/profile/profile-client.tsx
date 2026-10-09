@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { AuthUser } from "@/features/auth/core/session";
 import { signOutAction } from "@/features/auth/actions/session";
-import { getUserActivity, updateUserProfile } from "@/features/users/actions";
+import { updateUserProfile } from "@/features/users/actions";
 import type { BorrowRequest } from "@/features/users/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,83 +14,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Mail,
-  Edit,
-  BookOpen,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Info,
-  LogOut,
-  User,
-  Calendar,
-} from "lucide-react";
+import { Mail, Edit, BookOpen, LogOut, User, Calendar } from "lucide-react";
 import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
+import { LoanHistory, getStatusBadge } from "./loan-history";
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case "pending":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-yellow-50 text-yellow-700 border-yellow-200 font-bold rounded-full px-3"
-        >
-          <Clock className="h-3 w-3 mr-1" /> Pendiente
-        </Badge>
-      );
-    case "approved":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-green-50 text-green-700 border-green-200 font-bold rounded-full px-3"
-        >
-          <CheckCircle className="h-3 w-3 mr-1" /> Vigente
-        </Badge>
-      );
-    case "rejected":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-red-50 text-red-700 border-red-200 font-bold rounded-full px-3"
-        >
-          <XCircle className="h-3 w-3 mr-1" /> Rechazado
-        </Badge>
-      );
-    case "returned":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-gray-50 text-gray-500 border-gray-200 font-bold rounded-full px-3"
-        >
-          <Info className="h-3 w-3 mr-1" /> Devuelto
-        </Badge>
-      );
-    default:
-      return (
-        <Badge variant="secondary" className="rounded-full">
-          {status}
-        </Badge>
-      );
-  }
-}
-
-export function ProfileClient({ user }: { user: AuthUser }) {
+export function ProfileClient({
+  user,
+  borrowHistory,
+}: {
+  user: AuthUser;
+  borrowHistory: BorrowRequest[];
+}) {
   const router = useRouter();
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(user.name);
-  const [borrowHistory, setBorrowHistory] = useState<BorrowRequest[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-
-  useState(() => {
-    getUserActivity()
-      .then((result) => {
-        if (isErr(result)) toastActionError(result.error);
-        else setBorrowHistory(result.value);
-      })
-      .finally(() => setLoadingData(false));
-  });
 
   const handleNameUpdate = async () => {
     if (!newName.trim()) return;
@@ -244,16 +182,7 @@ export function ProfileClient({ user }: { user: AuthUser }) {
 
           <TabsContent value="borrowed">
             <div className="grid grid-cols-1 gap-6">
-              {loadingData ? (
-                Array(2)
-                  .fill(0)
-                  .map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-32 bg-white rounded-3xl animate-pulse border border-gray-100 shadow-xs"
-                    />
-                  ))
-              ) : activeLoans.length === 0 ? (
+              {activeLoans.length === 0 ? (
                 <Card className="rounded-3xl border-dashed border-2 border-gray-200 bg-transparent text-center py-20">
                   <BookOpen className="h-14 w-14 text-gray-200 mx-auto mb-4" />
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -323,42 +252,7 @@ export function ProfileClient({ user }: { user: AuthUser }) {
           </TabsContent>
 
           <TabsContent value="history">
-            <Card className="rounded-3xl border-gray-100 shadow-xs overflow-hidden bg-white">
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50/50 border-b border-gray-100">
-                        <th className="px-8 py-6 font-black text-gray-400 uppercase tracking-widest text-[10px]">
-                          Libro
-                        </th>
-                        <th className="px-8 py-6 font-black text-gray-400 uppercase tracking-widest text-[10px]">
-                          Estado
-                        </th>
-                        <th className="px-8 py-6 font-black text-gray-400 uppercase tracking-widest text-[10px] text-right">
-                          Fecha
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {borrowHistory.map((req) => (
-                        <tr key={req.id} className="hover:bg-gray-50/30 transition-colors group">
-                          <td className="px-8 py-6">
-                            <span className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                              {req.book?.title}
-                            </span>
-                          </td>
-                          <td className="px-8 py-6">{getStatusBadge(req.status)}</td>
-                          <td className="px-8 py-6 text-right font-medium text-gray-400">
-                            {new Date(req.requestDate).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+            <LoanHistory borrowHistory={borrowHistory} />
           </TabsContent>
         </Tabs>
       </div>
