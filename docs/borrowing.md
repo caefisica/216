@@ -28,20 +28,10 @@ in [catalogue](catalogue.md).
    the status to `returned` and `returnDate`. The loan keeps its `copyId` as
    history. A loan that is not `approved` cannot be returned.
 
-A copy is lendable when its `status` is `present` and no `approved` loan names
-it. Nothing stores "borrowed": returning a loan frees its copy because the loan
-is no longer `approved`. A copy a librarian has moved to `maintenance` or
-`missing` while it was on loan does not become lendable on return.
-
-A request is refused unless the title has a lendable copy and the user has no
-other pending request for it. One insert statement checks the copies and a
-unique index checks the duplicate, so both hold even when requests arrive at
-once. Approving or rejecting is refused unless the request is still `pending`.
-Approving is one statement that only matches while the chosen copy belongs to
-the title and is lendable, and a unique index on `copy_id` for `approved` loans
-backs it, so two requests cannot be approved onto one copy. A request that loses
-the race reports that the copy is unavailable. The full state table is in
-[architecture](../architecture.md#shared-state).
+Each step above is one guarded statement, so concurrent requests cannot
+double-book a copy. A request that loses the race reports that the copy is
+unavailable. The conditions, the indexes behind them and the definition of a
+lendable copy are in [Architecture](architecture.md#shared-state).
 
 ## Favorites
 

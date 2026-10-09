@@ -155,10 +155,35 @@ handles the conflict instead of checking first.
 Plain indexes serve the reads that run on every page:
 `books_title_key_idx (title_key, code)` for the list order, `books_code_unique`,
 `copies_code_unique` and `copies_book_number_unique (book_id, number)` for code
-lookups and the per-title copy reads, `copies_location_idx` and
-`copies_donor_idx` for the place and donor filters,
+lookups and the per-title copy reads, `copies_location_idx`, `copies_donor_idx`
+and `copies_status_idx` for the place, donor and collection availability reads,
 `borrow_requests_user_idx (user_id, request_date)`, `borrow_requests_book_idx`
 and `borrow_requests_date_idx` for the loan lists and the activity report, and
 `book_images_book_idx` and `user_book_hearts_book_idx` for the per-title images
 and favorite counts. A foreign key column without an index is a scan on every
 cascade delete, so each one that a screen or a delete reads has one.
+
+## Reader collection counts
+
+The home page and the about page read title, copy and currently available counts
+from `getLibraryCounts` in
+[`src/features/readers/repository.ts`](../src/features/readers/repository.ts).
+The query uses three scalar subqueries in one statement. Available copies are
+defined in [Architecture](architecture.md#shared-state). The status index
+narrows the copy read, and `borrow_requests_active_copy_idx` checks each
+candidate loan.
+
+On the seeded local database, `EXPLAIN QUERY PLAN` reports:
+
+| Read              | Plan                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| Titles            | `SCAN books USING COVERING INDEX books_category_idx`                                      |
+| Copies            | `SCAN copies USING COVERING INDEX copies_status_idx`                                      |
+| Available copies  | `SEARCH copies USING INDEX copies_status_idx (status=?)`                                  |
+| Active loan check | `SEARCH borrow_requests USING COVERING INDEX borrow_requests_active_copy_idx (copy_id=?)` |
+
+The donors page uses one grouped read that inner-joins `donors`, `copies` and
+`books`, so a donor without copies is not listed. It orders donors by their
+total copies and groups the returned rows in memory to show each donor's titles.
+The favorites and profile pages each use one authenticated read. The profile
+read joins each loan to its title and assigned copy, including its due date.

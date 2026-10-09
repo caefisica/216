@@ -138,8 +138,8 @@ address. The wrapper refuses an unverified caller with the `unverified` code.
 The pages that need a session send an unverified user to `/auth/verify-email`.
 Reads that anyone may call (`getBooks`, `getBookById` and the home page) show an
 unverified account the same view as a visitor, without its favorites, and the
-book page hides staff controls from it. `getFavoriteBooks` is an authenticated
-action, so an unverified caller gets `unverified`.
+book page hides staff controls from it. The favorites and profile pages send an
+unverified account to `/auth/verify-email`.
 
 A wrapped action never throws to the browser. Production Next.js replaces the
 message of a thrown error, so the wrapper returns a result: `Ok(value)`, or
