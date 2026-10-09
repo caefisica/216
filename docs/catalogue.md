@@ -260,6 +260,8 @@ the file holds no contact data.
   shared link opens the same pane; when that title is not on the current page,
   the pane shows it and no row is highlighted. Below 1024 pixels, selecting a
   row opens `/books/<id>`.
+- The list and detail pane share each title's favorite state and heart count
+  while the catalogue is open.
 - Grid view has no pane: its cards link to the book page, and switching to the
   grid closes the pane.
 - Keys: `/` focuses the search, `↑` and `↓` move the highlighted row, `←` and
