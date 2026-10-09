@@ -7,6 +7,24 @@ vi.mock("@/features/books/service", async () => {
   );
   return { ...actual, getFavoriteBooksService: async () => [] };
 });
+vi.mock("@/features/loans/service", async () => {
+  const actual = await vi.importActual<typeof import("@/features/loans/service")>(
+    "@/features/loans/service",
+  );
+  return {
+    ...actual,
+    getDeskService: async () => ({
+      view: "requests",
+      items: [],
+      counts: { pending: 0, active: 0, overdue: 0 },
+      page: 1,
+      pageCount: 1,
+      total: 0,
+      pageSize: 25,
+      now: new Date(),
+    }),
+  };
+});
 vi.mock("@/features/users/repository", async () => {
   const actual = await vi.importActual<typeof import("@/features/users/repository")>(
     "@/features/users/repository",
@@ -42,12 +60,8 @@ vi.mock("@/features/auth/core/session", () => ({
 type ActionPolicy = "public" | "own-session" | "authenticated" | "staff" | "admin";
 
 const actionPolicies: Record<string, ActionPolicy> = {
-  "features/admin/actions.ts#getActiveLoans": "staff",
-  "features/admin/actions.ts#getPendingBorrowRequests": "staff",
   "features/admin/actions.ts#getDetailedAdminStats": "staff",
   "features/admin/actions.ts#getBorrowingHistory": "staff",
-  "features/admin/actions.ts#returnLoan": "staff",
-  "features/admin/actions.ts#updateBorrowStatus": "staff",
   "features/auth/actions/reset-password-request.ts#requestPasswordResetAction": "public",
   "features/auth/actions/reset-password.ts#resetPasswordAction": "public",
   "features/auth/actions/session.ts#signOutAction": "own-session",
@@ -74,6 +88,9 @@ const actionPolicies: Record<string, ActionPolicy> = {
   "features/books/actions.ts#updateDonor": "staff",
   "features/books/actions.ts#updateLocation": "staff",
   "features/books/actions.ts#uploadBookImage": "staff",
+  "features/loans/actions.ts#approveRequest": "staff",
+  "features/loans/actions.ts#rejectRequest": "staff",
+  "features/loans/actions.ts#returnLoan": "staff",
   "features/users/actions.ts#getAllUsers": "staff",
   "features/users/actions.ts#suspendUser": "admin",
   "features/users/actions.ts#updateUserProfile": "authenticated",
@@ -188,6 +205,7 @@ const pagePolicies: Record<string, PagePolicy> = {
   "/about/team": "public",
   "/admin/books/[id]": "staff",
   "/admin/books/create": "staff",
+  "/admin/loans": "staff",
   "/auth/reset-password": "public",
   "/auth/signin": "public",
   "/auth/signup": "public",

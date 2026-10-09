@@ -80,7 +80,12 @@ beforeAll(async () => {
       dueDate: new Date("2026-10-23T00:00:00.000Z"),
     },
     { userId: "reader-1", bookId: wanted.id, status: "pending" },
-    { userId: "reader-1", bookId: refused.id, status: "rejected" },
+    {
+      userId: "reader-1",
+      bookId: refused.id,
+      status: "rejected",
+      rejectionReason: "Solo se presta en sala",
+    },
   ]);
 }, 120_000);
 
@@ -143,5 +148,6 @@ describe("profile loan history", () => {
     expect(row("Negado")).toContain("Rechazado");
     expect(row("Negado")).toContain("Solicitud rechazada");
     expect(row("Negado")).not.toContain("Pendiente de asignar");
+    expect(row("Negado")).toContain("Motivo: Solo se presta en sala");
   });
 });

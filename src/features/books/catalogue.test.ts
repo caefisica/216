@@ -21,7 +21,7 @@ import {
 import type { CopyFields } from "./schemas";
 import type { BookFilters } from "./schemas";
 import { createBorrowRequestService } from "./service";
-import { updateBorrowStatusService } from "@/features/admin/service";
+import { approveRequestService } from "@/features/loans/service";
 
 // Revalidation needs a Next.js request.
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
@@ -443,7 +443,7 @@ describe("removing", () => {
       "SELECT id FROM borrow_requests WHERE book_id = ?",
       created.id,
     );
-    await updateBorrowStatusService(request.id, "approved", "reader", first.id);
+    await approveRequestService(request.id, first.id, "reader");
 
     await expect(deleteCopyService(first.id)).rejects.toThrow("Márcalo como extraviado");
     await deleteCopyService(second.id);

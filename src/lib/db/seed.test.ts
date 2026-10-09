@@ -4,13 +4,15 @@ import { runSeed } from "./seed";
 import register from "./seeds/catalogue.json";
 import { createTestDatabase, type TestDatabase } from "./test-database";
 import { createBookService, createBorrowRequestService } from "@/features/books/service";
-import { listActiveLoans } from "@/features/admin/repository";
-import { returnLoanService, updateBorrowStatusService } from "@/features/admin/service";
+import { listActiveLoans, listPendingRequests } from "@/features/loans/repository";
+import { approveRequestService, returnLoanService } from "@/features/loans/service";
 
 // Revalidation needs a Next.js request.
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
 let testDb: TestDatabase;
+
+const everything = { limit: 100, offset: 0 };
 
 const count = async (table: string) =>
   (await testDb.query<{ n: number }>(`SELECT count(*) AS n FROM ${table}`))[0].n;
@@ -162,9 +164,15 @@ describe("a loan against a seeded copy", () => {
       "SELECT id FROM borrow_requests WHERE book_id = ?",
       book.id,
     );
-    await updateBorrowStatusService(request.id, "approved", id("librarian@unmsm.edu.pe"));
+    const [pending] = await listPendingRequests(everything);
+    expect(pending.id).toBe(request.id);
+    await approveRequestService(
+      request.id,
+      pending.lendableCopies[0].id,
+      id("librarian@unmsm.edu.pe"),
+    );
 
-    const loans = await listActiveLoans();
+    const loans = await listActiveLoans(everything);
     expect(loans).toHaveLength(1);
     expect(loans[0]).toMatchObject({
       book: { code: "CAFG.1.05" },
@@ -176,7 +184,7 @@ describe("a loan against a seeded copy", () => {
     ).rejects.toThrow("El libro no está disponible.");
 
     await returnLoanService(request.id);
-    expect(await listActiveLoans()).toEqual([]);
+    expect(await listActiveLoans(everything)).toEqual([]);
   });
 
   it("does not offer a missing copy for loan", async () => {

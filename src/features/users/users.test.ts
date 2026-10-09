@@ -3,7 +3,7 @@ import { getDb } from "@/lib/db";
 import { createTestDatabase, type TestDatabase } from "@/lib/db/test-database";
 import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
-import { listPendingBorrowRequests } from "@/features/admin/repository";
+import { listPendingRequests } from "@/features/loans/repository";
 import { listUsers } from "./repository";
 import { suspendUserService, updateUserRoleService, updateUserProfileService } from "./service";
 
@@ -79,9 +79,9 @@ describe("what staff can read about users", () => {
     const book = await insertBook();
     await db.insert(schema.borrowRequests).values({ bookId: book.id, userId: "reader" });
 
-    const pending = await listPendingBorrowRequests();
+    const pending = await listPendingRequests({ limit: 10, offset: 0 });
     expect(pending).toHaveLength(1);
-    expect(pending[0].user).toMatchObject({ id: "reader", email: "reader@x.test" });
+    expect(pending[0].reader).toEqual({ name: "reader", email: "reader@x.test" });
     expect(JSON.stringify(pending)).not.toContain("hash-of-");
   });
 
