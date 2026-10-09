@@ -22,6 +22,7 @@ vi.mock("@/features/loans/service", async () => {
       total: 0,
       pageSize: 25,
       now: new Date(),
+      query: "",
     }),
   };
 });
@@ -71,7 +72,7 @@ const actionPolicies: Record<string, ActionPolicy> = {
   "features/auth/actions/verify-email.ts#verifyEmailAction": "own-session",
   "features/books/actions.ts#addBookImage": "staff",
   "features/books/actions.ts#addCopy": "staff",
-  "features/books/actions.ts#createBook": "staff",
+  "features/books/actions.ts#createIntakeBook": "staff",
   "features/books/actions.ts#createBorrowRequest": "authenticated",
   "features/books/actions.ts#createDonor": "staff",
   "features/books/actions.ts#createLocation": "staff",

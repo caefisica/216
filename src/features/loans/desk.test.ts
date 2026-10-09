@@ -1,8 +1,11 @@
+// @vitest-environment happy-dom
+
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { eq } from "drizzle-orm";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb } from "@/lib/db";
 import { createTestDatabase, type TestDatabase } from "@/lib/db/test-database";
 import { insertBook } from "@/lib/db/test-fixtures";
@@ -11,9 +14,11 @@ import LoansPage from "@/app/admin/loans/page";
 import { activeLoansQuery, loanCountsStatement, pendingRequestsQuery } from "./repository";
 import { DESK_PAGE_SIZE } from "./schemas";
 import { getDeskService } from "./service";
+import { LoanDesk } from "./components/loan-desk";
 
 // Client components read the router, which needs a mounted Next.js app.
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
+vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
 // Session cookies need a Next.js request, so the session lookup is the only fake.
 vi.mock("@/features/auth/core/session", () => ({
@@ -55,6 +60,8 @@ beforeAll(async () => {
 afterAll(async () => {
   await testDb?.drop();
 });
+
+afterEach(cleanup);
 
 beforeEach(async () => {
   await testDb.db.prepare("DELETE FROM borrow_requests").run();
@@ -230,6 +237,19 @@ describe("the loan list", () => {
     expect(desk.items).toEqual([]);
     expect(desk.counts).toMatchObject({ active: 0, overdue: 0 });
   });
+
+  it("searches active loans by title or reader", async () => {
+    const target = await insertBook({ title: "Óptica aplicada" });
+    const other = await insertBook({ title: "Mecánica" });
+    await lend(target, 0, daysFromNow(-1), "ana");
+    await lend(other, 0, daysFromNow(-1), "ben");
+
+    const byTitle = await getDeskService("loans", 1, now, "óptica");
+    const byReader = await getDeskService("loans", 1, now, "Lector ben");
+
+    expect(byTitle.items.map((item) => item.book.title)).toEqual(["Óptica aplicada"]);
+    expect(byReader.items.map((item) => item.reader.name)).toEqual(["Lector ben"]);
+  });
 });
 
 describe("paging", () => {
@@ -404,4 +424,43 @@ describe("the desk page", () => {
     },
     SEED_TIMEOUT,
   );
+});
+
+describe("the real loan desk", () => {
+  it("renders overdue loans first and marks them", async () => {
+    const late = await insertBook({ title: "Mostrador atrasado" });
+    const current = await insertBook({ title: "Mostrador vigente" });
+    await lend(late, 0, daysFromNow(-2));
+    await lend(current, 0, daysFromNow(2));
+
+    const desk = await getDeskService("loans", 1, now);
+    render(createElement(LoanDesk, { desk }));
+
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(within(rows[0]).getByText("Mostrador atrasado")).toBeTruthy();
+    expect(within(rows[0]).getByText("Vencido hace 2 días")).toBeTruthy();
+    expect(within(rows[1]).getByText("Mostrador vigente")).toBeTruthy();
+  });
+
+  it("returns a loan through the row's return button", async () => {
+    const book = await insertBook({ title: "Devolución en mostrador" });
+    const loan = await lend(book, 0, daysFromNow(2));
+    const desk = await getDeskService("loans", 1, now);
+    render(createElement(LoanDesk, { desk }));
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Devolver Devolución en mostrador a nombre de Lector ana",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Registrar devolución" }));
+
+    await waitFor(async () => {
+      const [row] = await testDb.query<{ status: string }>(
+        "SELECT status FROM borrow_requests WHERE id = ?",
+        loan.id,
+      );
+      expect(row.status).toBe("returned");
+    });
+  });
 });

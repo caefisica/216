@@ -3,7 +3,7 @@ import { getDb } from "./index";
 import { runSeed } from "./seed";
 import register from "./seeds/catalogue.json";
 import { createTestDatabase, type TestDatabase } from "./test-database";
-import { createBookService, createBorrowRequestService } from "@/features/books/service";
+import { createIntakeBookService, createBorrowRequestService } from "@/features/books/service";
 import { listActiveLoans, listPendingRequests } from "@/features/loans/repository";
 import { approveRequestService, returnLoanService } from "@/features/loans/service";
 
@@ -210,23 +210,9 @@ describe("adding a title after the seed", () => {
       "SELECT id, next_number FROM categories WHERE code = 'FG.1'",
     );
 
-    const created = await createBookService(
+    const created = await createIntakeBookService(
       { title: "Nuevo", author: null, isbn: null, description: null, categoryId: category.id },
-      {
-        origin: "original",
-        volume: null,
-        pieces: 1,
-        edition: null,
-        year: null,
-        country: null,
-        publisher: null,
-        locationId: null,
-        donorId: null,
-        status: "present",
-        condition: null,
-        labelled: false,
-        notes: null,
-      },
+      1,
     );
 
     expect(created.code).toBe(`CAFG.1.${String(category.next_number).padStart(2, "0")}`);

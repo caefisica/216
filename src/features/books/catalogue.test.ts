@@ -7,7 +7,7 @@ import { listFacets, listBooks } from "./repository";
 import { normalizeSearch, titleKey } from "./search";
 import {
   addCopyService,
-  createBookService,
+  createIntakeBookService,
   createDonorService,
   createLocationService,
   deleteBookService,
@@ -251,6 +251,31 @@ async function categoryId(code: string) {
 }
 
 describe("registering titles and copies", () => {
+  it("creates the requested number of default copies in one intake", async () => {
+    const result = await createIntakeBookService(
+      {
+        title: "Intake de prueba",
+        author: "Una autora",
+        isbn: null,
+        description: null,
+        categoryId: await categoryId("FG.4"),
+      },
+      3,
+    );
+
+    const copies = await testDb.query<{ code: string; location_id: string | null }>(
+      "SELECT code, location_id FROM copies WHERE book_id = ? ORDER BY number",
+      result.id,
+    );
+    expect(result.copies).toBe(3);
+    expect(copies.map((copy) => copy.code)).toEqual([
+      `${result.code}.1`,
+      `${result.code}.2`,
+      `${result.code}.3`,
+    ]);
+    expect(copies.every((copy) => copy.location_id !== null)).toBe(true);
+  });
+
   it("issues consecutive title codes and never hands one out twice", async () => {
     const category = await categoryId("FG.4");
     const [{ next_number }] = await testDb.query<{ next_number: number }>(
@@ -261,7 +286,7 @@ describe("registering titles and copies", () => {
 
     const created = await Promise.all(
       Array.from({ length: 4 }, (_, i) =>
-        createBookService({ ...book, title: `Óptica ${i}`, categoryId: category }, baseCopy),
+        createIntakeBookService({ ...book, title: `Óptica ${i}`, categoryId: category }, 1),
       ),
     );
 
@@ -272,7 +297,7 @@ describe("registering titles and copies", () => {
 
   it("refuses a category that has subcategories", async () => {
     await expect(
-      createBookService(
+      createIntakeBookService(
         {
           title: "X",
           author: null,
@@ -280,13 +305,13 @@ describe("registering titles and copies", () => {
           description: null,
           categoryId: await categoryId("FG"),
         },
-        baseCopy,
+        1,
       ),
     ).rejects.toThrow("Elige una subcategoría");
   });
 
   it("numbers added copies after the highest one, even after one was deleted", async () => {
-    const { id } = await createBookService(
+    const { id } = await createIntakeBookService(
       {
         title: "Con ejemplares",
         author: null,
@@ -294,7 +319,7 @@ describe("registering titles and copies", () => {
         description: null,
         categoryId: await categoryId("FG.4"),
       },
-      baseCopy,
+      1,
     );
 
     const second = await addCopyService(id, { ...baseCopy, origin: "copy" });
@@ -353,9 +378,9 @@ describe("registering titles and copies", () => {
 describe("editing", () => {
   it("clears a field the form emptied and keeps the code", async () => {
     const category = await categoryId("FG.5");
-    const created = await createBookService(
+    const created = await createIntakeBookService(
       { title: "Antes", author: "Autor", isbn: "123", description: "d", categoryId: category },
-      baseCopy,
+      1,
     );
 
     await updateBookService(created.id, {
@@ -424,9 +449,9 @@ describe("editing", () => {
 describe("removing", () => {
   it("deletes a copy nobody borrowed, and refuses one with loan history", async () => {
     const category = await categoryId("FG.5");
-    const created = await createBookService(
+    const created = await createIntakeBookService(
       { title: "Prestado", author: null, isbn: null, description: null, categoryId: category },
-      baseCopy,
+      1,
     );
     await addCopyService(created.id, baseCopy);
     const detail = await getBookByIdService(created.id);
