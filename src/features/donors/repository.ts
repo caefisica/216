@@ -1,49 +1,72 @@
 import { getDb } from "@/lib/db";
 import { books, copies, donors } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
-export async function listDonors() {
+export async function listDonorGifts() {
   const db = await getDb();
-  return db
+  const donorRows = await db
     .select({
-      id: donors.id,
-      name: donors.name,
+      donorId: donors.id,
+      donorName: donors.name,
       motivation: donors.motivation,
+      bookId: books.id,
+      bookCode: books.code,
+      title: books.title,
+      author: books.author,
       copyCount: sql<number>`count(${copies.id})`.mapWith(Number),
     })
     .from(donors)
     .innerJoin(copies, eq(copies.donorId, donors.id))
-    .groupBy(donors.id)
-    .orderBy(sql`count(${copies.id}) DESC`, donors.name);
-}
-
-export async function listDonatedCopies() {
-  const db = await getDb();
-  return db
-    .select({
-      id: copies.id,
-      code: copies.code,
-      volume: copies.volume,
-      bookId: books.id,
-      title: books.title,
-      author: books.author,
-      donor: { id: donors.id, name: donors.name },
-    })
-    .from(copies)
     .innerJoin(books, eq(copies.bookId, books.id))
-    .innerJoin(donors, eq(copies.donorId, donors.id))
-    .orderBy(donors.name, copies.code);
-}
+    .groupBy(donors.id, books.id)
+    .orderBy(
+      desc(sql`sum(count(${copies.id})) over (partition by ${donors.id})`),
+      donors.name,
+      donors.id,
+      books.title,
+    );
 
-export async function getDonationStats() {
-  const db = await getDb();
-  const [stats] = await db
-    .select({
-      totalCopies: sql<number>`count(${copies.id})`.mapWith(Number),
-      totalDonors: sql<number>`count(distinct ${copies.donorId})`.mapWith(Number),
-    })
-    .from(copies)
-    .where(sql`${copies.donorId} IS NOT NULL`);
+  const donorsById = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      motivation: string | null;
+      copyCount: number;
+      books: {
+        id: string;
+        code: string;
+        title: string;
+        author: string | null;
+        copyCount: number;
+      }[];
+    }
+  >();
 
-  return stats;
+  for (const row of donorRows) {
+    const donor = donorsById.get(row.donorId) ?? {
+      id: row.donorId,
+      name: row.donorName,
+      motivation: row.motivation,
+      copyCount: 0,
+      books: [],
+    };
+    donor.copyCount += row.copyCount;
+    donor.books.push({
+      id: row.bookId,
+      code: row.bookCode,
+      title: row.title,
+      author: row.author,
+      copyCount: row.copyCount,
+    });
+    donorsById.set(row.donorId, donor);
+  }
+
+  const donorGroups = [...donorsById.values()];
+
+  return {
+    donors: donorGroups,
+    totalCopies: donorGroups.reduce((total, donor) => total + donor.copyCount, 0),
+    totalDonors: donorGroups.length,
+  };
 }
