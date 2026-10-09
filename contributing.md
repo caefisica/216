@@ -15,15 +15,13 @@ and starts Next.js. `bun run db:seed` adds demo accounts and the catalogue.
 Neither touches production; [deployment](docs/deployment.md#load-the-catalogue)
 loads the catalogue there. See [database](docs/database.md).
 
-Read [architecture](architecture.md) for where code lives.
+Read [architecture](docs/architecture.md) for where code lives.
 
 ## Checks
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs four checks on
-pull requests to `master`, but only when the change touches `src/**`, a `*.ts`,
-`*.json` or `*.css` file in the repository root, `bun.lock`, or the workflow
-file. A pull request that changes only Markdown runs no checks. Run them before
-you push:
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the full
+project check on every pull request into `master`, every push to `master` and
+manual workflow runs. Run it before you push:
 
 ```bash
 mise run check
