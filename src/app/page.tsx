@@ -5,6 +5,7 @@ import { listActiveLoans } from "@/features/admin/repository";
 import { getPendingRequestsService } from "@/features/admin/service";
 import { BookCatalog } from "@/features/books/components/book-catalog";
 import { AdminDashboard } from "@/features/admin/components/admin-dashboard";
+import { getLibraryCounts } from "@/features/readers/repository";
 
 export default async function HomePage({
   searchParams,
@@ -16,13 +17,20 @@ export default async function HomePage({
   const filters = parsed.success ? parsed.data : {};
   const staff = isVerifiedStaff(user);
 
-  const [initialPage, facets] = await Promise.all([
+  const [initialPage, facets, counts] = await Promise.all([
     getBooksService(filters, await getVerifiedUserId(), staff),
     getFacetsService(),
+    staff ? null : getLibraryCounts(),
   ]);
 
   const catalogue = (
-    <BookCatalog initialPage={initialPage} initialFilters={filters} facets={facets} staff={staff} />
+    <BookCatalog
+      initialPage={initialPage}
+      initialFilters={filters}
+      facets={facets}
+      staff={staff}
+      counts={counts}
+    />
   );
 
   if (staff) {

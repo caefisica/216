@@ -12,12 +12,14 @@ import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import type { BookFilters } from "../schemas";
 import type { BookListItem, BookPage, CatalogueFacets } from "../types";
+import type { LibraryCounts } from "@/features/readers/types";
 
 interface BookCatalogProps {
   initialPage: BookPage;
   initialFilters: BookFilters;
   facets: CatalogueFacets;
   staff: boolean;
+  counts: LibraryCounts | null;
 }
 
 /** The ids of the list on screen, which a title page walks with the arrow keys. */
@@ -34,7 +36,13 @@ function filtersToQuery(filters: BookFilters) {
   return query.toString();
 }
 
-export function BookCatalog({ initialPage, initialFilters, facets, staff }: BookCatalogProps) {
+export function BookCatalog({
+  initialPage,
+  initialFilters,
+  facets,
+  staff,
+  counts,
+}: BookCatalogProps) {
   const router = useRouter();
   const [pageData, setPageData] = useState(initialPage);
   const [filters, setFilters] = useState<BookFilters>(initialFilters);
@@ -154,6 +162,22 @@ export function BookCatalog({ initialPage, initialFilters, facets, staff }: Book
 
   return (
     <div className="space-y-4">
+      {counts && (
+        <section aria-label="Resumen de la colección" className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="rounded-lg border bg-white px-3 py-3 shadow-xs sm:px-4">
+            <p className="text-xl font-bold text-gray-950 sm:text-2xl">{counts.titleCount}</p>
+            <p className="text-xs text-gray-600 sm:text-sm">títulos</p>
+          </div>
+          <div className="rounded-lg border bg-white px-3 py-3 shadow-xs sm:px-4">
+            <p className="text-xl font-bold text-gray-950 sm:text-2xl">{counts.copyCount}</p>
+            <p className="text-xs text-gray-600 sm:text-sm">ejemplares</p>
+          </div>
+          <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 shadow-xs sm:px-4">
+            <p className="text-xl font-bold text-blue-800 sm:text-2xl">{counts.availableNow}</p>
+            <p className="text-xs text-blue-900 sm:text-sm">disponibles ahora</p>
+          </div>
+        </section>
+      )}
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Catálogo</p>

@@ -1,36 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { getFavoriteBooks, setHeart } from "@/features/books/actions";
+import { useState } from "react";
+import { setHeart } from "@/features/books/actions";
 import { BookCard } from "@/features/books/components/book-card";
-import { Heart, BookOpen, Loader2 } from "lucide-react";
+import { Heart, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import type { BookListItem } from "@/features/books/types";
 
-export function FavoritesClient() {
-  const [favoriteBooks, setFavoriteBooks] = useState<BookListItem[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-
-  const fetchFavoriteBooks = useCallback(async () => {
-    setLoadingData(true);
-    try {
-      const result = await getFavoriteBooks({});
-      if (isErr(result)) {
-        toastActionError(result.error);
-        return;
-      }
-      setFavoriteBooks(result.value);
-    } finally {
-      setLoadingData(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchFavoriteBooks();
-  }, [fetchFavoriteBooks]);
+export function FavoritesClient({ initialBooks }: { initialBooks: BookListItem[] }) {
+  const [favoriteBooks, setFavoriteBooks] = useState(initialBooks);
 
   const handleToggleHeart = async (e: React.MouseEvent, bookId: string) => {
     e.preventDefault();
@@ -66,11 +47,7 @@ export function FavoritesClient() {
       </div>
 
       <div className="container mx-auto px-6 py-12">
-        {loadingData ? (
-          <div className="flex justify-center py-24">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-          </div>
-        ) : favoriteBooks.length === 0 ? (
+        {favoriteBooks.length === 0 ? (
           <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-gray-200">
             <div className="h-20 w-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
               <Heart className="h-10 w-10 text-gray-300" />
