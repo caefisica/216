@@ -174,7 +174,13 @@ export async function fetchCovers({
     if (!dryRun) {
       const key = `book-images/${crypto.randomUUID()}.jpg`;
       const storedUrl = getFileUrl(key);
-      await putFileInBucket(bucket, key, new Uint8Array(await image.arrayBuffer()), "image/jpeg");
+      try {
+        await putFileInBucket(bucket, key, new Uint8Array(await image.arrayBuffer()), "image/jpeg");
+      } catch (error) {
+        console.error(`No se pudo guardar la portada de «${book.title}»:`, error);
+        errors++;
+        continue;
+      }
       try {
         const attached = await addBookImageRecord(
           { bookId: book.id, imageUrl: storedUrl, isCover: true, displayOrder: 0 },
@@ -219,7 +225,7 @@ async function main() {
     console.log(
       `Portadas encontradas: ${result.found}. Sin coincidencia: ${result.missed}. ` +
         `Errores: ${result.errors}. ` +
-        `Pendientes: ${result.total - result.found - result.missed - result.errors}.`,
+        `Pendientes: ${result.total - result.found}.`,
     );
     console.log(`Las coincidencias se guardaron en ${CACHE_FILE}; las faltantes en ${MISS_FILE}.`);
   } finally {
