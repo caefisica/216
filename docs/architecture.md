@@ -51,12 +51,12 @@ See [accounts and roles](auth.md).
 | `src/app/admin/loans/`              | Staff page of the loan desk.                                                                                         |
 | `src/features/auth/`                | Sessions, password hashing, one-time codes, rate limits. See [accounts and roles](auth.md).                          |
 | `src/features/books/`               | Titles, copies, search and filters, the list and editor components, images, favorites, requests.                     |
-| `src/components/catalogue/`         | Shared public catalogue presentation, including generated and stored book covers.                                    |
 | `src/features/books/search.ts`      | Search text normalisation and code detection. `sql.ts` holds the shared SQL fragments.                               |
 | `src/features/books/location.ts`    | The default location of a new copy. `copy-draft.ts` turns the copy form into action input.                           |
 | `src/features/users/`               | Profile updates, role changes, suspension, user activity.                                                            |
 | `src/features/donors/`              | Read-only donor and donated-copy lists.                                                                              |
 | `src/features/readers/`             | Aggregate reads shared by reader-facing pages, including collection counts.                                          |
+| `src/components/catalogue/`         | Shared public catalogue presentation, including generated and stored book covers.                                    |
 | `src/components/ui/`                | Radix-based primitives in the shadcn style (`components.json`).                                                      |
 | `src/components/layout/`            | Header and footer.                                                                                                   |
 | `src/lib/db/schema/`                | Drizzle table definitions. See [database](database.md).                                                              |

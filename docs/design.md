@@ -1,56 +1,55 @@
-# Diseño de la interfaz
+# Interface design
 
-La interfaz pública usa una escala corta y consistente:
+The public interface uses a short, consistent scale:
 
-- Texto: `0.7rem` para etiquetas, `0.875rem` para metadatos, `1rem` para
-  controles, `1.875rem` para títulos de página y `2.25rem` para el título de una
-  obra.
-- Espacio: múltiplos de `0.25rem`; las superficies usan `0.75rem` de relleno en
-  listas y entre `1.5rem` y `2.5rem` en detalles.
-- Color: en las superficies que posee este trabajo —inicio, catálogo, página de
-  libro, encabezado, pie, autenticación, perfil y
-  [`BookCover`](../src/components/catalogue/book-cover.tsx)— todos los colores
-  usan tokens de [`globals.css`](../src/app/globals.css), con valores para claro
-  y oscuro. Las páginas de [`src/app/about`](../src/app/about) y los componentes
-  de [`src/components/ui`](../src/components/ui) todavía no están migrados y
-  quedan fuera de este alcance.
+- Type: `0.7rem` for labels, `0.875rem` for metadata, `1rem` for controls,
+  `1.875rem` for page headings, and `2.25rem` for a work title.
+- Spacing: multiples of `0.25rem`; surfaces use `0.75rem` padding in lists and
+  between `1.5rem` and `2.5rem` in detail views.
+- Color: the home, catalogue, book page, header, footer, authentication and
+  profile pages and [`BookCover`](../src/components/catalogue/book-cover.tsx)
+  use only tokens from [`globals.css`](../src/app/globals.css), with light and
+  dark values. [`src/app/about`](../src/app/about) and
+  [`src/components/ui`](../src/components/ui) still use their own colors.
 
-## Componentes
+## Components
 
-[`BookCover`](../src/components/catalogue/book-cover.tsx) mantiene una relación
-fija de 2:3. Una imagen almacenada usa `/media/`; cuando falta, el componente
-renderiza una portada tipográfica con el título, autor, categoría y un color
-determinista derivado de la categoría. Así una cuadrícula no depende de que la
-colección tenga imágenes completas.
+[`BookCover`](../src/components/catalogue/book-cover.tsx) keeps a fixed 2:3
+ratio. A stored image uses `/media/`; when absent, the component renders a
+typographic cover with title, author, category, and a deterministic color
+derived from the category. A grid therefore does not depend on a complete image
+collection.
 
-La portada recibe `loading="lazy"` debajo del primer tramo visible y dimensiones
-fijas. El catálogo ofrece una lista densa y una cuadrícula. La lista conserva
-los atajos `/`, flechas y Enter; la búsqueda actualiza el resultado sin perder
-el foco. Los filtros de categoría y disponibilidad permanecen visibles.
+The cover uses `loading="lazy"` below the first visible section and fixed
+dimensions. The catalogue offers a dense list and a grid. The list keeps the
+`/`, arrow, and Enter shortcuts; search updates results without losing focus.
+Category and availability filters remain visible.
 
-La página de una obra pone la portada y la acción de préstamo junto al título,
-autor, código, categoría y tabla de ejemplares. La disponibilidad sigue siendo
-la consulta compartida `copyIsLendable` en
+A book page places the cover and borrow action beside the title, author, code,
+category, and copy table. Availability remains owned by the shared
+`copyIsLendable` query in
 [`src/features/books/sql.ts`](../src/features/books/sql.ts).
 
-## Portadas importadas
+## Imported covers
 
-`bun run covers:fetch` consulta Open Library una obra a la vez. Normaliza el
-título y el primer autor, exige una coincidencia cercana del título, guarda la
-respuesta en `.cache/covers/open-library.json` y registra faltantes en
-`.cache/covers/misses.json`. Descarga la imagen aceptada al prefijo existente
-`book-images/` del bucket R2, registra `/media/book-images/...` en `books` y
-`book_images`, y nunca guarda la URL de Open Library.
+`bun run covers:fetch` queries Open Library one work at a time. It normalizes
+the title and first author, requires a close title match, stores the response in
+`.cache/covers/open-library.json`, and records misses in
+`.cache/covers/misses.json`. It downloads accepted images to the existing
+`book-images/` R2 prefix, records `/media/book-images/...` in `books` and
+`book_images`, and never stores an Open Library URL.
 
-La fuente del catálogo y el bucket son los bindings locales de Wrangler. El
-comando no usa Google Books ni necesita credenciales.
+The database and bucket are Wrangler's local bindings. The command needs no
+credentials; `--dry-run` matches and caches results without writing to R2 or the
+database.
 
-## Capturas revisables
+## Review screenshots
 
-El servidor de producción local debe estar ejecutándose para capturar la
-interfaz: `bun run screenshots` escribe las vistas de inicio, catálogo en
-cuadrícula y una obra con portada real y generada en `docs/ui/`, en 375 y 1280
-píxeles. Para revisar los tokens oscuros se puede ejecutar
-`bun run screenshots -- --dark`; esa variante escribe las capturas con el sufijo
-`-dark`. El comando requiere Chromium instalado mediante
-`bunx playwright install chromium`.
+`bun run screenshots` opens a running site, `http://localhost:3000` unless
+`SCREENSHOT_BASE_URL` says otherwise, and writes the home page, the catalogue
+grid, and a book with a stored cover and one without to `docs/ui/` at 375 and
+1280 pixels. It looks for those two books through every catalogue page and only
+reads the site; when no book has a stored cover (or none lacks one) it prints a
+warning and skips that book's captures. `bun run screenshots -- --dark` writes
+the same files with a `-dark` suffix. The command requires Chromium, installed
+with `bunx playwright install chromium`.
