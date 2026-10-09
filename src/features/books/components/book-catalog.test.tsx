@@ -41,6 +41,7 @@ const initialPage: BookPage = {
       },
       copyCount: 1,
       lendableCount: 1,
+      heartsCount: 0,
       isHearted: false,
     },
   ],
@@ -162,6 +163,54 @@ describe("catalogue favorite controls", () => {
         hearted: true,
       }),
     );
+  });
+
+  it("shares favorite state between the list and the detail pane", async () => {
+    const hearted = new Map<string, boolean>();
+    actionMocks.setHeart.mockImplementation(
+      async ({ bookId, hearted: next }: { bookId: string; hearted: boolean }) => {
+        hearted.set(bookId, next);
+        return { ok: true, value: { hearted: next } };
+      },
+    );
+    actionMocks.getBookById.mockImplementation(async (id: string) => ({
+      ok: true,
+      value: {
+        ...(id === secondBook.id ? secondDetailedBook : detailedBook),
+        isHearted: hearted.get(id) ?? false,
+        heartsCount: hearted.get(id) ? 1 : 0,
+      },
+    }));
+    render(
+      <BookCatalog
+        initialPage={{ ...initialPage, items: [initialPage.items[0], secondBook], total: 2 }}
+        initialFilters={{}}
+        facets={facets}
+        staff={false}
+        counts={null}
+        user={{
+          id: "00000000-0000-4000-8000-000000000009",
+          email: "lectora@example.com",
+          name: "Lectora",
+          emailVerified: true,
+          role: "user",
+        }}
+        initialSelectedBook={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("option", { name: /Un título de prueba/ }));
+    const firstPane = await screen.findByTestId("catalogue-detail-pane");
+    fireEvent.click(within(firstPane).getByRole("button", { name: "Me gusta (0)" }));
+    expect(await screen.findByRole("button", { name: "Quitar de favoritos" })).not.toBeNull();
+    expect(await within(firstPane).findByRole("button", { name: "Te gusta (1)" })).not.toBeNull();
+
+    fireEvent.click(
+      screen.getByRole("option", { name: /Otro título de prueba/ }).querySelector("button")!,
+    );
+    fireEvent.click(screen.getByRole("option", { name: /Otro título de prueba/ }));
+    const secondPane = await screen.findByTestId("catalogue-detail-pane");
+    expect(await within(secondPane).findByRole("button", { name: "Te gusta (1)" })).not.toBeNull();
   });
 
   it("calls the favorite action from grid view", async () => {
