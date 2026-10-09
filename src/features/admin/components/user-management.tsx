@@ -315,7 +315,6 @@ export function UserManagement() {
               <CardContent className="p-6">
                 <div className="space-y-5">
                   <div className="flex items-center justify-between text-[10px] text-gray-400 font-black uppercase tracking-tighter pb-3 border-b border-gray-50">
-                    <span>Donaciones: ${u.totalDonations || 0}</span>
                     <span>Desde: {new Date(u.createdAt).toLocaleDateString()}</span>
                   </div>
 

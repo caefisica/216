@@ -69,19 +69,6 @@ export function AdminStats() {
   const totalBooksPages = Math.ceil(allPopularBooks.length / BOOKS_PER_PAGE);
   const totalUsersPages = Math.ceil(activeUsers.length / BOOKS_PER_PAGE);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "available":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Disponible</Badge>;
-      case "borrowed":
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-200">Prestado</Badge>;
-      case "maintenance":
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Mantenimiento</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
   const getRoleBadge = (role: string) => {
     switch (role) {
       case "admin":
@@ -184,7 +171,7 @@ export function AdminStats() {
                     <div>
                       <h4 className="font-semibold text-sm">{book.title}</h4>
                       <p className="text-xs text-gray-500">{book.author}</p>
-                      <div className="mt-1">{getStatusBadge(book.status)}</div>
+                      <p className="mt-1 font-mono text-[10px] text-gray-400">{book.code}</p>
                     </div>
                   </div>
                   <div className="text-right">

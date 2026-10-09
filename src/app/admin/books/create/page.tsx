@@ -1,7 +1,7 @@
 import { requireStaffPage } from "@/features/auth/protected-action";
-import { NewBookClient } from "./new-book-client";
+import { BookEditorLoader } from "@/features/books/components/book-editor-loader";
 
 export default async function NewBookPage() {
   await requireStaffPage();
-  return <NewBookClient />;
+  return <BookEditorLoader />;
 }

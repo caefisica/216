@@ -2,12 +2,12 @@ import { useState } from "react";
 import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import { TOAST_MESSAGES } from "../constants/book-constants";
-import type { User } from "@/features/users/types";
+import type { AuthUser } from "@/features/auth/core/session";
 import { createBorrowRequest, setHeart } from "@/features/books/actions";
 import { useRouter } from "next/navigation";
 
 export function useBookActions(
-  user: User | null,
+  user: AuthUser | null,
   bookId: string,
   initialBook?: { id: string; isHearted?: boolean; heartsCount?: number },
 ) {

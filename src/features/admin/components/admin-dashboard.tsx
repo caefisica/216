@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { AdminBookCard } from "./admin-book-card";
+import { useRouter } from "next/navigation";
 import { AdminStats } from "./admin-stats";
 import { UserManagement } from "./user-management";
 import { BorrowingTimeline } from "./borrowing-timeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import {
   Plus,
   BookOpen,
@@ -17,45 +16,36 @@ import {
   UserCog,
   Activity,
   BarChart3,
-  Search,
-  Filter,
   CheckCircle2,
   XCircle,
   Undo2,
 } from "lucide-react";
 import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
-import { getBooks, deleteBook } from "../../books/actions";
+import { locationLabel } from "../../books/labels";
 import {
   getActiveLoans,
   getPendingBorrowRequests,
   returnLoan,
   updateBorrowStatus,
 } from "../actions";
-import type { BookDetailed } from "../../books/types";
 import type { ActiveLoan, PendingRequest } from "../types";
 
 interface AdminDashboardProps {
-  initialBooks: BookDetailed[];
+  catalogue: ReactNode;
   initialPendingRequests: PendingRequest[];
   initialActiveLoans: ActiveLoan[];
 }
 
 export function AdminDashboard({
-  initialBooks,
+  catalogue,
   initialPendingRequests,
   initialActiveLoans,
 }: AdminDashboardProps) {
-  const [books, setBooks] = useState<BookDetailed[]>(initialBooks);
+  const router = useRouter();
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>(initialPendingRequests);
   const [activeLoans, setActiveLoans] = useState<ActiveLoan[]>(initialActiveLoans);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const refreshBooks = useCallback(async () => {
-    const result = await getBooks({ search: searchQuery });
-    if (isErr(result)) toastActionError(result.error);
-    else setBooks(result.value);
-  }, [searchQuery]);
+  const [chosenCopies, setChosenCopies] = useState<Record<string, string>>({});
 
   const refreshLoans = async () => {
     const [pending, active] = await Promise.all([getPendingBorrowRequests(), getActiveLoans()]);
@@ -63,20 +53,16 @@ export function AdminDashboard({
     else setPendingRequests(pending.value);
     if (isErr(active)) toastActionError(active.error);
     else setActiveLoans(active.value);
+    router.refresh();
   };
 
-  const handleDeleteBook = async (bookId: string) => {
-    const result = await deleteBook({ bookId });
-    if (isErr(result)) {
-      toastActionError(result.error);
-      return;
-    }
-    toast({ title: "Libro eliminado", description: "El libro ha sido eliminado del sistema." });
-    refreshBooks();
-  };
-
-  const handleRequestAction = async (requestId: string, action: "approved" | "rejected") => {
-    const result = await updateBorrowStatus({ requestId, status: action });
+  const handleRequestAction = async (req: PendingRequest, action: "approved" | "rejected") => {
+    const result = await updateBorrowStatus({
+      requestId: req.id,
+      status: action,
+      copyId:
+        action === "approved" ? (chosenCopies[req.id] ?? req.lendableCopies[0]?.id) : undefined,
+    });
     if (isErr(result)) {
       toastActionError(result.error);
     } else {
@@ -86,7 +72,6 @@ export function AdminDashboard({
       });
     }
     await refreshLoans();
-    refreshBooks();
   };
 
   const handleReturn = async (requestId: string) => {
@@ -94,10 +79,12 @@ export function AdminDashboard({
     if (isErr(result)) {
       toastActionError(result.error);
     } else {
-      toast({ title: "Devolución registrada", description: "El libro vuelve a estar disponible." });
+      toast({
+        title: "Devolución registrada",
+        description: "El ejemplar vuelve a estar disponible.",
+      });
     }
     await refreshLoans();
-    refreshBooks();
   };
 
   return (
@@ -147,46 +134,10 @@ export function AdminDashboard({
               </TabsTrigger>
             ))}
           </TabsList>
-
-          <div className="flex gap-4 min-w-[320px]">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Filtro rápido..."
-                className="h-12 pl-10 rounded-2xl bg-white border-gray-100 shadow-xs"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && refreshBooks()}
-              />
-            </div>
-            <Button
-              variant="secondary"
-              className="h-12 px-5 rounded-2xl border hover:bg-white transition-colors"
-              onClick={refreshBooks}
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
 
         <TabsContent value="books" className="space-y-6 focus-visible:outline-hidden">
-          {books.length === 0 ? (
-            <div className="text-center py-20 bg-gray-50/50 rounded-3xl border border-dashed">
-              <Filter className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500 font-medium">No se encontraron libros en esta vista.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8">
-              {books.map((book, index) => (
-                <AdminBookCard
-                  key={book.id}
-                  book={book}
-                  onDelete={() => handleDeleteBook(book.id)}
-                  priority={index < 4}
-                />
-              ))}
-            </div>
-          )}
+          {catalogue}
         </TabsContent>
 
         <TabsContent value="requests" className="space-y-8 focus-visible:outline-hidden">
@@ -211,7 +162,12 @@ export function AdminDashboard({
                     >
                       <div className="space-y-1.5">
                         <h4 className="font-bold text-gray-900 text-lg leading-tight">
-                          {req.book?.title}
+                          <Link href={`/books/${req.book.id}`} className="hover:underline">
+                            {req.book.title}
+                          </Link>
+                          <span className="ml-2 font-mono text-xs font-normal text-gray-500">
+                            {req.book.code}
+                          </span>
                         </h4>
                         <p className="text-sm text-gray-600 flex items-center gap-2 font-medium">
                           <span className="text-blue-600">@{req.user?.name}</span> •{" "}
@@ -225,22 +181,49 @@ export function AdminDashboard({
                           })}
                         </p>
                       </div>
-                      <div className="flex gap-2 w-full sm:w-auto">
-                        <Button
-                          size="lg"
-                          className="flex-1 sm:flex-none h-11 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold"
-                          onClick={() => handleRequestAction(req.id, "approved")}
-                        >
-                          <CheckCircle2 className="h-5 w-5 mr-2" /> Aprobar
-                        </Button>
-                        <Button
-                          size="lg"
-                          variant="ghost"
-                          className="flex-1 sm:flex-none h-11 px-6 rounded-xl border-gray-100 font-bold text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => handleRequestAction(req.id, "rejected")}
-                        >
-                          <XCircle className="h-5 w-5 mr-2" /> Rechazar
-                        </Button>
+                      <div className="flex flex-col gap-2 w-full sm:w-auto">
+                        {req.lendableCopies.length === 0 ? (
+                          <p className="text-sm text-red-600">
+                            Ningún ejemplar disponible: se puede rechazar o esperar una devolución.
+                          </p>
+                        ) : (
+                          <select
+                            aria-label="Ejemplar a prestar"
+                            className="h-9 rounded-md border border-gray-200 bg-white px-2 text-sm"
+                            value={chosenCopies[req.id] ?? req.lendableCopies[0].id}
+                            onChange={(e) =>
+                              setChosenCopies((prev) => ({ ...prev, [req.id]: e.target.value }))
+                            }
+                          >
+                            {req.lendableCopies.map((copy) => (
+                              <option key={copy.id} value={copy.id}>
+                                {copy.code}
+                                {copy.volume ? ` · ${copy.volume}` : ""}
+                                {copy.location
+                                  ? ` · ${locationLabel(copy.location)}`
+                                  : " · sin ubicación"}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        <div className="flex gap-2">
+                          <Button
+                            size="lg"
+                            className="flex-1 sm:flex-none h-11 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold"
+                            disabled={req.lendableCopies.length === 0}
+                            onClick={() => handleRequestAction(req, "approved")}
+                          >
+                            <CheckCircle2 className="h-5 w-5 mr-2" /> Aprobar
+                          </Button>
+                          <Button
+                            size="lg"
+                            variant="ghost"
+                            className="flex-1 sm:flex-none h-11 px-6 rounded-xl border-gray-100 font-bold text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleRequestAction(req, "rejected")}
+                          >
+                            <XCircle className="h-5 w-5 mr-2" /> Rechazar
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -273,6 +256,10 @@ export function AdminDashboard({
                         <div className="space-y-1.5">
                           <h4 className="font-bold text-gray-900 text-lg leading-tight">
                             {loan.book.title}
+                            <span className="ml-2 font-mono text-xs font-normal text-gray-500">
+                              {loan.copy.code}
+                              {loan.copy.volume ? ` · ${loan.copy.volume}` : ""}
+                            </span>
                           </h4>
                           <p className="text-sm text-gray-600 flex items-center gap-2 font-medium">
                             <span className="text-blue-600">@{loan.user.name}</span> •{" "}

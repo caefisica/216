@@ -1,37 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { BookImage } from "./components/book-image";
 import { BookActions } from "./components/book-actions";
 import { BookHeader } from "./components/book-header";
 import { BookDetails } from "./components/book-details";
-import { EditForm } from "./components/edit-form";
-import type { BookFormData } from "./types/book-types";
-import { toast, toastActionError } from "@/hooks/use-toast";
-import { isErr } from "@/lib/result";
-import { saveBookWithImages } from "@/features/books/actions/editor";
-import { deleteBookImage, setCoverImage } from "@/features/books/actions";
-import { useRouter } from "next/navigation";
-import type { BookDetailed, Category, BookImage as BookImageData } from "@/features/books/types";
-import type { User } from "@/features/users/types";
+import { LIST_STORAGE_KEY } from "@/features/books/components/book-catalog";
+import type { BookDetailed } from "@/features/books/types";
+import type { AuthUser } from "@/features/auth/core/session";
 import { useBookActions } from "./hooks/use-book-actions";
 
 interface BookClientProps {
-  initialBook: BookDetailed;
-  categories: Category[];
-  user: unknown;
+  book: BookDetailed;
+  user: AuthUser | null;
 }
 
-export default function BookClient({ initialBook, categories, user }: BookClientProps) {
+export default function BookClient({ book, user }: BookClientProps) {
   const router = useRouter();
-  const book = initialBook;
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<BookFormData>(initialBook as unknown as BookFormData);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    initialBook.categories?.map((c) => c.id) || [],
-  );
-  const [existingImages, setExistingImages] = useState<BookImageData[]>(initialBook.images || []);
-  const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const {
@@ -42,79 +28,28 @@ export default function BookClient({ initialBook, categories, user }: BookClient
     heartsCount,
     handleBorrowRequest,
     handleToggleHeart,
-  } = useBookActions(user as User, initialBook.id, {
-    id: initialBook.id,
-    isHearted: initialBook.isHearted,
-    heartsCount: initialBook.heartsCount,
+  } = useBookActions(user, book.id, {
+    id: book.id,
+    isHearted: book.isHearted,
+    heartsCount: book.heartsCount,
   });
 
-  const canEdit = Boolean(
-    user &&
-    ((user as unknown as User).role === "librarian" || (user as unknown as User).role === "admin"),
-  );
+  const canEdit = user?.role === "librarian" || user?.role === "admin";
 
-  const handleSaveBookAsync = async (
-    uploadedImages: {
-      id: string;
-      url: string;
-      fileName: string;
-      isCover: boolean;
-      altText: string;
-    }[],
-  ) => {
-    setSaving(true);
-    try {
-      const result = await saveBookWithImages({
-        bookId: book.id,
-        bookData: {
-          title: editForm.title!,
-          author: editForm.author!,
-          isbn: editForm.isbn || undefined,
-          publisher: editForm.publisher || undefined,
-          publicationYear: editForm.publicationYear ? Number(editForm.publicationYear) : undefined,
-          pages: editForm.pages ? Number(editForm.pages) : undefined,
-          description: editForm.description || undefined,
-          status: editForm.status!,
-          location: editForm.location || undefined,
-          categoryId: selectedCategories[0] || undefined,
-        },
-        uploadedImages,
-        selectedCategories,
-      });
-
-      if (isErr(result)) {
-        toastActionError(result.error);
-        return;
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes((event.target as HTMLElement).tagName)) return;
+      const ids: string[] = JSON.parse(sessionStorage.getItem(LIST_STORAGE_KEY) ?? "[]");
+      const next = ids[ids.indexOf(book.id) + (event.key === "ArrowDown" ? 1 : -1)];
+      if (next) {
+        event.preventDefault();
+        router.push(`/books/${next}`);
       }
-      toast({ title: "Libro actualizado", description: "Libro actualizado correctamente" });
-      setIsEditing(false);
-      router.refresh();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const removeExistingImage = async (imageId: string) => {
-    const result = await deleteBookImage({ imageId, bookId: book.id });
-    if (isErr(result)) {
-      toastActionError(result.error);
-      return;
-    }
-    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
-    toast({ title: "Imagen eliminada" });
-  };
-
-  const handleSetCoverImage = async (imageId: string, isExisting: boolean) => {
-    if (isExisting) {
-      const result = await setCoverImage({ imageId, bookId: book.id });
-      if (isErr(result)) {
-        toastActionError(result.error);
-        return;
-      }
-      setExistingImages((prev) => prev.map((img) => ({ ...img, isCover: img.id === imageId })));
-    }
-    toast({ title: "Portada actualizada" });
-  };
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [book.id, router]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -122,7 +57,7 @@ export default function BookClient({ initialBook, categories, user }: BookClient
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
             <div className="sticky top-24">
-              <BookImage images={existingImages} title={book.title} />
+              <BookImage images={book.images} title={book.title} />
               <BookActions
                 book={book}
                 isHearted={isHearted}
@@ -139,33 +74,11 @@ export default function BookClient({ initialBook, categories, user }: BookClient
           </div>
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-lg border p-6">
-              <BookHeader
-                book={book}
-                canEdit={canEdit}
-                isEditing={isEditing}
-                onToggleEditing={() => setIsEditing(!isEditing)}
-              />
-              {isEditing ? (
-                <EditForm
-                  editForm={editForm}
-                  onFormChange={(f, v) => setEditForm((p) => ({ ...p, [f]: v }))}
-                  onSave={handleSaveBookAsync}
-                  categories={categories}
-                  selectedCategories={selectedCategories}
-                  onCategoryToggle={(id) =>
-                    setSelectedCategories((prev) =>
-                      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-                    )
-                  }
-                  existingImages={existingImages}
-                  onImageRemove={removeExistingImage}
-                  onSetCover={handleSetCoverImage}
-                  saving={saving}
-                  userId={(user as unknown as User)?.id}
-                />
-              ) : (
-                <BookDetails book={book} />
-              )}
+              <BookHeader book={book} canEdit={canEdit} />
+              <BookDetails book={book} canEdit={canEdit} />
+              <p className="mt-6 text-xs text-gray-400">
+                ↑ ↓ título anterior o siguiente de la lista
+              </p>
             </div>
           </div>
         </div>

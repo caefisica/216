@@ -276,9 +276,9 @@ export function ProfileClient({ user }: { user: AuthUser }) {
                       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div className="flex gap-6">
                           <div className="h-20 w-16 relative bg-gray-50 rounded-xl overflow-hidden border shrink-0">
-                            {req.book?.images?.[0]?.imageUrl && (
+                            {req.book?.imageUrl && (
                               <Image
-                                src={req.book.images[0].imageUrl}
+                                src={req.book.imageUrl}
                                 alt={req.book.title}
                                 fill
                                 className="object-cover"
@@ -294,6 +294,12 @@ export function ProfileClient({ user }: { user: AuthUser }) {
                               {req.book?.title}
                             </Link>
                             <p className="text-gray-500 font-medium mb-2">{req.book?.author}</p>
+                            {req.copy && (
+                              <p className="mb-2 font-mono text-xs text-gray-500">
+                                Ejemplar {req.copy.code}
+                                {req.copy.volume ? ` · ${req.copy.volume}` : ""}
+                              </p>
+                            )}
                             <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-tighter">
                               <Calendar className="h-3.5 w-3.5" />
                               Solicitado el {new Date(req.requestDate).toLocaleDateString()}

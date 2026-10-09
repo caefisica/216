@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDonors, getDonations, getDonationsStats } from "@/features/donors/actions";
-import type { Donor, Donation, DonationStats } from "@/features/donors/types";
+import Link from "next/link";
+import { getDonors, getDonatedCopies, getDonationsStats } from "@/features/donors/actions";
+import type { Donor, DonatedCopy, DonationStats } from "@/features/donors/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Users, BookOpen, Quote, Calendar } from "lucide-react";
+import { Heart, Users, BookOpen, Quote } from "lucide-react";
 
 export default function DonorsPage() {
   const [activeDonors, setActiveDonors] = useState<Donor[]>([]);
-  const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
+  const [donatedCopies, setDonatedCopies] = useState<DonatedCopy[]>([]);
   const [stats, setStats] = useState<DonationStats>({
-    totalBooks: 0,
+    totalCopies: 0,
     totalDonors: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -25,15 +26,15 @@ export default function DonorsPage() {
   const fetchDonationsData = async () => {
     try {
       setLoading(true);
-      const [donorsData, donationsData, statsData] = await Promise.all([
+      const [donorsData, copiesData, statsData] = await Promise.all([
         getDonors(),
-        getDonations(),
+        getDonatedCopies(),
         getDonationsStats(),
       ]);
 
-      setActiveDonors(donorsData || []);
-      setRecentDonations(donationsData || []);
-      setStats(statsData || { totalBooks: 0, totalDonors: 0 });
+      setActiveDonors(donorsData);
+      setDonatedCopies(copiesData);
+      setStats(statsData);
     } catch (error) {
       console.error("Error fetching donations data:", error);
     } finally {
@@ -65,9 +66,9 @@ export default function DonorsPage() {
               <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="h-7 w-7 text-blue-600" />
               </div>
-              <div className="text-4xl font-black text-gray-900 mb-1">{stats.totalBooks}</div>
+              <div className="text-4xl font-black text-gray-900 mb-1">{stats.totalCopies}</div>
               <div className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-                Libros Donados
+                Ejemplares Donados
               </div>
             </div>
             <div className="bg-white border border-gray-100 p-8 rounded-3xl shadow-xl shadow-green-900/5 w-56 transform transition-all hover:scale-105">
@@ -97,7 +98,7 @@ export default function DonorsPage() {
                 value="donations"
                 className="rounded-xl px-8 py-3 data-[state=active]:bg-white data-[state=active]:shadow-xs font-bold text-sm"
               >
-                Últimas Entradas
+                Ejemplares
               </TabsTrigger>
             </TabsList>
           </div>
@@ -155,12 +156,10 @@ export default function DonorsPage() {
                         </p>
                       )}
                       <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-tighter">
-                        <Calendar className="h-3.5 w-3.5" />
-                        Miembro desde{" "}
-                        {new Date(donor.createdAt).toLocaleDateString("es-ES", {
-                          month: "long",
-                          year: "numeric",
-                        })}
+                        <BookOpen className="h-3.5 w-3.5" />
+                        {donor.copyCount === 1
+                          ? "1 ejemplar donado"
+                          : `${donor.copyCount} ejemplares donados`}
                       </div>
                     </CardContent>
                   </Card>
@@ -186,42 +185,33 @@ export default function DonorsPage() {
                           Donante
                         </th>
                         <th className="px-8 py-6 font-black text-gray-400 uppercase tracking-widest text-[10px] text-right">
-                          Fecha
+                          Código
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {recentDonations.map((donation) => (
-                        <tr
-                          key={donation.id}
-                          className="hover:bg-gray-50/30 transition-colors group"
-                        >
+                      {donatedCopies.map((copy) => (
+                        <tr key={copy.id} className="hover:bg-gray-50/30 transition-colors group">
                           <td className="px-8 py-6">
-                            <span className="font-bold text-gray-900 block group-hover:text-blue-600 transition-colors">
-                              {donation.bookTitle}
-                            </span>
+                            <Link
+                              href={`/books/${copy.bookId}`}
+                              className="font-bold text-gray-900 block group-hover:text-blue-600 transition-colors"
+                            >
+                              {copy.title}
+                              {copy.volume ? ` · ${copy.volume}` : ""}
+                            </Link>
                           </td>
-                          <td className="px-8 py-6 text-gray-500 font-medium">
-                            {donation.bookAuthor}
-                          </td>
+                          <td className="px-8 py-6 text-gray-500 font-medium">{copy.author}</td>
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-2">
-                              {donation.donor?.name ? (
-                                <>
-                                  <div className="h-6 w-6 rounded-md bg-blue-50 flex items-center justify-center text-[10px] font-black text-blue-600">
-                                    {donation.donor.name.charAt(0)}
-                                  </div>
-                                  <span className="font-bold text-gray-700">
-                                    {donation.donor.name}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="text-gray-400 italic">Anónimo</span>
-                              )}
+                              <div className="h-6 w-6 rounded-md bg-blue-50 flex items-center justify-center text-[10px] font-black text-blue-600">
+                                {copy.donor.name.charAt(0)}
+                              </div>
+                              <span className="font-bold text-gray-700">{copy.donor.name}</span>
                             </div>
                           </td>
-                          <td className="px-8 py-6 text-right font-medium text-gray-400">
-                            {new Date(donation.donationDate).toLocaleDateString()}
+                          <td className="px-8 py-6 text-right font-mono text-xs text-gray-400">
+                            {copy.code}
                           </td>
                         </tr>
                       ))}

@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
-import type { BookDetailed } from "@/features/books/types";
+import type { BookListItem } from "@/features/books/types";
 
 export function FavoritesClient() {
-  const [favoriteBooks, setFavoriteBooks] = useState<BookDetailed[]>([]);
+  const [favoriteBooks, setFavoriteBooks] = useState<BookListItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   const fetchFavoriteBooks = useCallback(async () => {
@@ -22,7 +22,7 @@ export function FavoritesClient() {
         toastActionError(result.error);
         return;
       }
-      setFavoriteBooks(result.value as BookDetailed[]);
+      setFavoriteBooks(result.value);
     } finally {
       setLoadingData(false);
     }

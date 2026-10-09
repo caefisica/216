@@ -49,7 +49,11 @@ export function BookActions({
         {isHearted ? "Te gusta" : "Me gusta"} ({heartsCount})
       </Button>
 
-      {book.status === "available" && (
+      {book.lendableCount === 0 && (
+        <p className="text-center text-sm text-gray-500">Ningún ejemplar está disponible ahora.</p>
+      )}
+
+      {book.lendableCount > 0 && (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="w-full">
@@ -59,7 +63,7 @@ export function BookActions({
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Request to Borrow</DialogTitle>
+              <DialogTitle>Solicitar préstamo</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
