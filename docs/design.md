@@ -7,10 +7,17 @@ The public interface uses a short, consistent scale:
 - Spacing: multiples of `0.25rem`; surfaces use `0.75rem` padding in lists and
   between `1.5rem` and `2.5rem` in detail views.
 - Color: the home, catalogue, book page, header, footer, authentication and
-  profile pages and [`BookCover`](../src/components/catalogue/book-cover.tsx)
-  use only tokens from [`globals.css`](../src/app/globals.css), with light and
-  dark values. [`src/app/about`](../src/app/about) and
+  profile pages, admin pages and
+  [`BookCover`](../src/components/catalogue/book-cover.tsx) use only tokens from
+  [`globals.css`](../src/app/globals.css), with light and dark values.
+  [`src/app/about`](../src/app/about) and
   [`src/components/ui`](../src/components/ui) still use their own colors.
+  Semantic status colors use the named `status-*` tokens in the same file.
+
+Admin pages use the same type scale, spacing, surfaces, borders and buttons. The
+loans desk keeps the queue dense on wide screens and stacks each row below 768
+pixels. Intake shows the generated or stored cover beside the fields, with one
+primary action and an inline error under each invalid field.
 
 ## Components
 

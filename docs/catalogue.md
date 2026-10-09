@@ -289,19 +289,21 @@ the file holds no contact data.
 
 ### Intake and edit
 
-`/admin/books/create` and `/admin/books/<id>`
-([`book-editor.tsx`](../src/features/books/components/book-editor.tsx)) are
-staff-only.
+`/admin/books/create` and `/admin/books/<id>` are staff-only. Intake uses
+[`book-intake-form.tsx`](../src/features/books/components/book-intake-form.tsx);
+the existing-title editor uses
+[`book-editor.tsx`](../src/features/books/components/book-editor.tsx).
 
 - Intake starts with the title. Matching titles are listed with _Agregar un
-  ejemplar_, so a second copy does not become a duplicate title.
-- One form holds the title fields, a category (leaf categories only) and the
-  first copy. The copy's location is filled from the category until staff choose
-  one. The donor field suggests existing donors, and a new name creates a donor
-  when the form is saved.
+  ejemplar_, which adds a default copy to that title, so a second copy does not
+  become a duplicate title.
+- Intake asks for the title, author, ISBN, category and number of copies. It
+  shows a generated cover until a stored cover exists. Codes and default copy
+  data, including the category's default location when one is unambiguous, are
+  generated when the form is saved. Later copies use the category's extra bay
+  when one is configured.
 - Saving shows the issued copy code in large type, for the librarian to write on
-  the spine. _Agregar otro_ keeps the category, origin, location, donor, country
-  and publisher.
+  the spine and offers _Agregar otro_.
 - Edit changes the title fields, adds, edits and deletes copies, manages the
   cover and other images, and deletes the book after a confirmation. The codes
   and copy numbers are read-only.
