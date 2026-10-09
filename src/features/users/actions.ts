@@ -7,7 +7,7 @@ import {
   staffAction,
 } from "@/features/auth/protected-action";
 import { Role } from "@/lib/db/schema";
-import { listUsers, listUserActivity } from "./repository";
+import { listUsers } from "./repository";
 import { updateUserProfileService, updateUserRoleService, suspendUserService } from "./service";
 
 const UserIdSchema = z.string().min(1);
@@ -23,10 +23,6 @@ const ProfileUpdateSchema = z.object({
 
 export const getAllUsers = staffAction(z.void(), async () => {
   return listUsers();
-});
-
-export const getUserActivity = authenticatedAction(z.void(), async (_, session) => {
-  return listUserActivity(session.user.id);
 });
 
 export const updateUserProfile = authenticatedAction(ProfileUpdateSchema, async (data, session) => {
