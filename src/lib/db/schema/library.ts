@@ -148,6 +148,7 @@ export const copies = sqliteTable(
     index("copies_location_idx").on(table.locationId),
     index("copies_donor_idx").on(table.donorId),
     index("copies_status_idx").on(table.status),
+    index("copies_book_status_idx").on(table.bookId, table.status),
     check("copies_origin_check", inList(table.origin, CopyOrigin)),
     check("copies_status_check", inList(table.status, CopyStatus)),
     check(
@@ -198,11 +199,18 @@ export const borrowRequests = sqliteTable(
     dueDate: integer("due_date", { mode: "timestamp_ms" }),
     returnDate: integer("return_date", { mode: "timestamp_ms" }),
     notes: text("notes"),
+    rejectionReason: text("rejection_reason"),
     createdAt: timestampNow("created_at"),
     updatedAt: timestampNow("updated_at"),
   },
   (table) => [
     index("borrow_requests_user_idx").on(table.userId, table.requestDate),
+    index("borrow_requests_queue_idx")
+      .on(table.requestDate, table.id)
+      .where(sql`${table.status} = 'pending'`),
+    index("borrow_requests_due_idx")
+      .on(table.dueDate, table.id)
+      .where(sql`${table.status} = 'approved'`),
     index("borrow_requests_book_idx").on(table.bookId),
     index("borrow_requests_date_idx").on(table.requestDate),
     foreignKey({
@@ -213,6 +221,10 @@ export const borrowRequests = sqliteTable(
     check(
       "borrow_requests_status_check",
       sql`${table.status} IN ('pending', 'approved', 'rejected', 'returned')`,
+    ),
+    check(
+      "borrow_requests_rejection_check",
+      sql`${table.status} <> 'rejected' OR length(trim(coalesce(${table.rejectionReason}, ''))) > 0`,
     ),
     check(
       "borrow_requests_copy_check",
