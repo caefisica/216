@@ -13,7 +13,6 @@ export function BookDetails({ book, canEdit }: BookDetailsProps) {
     <>
       {book.description && (
         <>
-          <Separator className="my-6" />
           <div>
             <h3 className="mb-3 flex items-center text-base font-semibold">
               <FileText className="h-5 w-5 mr-2" />
@@ -21,10 +20,9 @@ export function BookDetails({ book, canEdit }: BookDetailsProps) {
             </h3>
             <p className="leading-relaxed text-muted-foreground">{book.description}</p>
           </div>
+          <Separator className="my-6" />
         </>
       )}
-
-      <Separator className="my-6" />
 
       <div>
         <div className="mb-3 flex items-end justify-between gap-3">

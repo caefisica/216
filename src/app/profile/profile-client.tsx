@@ -199,14 +199,13 @@ export function ProfileClient({
                     <CardContent className="p-8">
                       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div className="flex gap-6">
-                          <div className="h-20 w-16 shrink-0 overflow-hidden rounded border border-border">
+                          <div className="w-16 shrink-0 overflow-hidden rounded border border-border">
                             {req.book && (
                               <BookCover
                                 title={req.book.title}
                                 author={req.book.author}
                                 category={req.book.category.name}
                                 imageUrl={req.book.imageUrl}
-                                className="h-20 w-16"
                               />
                             )}
                           </div>

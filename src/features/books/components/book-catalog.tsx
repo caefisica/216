@@ -470,7 +470,7 @@ export function BookCatalog({
                   role="option"
                   aria-selected={index === selected}
                   onMouseEnter={() => setSelected(index)}
-                  className={`grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 text-sm transition sm:grid-cols-[7rem_1fr_13rem_11rem_auto] ${
+                  className={`grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 text-sm transition md:grid-cols-[7rem_1fr_13rem_11rem_auto] ${
                     index === selected ? "bg-surface-muted" : "hover:bg-surface-muted/60"
                   }`}
                 >
