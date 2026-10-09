@@ -162,7 +162,7 @@ export async function createIntakeBookService(data: BookFields, copyCount: numbe
   ]);
   if (!categoryRef) throw new UserError("Categoría no encontrada.");
 
-  const copy: CopyFields = {
+  const created = await createBookRecord({ ...data, code }, copyCount, (number): CopyFields => ({
     origin: "original",
     volume: null,
     pieces: 1,
@@ -170,15 +170,12 @@ export async function createIntakeBookService(data: BookFields, copyCount: numbe
     year: null,
     country: null,
     publisher: null,
-    locationId: defaultLocation(locations, categoryRef, 1),
+    locationId: defaultLocation(locations, categoryRef, number),
     donorId: null,
     status: "present",
     condition: null,
     labelled: false,
     notes: null,
-  };
-  const created = await createBookRecord({ ...data, code }, copy, copyCount, (number) => ({
-    locationId: defaultLocation(locations, categoryRef, number),
   }));
   revalidatePath("/");
   return { id: created.id, code, copyCode: created.copyCode, copies: copyCount };

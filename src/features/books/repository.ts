@@ -622,9 +622,8 @@ export async function allocateCopy(bookId: string) {
 /** Inserts the title with its first copy in one batch, so a title never exists without it. */
 export async function createBookRecord(
   book: BookFields & { code: string },
-  copy: CopyFields,
-  copyCount = 1,
-  copyPatch: (number: number) => Partial<CopyFields> = () => ({}),
+  copyCount: number,
+  copyAt: (number: number) => CopyFields,
 ) {
   const db = await getDb();
   const bookId = crypto.randomUUID();
@@ -634,8 +633,7 @@ export async function createBookRecord(
       bookId,
       number: index + 1,
       code: `${book.code}.${index + 1}`,
-      ...copy,
-      ...copyPatch(index + 1),
+      ...copyAt(index + 1),
     }),
   );
   await db.batch([
