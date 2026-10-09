@@ -51,6 +51,7 @@ See [accounts and roles](auth.md).
 | `src/app/admin/loans/`              | Staff page of the loan desk.                                                                                         |
 | `src/features/auth/`                | Sessions, password hashing, one-time codes, rate limits. See [accounts and roles](auth.md).                          |
 | `src/features/books/`               | Titles, copies, search and filters, the list and editor components, images, favorites, requests.                     |
+| `src/components/catalogue/`         | Shared public catalogue presentation, including generated and stored book covers.                                    |
 | `src/features/books/search.ts`      | Search text normalisation and code detection. `sql.ts` holds the shared SQL fragments.                               |
 | `src/features/books/location.ts`    | The default location of a new copy. `copy-draft.ts` turns the copy form into action input.                           |
 | `src/features/users/`               | Profile updates, role changes, suspension, user activity.                                                            |
@@ -68,6 +69,7 @@ See [accounts and roles](auth.md).
 | `src/lib/db/index.ts`               | `getDb()`: Drizzle over the `DB` D1 binding.                                                                         |
 | `src/lib/db/qualified.ts`           | `outer()`: column references for correlated subqueries.                                                              |
 | `src/lib/storage.ts`                | R2 helpers over the `_216_storage` binding, and the `/media/` URL of an object.                                      |
+| `scripts/fetch-covers.ts`           | Open Library matching, disk cache, R2 upload and `books.image_url` updates for titles without a cover.               |
 | `src/app/media/`                    | Route that serves R2 objects at `/media/<key>`.                                                                      |
 | `src/features/auth/core/mailer.ts`  | Verification and reset emails through the Resend HTTP API.                                                           |
 | `src/lib/result.ts`                 | `Ok`/`Err` result type for fallible service calls.                                                                   |
@@ -79,9 +81,8 @@ See [accounts and roles](auth.md).
 
 - Server components may import a repository for a page read. Client components
   never import repositories; they call server actions for mutations.
-- [`getDb()`](../src/lib/db/index.ts) is the only place the D1 binding is read.
-  It builds a Drizzle client per call; D1 has no connection to pool.
-- Only `src/lib/storage.ts` and the `/media` route touch the R2 binding.
+- `scripts/fetch-covers.ts` reads the D1 and R2 bindings through the Wrangler
+  proxy; application code accesses those bindings through its existing helpers.
 - Stored image URLs are `/media/<key>` paths, never absolute URLs, so the bucket
   needs no public address.
 - Password and session code uses Web Crypto and `@oslojs`, not Node-only APIs,

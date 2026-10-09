@@ -35,6 +35,8 @@ password `password123`. Demo accounts are listed in
 
 - Search the catalogue by title, author or copy code, and filter by category,
   cabinet, donor and availability.
+- Browse the public catalogue as a dense list or a cover grid. Titles without a
+  stored image receive a generated typographic cover.
 - Favorite books and request a loan with a note.
 - Work the loan desk as a librarian: approve a request by choosing the copy that
   goes out (14-day due date), reject it with a reason the reader sees, mark a
@@ -42,6 +44,7 @@ password `password123`. Demo accounts are listed in
 - Register titles and their physical copies (each with a code for the spine, a
   place, a donor and a condition), edit them and upload cover images as a
   librarian.
+- Complete missing cover matches from Open Library with `bun run covers:fetch`.
 - Change user roles and suspend users as an admin.
 - Read the activity dashboard: popular books, active users, monthly borrows.
 - Sign up and confirm the account with a six-digit code, and reset a password
@@ -67,6 +70,7 @@ production, sending either email fails until `RESEND_API_KEY` is set. See
 - [Manual](docs/readme.md): database, catalogue, configuration, deployment,
   accounts and roles, borrowing.
 - [Architecture](docs/architecture.md): the code map.
+- [Design](docs/design.md): the public interface system and cover pipeline.
 - [Contributing](contributing.md): setup, checks and conventions.
 
 ## Tests

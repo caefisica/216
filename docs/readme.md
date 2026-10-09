@@ -12,6 +12,8 @@
    role can do.
 6. [Borrowing](borrowing.md): the loan flow, the loan desk and the dashboard
    statistics.
+7. [Design](design.md): the interface tokens, covers and public catalogue
+   behavior.
 
 The code map is in [architecture](architecture.md). Setup and checks for
 contributors are in [contributing](../contributing.md).
