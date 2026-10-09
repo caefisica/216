@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { signOutAction } from "@/features/auth/actions/session";
 import { Button } from "@/components/ui/button";
 import { BookOpen, User, LogOut, Heart } from "lucide-react";
@@ -49,6 +50,13 @@ interface HeaderClientProps {
 }
 
 export function HeaderClient({ user }: HeaderClientProps) {
+  const pathname = usePathname() ?? "";
+  const staff = user?.role === "librarian" || user?.role === "admin";
+  const navClass = (active: boolean) =>
+    cn(
+      "group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-hidden",
+      active ? "bg-accent text-accent-foreground" : "bg-background",
+    );
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-sm">
       <div className="container mx-auto px-3 sm:px-6">
@@ -69,7 +77,8 @@ export function HeaderClient({ user }: HeaderClientProps) {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/"
-                      className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-hidden disabled:pointer-events-none disabled:opacity-50 data-active:bg-accent/50 data-[state=open]:bg-accent/50"
+                      className={navClass(pathname === "/")}
+                      aria-current={pathname === "/" ? "page" : undefined}
                     >
                       {user && (user.role === "librarian" || user.role === "admin")
                         ? "Panel de gestión"
@@ -78,14 +87,29 @@ export function HeaderClient({ user }: HeaderClientProps) {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
 
-                {user && (user.role === "librarian" || user.role === "admin") && (
+                {staff && (
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild>
                       <Link
                         href="/admin/loans"
-                        className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-hidden disabled:pointer-events-none disabled:opacity-50 data-active:bg-accent/50 data-[state=open]:bg-accent/50"
+                        className={navClass(pathname.startsWith("/admin/loans"))}
+                        aria-current={pathname.startsWith("/admin/loans") ? "page" : undefined}
                       >
                         Préstamos
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                )}
+
+                {staff && (
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        href="/admin/books/create"
+                        className={navClass(pathname.startsWith("/admin/books"))}
+                        aria-current={pathname.startsWith("/admin/books") ? "page" : undefined}
+                      >
+                        Registrar libro
                       </Link>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
@@ -129,7 +153,8 @@ export function HeaderClient({ user }: HeaderClientProps) {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/donors"
-                      className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-hidden disabled:pointer-events-none disabled:opacity-50 data-active:bg-accent/50 data-[state=open]:bg-accent/50"
+                      className={navClass(pathname.startsWith("/donors"))}
+                      aria-current={pathname.startsWith("/donors") ? "page" : undefined}
                     >
                       Donantes
                     </Link>
@@ -164,6 +189,14 @@ export function HeaderClient({ user }: HeaderClientProps) {
                       <Link href="/admin/loans" className="flex items-center">
                         <BookOpen className="h-4 w-4 mr-2" />
                         Préstamos
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {staff && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/books/create" className="flex items-center">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Registrar libro
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -202,6 +235,35 @@ export function HeaderClient({ user }: HeaderClientProps) {
             )}
           </div>
         </div>
+        {staff && (
+          <nav
+            aria-label="Administración"
+            className="flex gap-1 overflow-x-auto border-t border-border py-2 md:hidden"
+          >
+            {[
+              { href: "/", label: "Catálogo", active: pathname === "/" },
+              {
+                href: "/admin/loans",
+                label: "Préstamos",
+                active: pathname.startsWith("/admin/loans"),
+              },
+              {
+                href: "/admin/books/create",
+                label: "Registrar libro",
+                active: pathname.startsWith("/admin/books"),
+              },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={item.active ? "page" : undefined}
+                className={cn(navClass(item.active), "shrink-0 px-3")}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
     </header>
   );

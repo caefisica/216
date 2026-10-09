@@ -15,7 +15,7 @@ import type { CatalogueFacets, LocationOption } from "../types";
 type ManagementFacets = CatalogueFacets & { locations: LocationOption[] };
 
 const fieldClass =
-  "h-9 rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-600";
+  "h-9 rounded-md border border-input bg-background px-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-ring";
 
 export function CatalogueManagement({ facets }: { facets: ManagementFacets }) {
   const router = useRouter();
@@ -121,29 +121,31 @@ export function CatalogueManagement({ facets }: { facets: ManagementFacets }) {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {(
           [
-            ["En estante", facets.copyHealth.present, "text-emerald-700"],
-            ["Mantenimiento", facets.copyHealth.maintenance, "text-amber-700"],
-            ["Extraviados", facets.copyHealth.missing, "text-red-700"],
-            ["Sin etiqueta", facets.copyHealth.unlabelled, "text-gray-700"],
-            ["Sin ubicación", facets.copyHealth.unplaced, "text-gray-700"],
+            ["En estante", facets.copyHealth.present, "text-status-available"],
+            ["Mantenimiento", facets.copyHealth.maintenance, "text-primary"],
+            ["Extraviados", facets.copyHealth.missing, "text-destructive"],
+            ["Sin etiqueta", facets.copyHealth.unlabelled, "text-muted-foreground"],
+            ["Sin ubicación", facets.copyHealth.unplaced, "text-muted-foreground"],
           ] as const
         ).map(([label, count, color]) => (
-          <div key={label} className="rounded-lg border bg-white px-3 py-2 shadow-xs">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">{label}</p>
+          <div key={label} className="rounded-lg border bg-surface px-3 py-2 shadow-xs">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {label}
+            </p>
             <p className={`mt-1 text-xl font-bold ${color}`}>{count}</p>
           </div>
         ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-        <section className="rounded-lg border bg-white" aria-labelledby="locations-heading">
+        <section className="rounded-lg border bg-surface" aria-labelledby="locations-heading">
           <div className="flex items-center justify-between border-b px-4 py-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Catálogo
               </p>
-              <h2 id="locations-heading" className="text-base font-semibold text-gray-950">
+              <h2 id="locations-heading" className="text-base font-semibold text-foreground">
                 Ubicaciones{" "}
-                <span className="font-normal text-gray-500">{facets.locations.length}</span>
+                <span className="font-normal text-muted-foreground">{facets.locations.length}</span>
               </h2>
             </div>
             {locationId && (
@@ -155,7 +157,7 @@ export function CatalogueManagement({ facets }: { facets: ManagementFacets }) {
 
           <form
             onSubmit={saveLocation}
-            className="grid gap-3 border-b bg-gray-50/70 p-4 sm:grid-cols-2"
+            className="grid gap-3 border-b bg-surface-muted/70 p-4 sm:grid-cols-2"
           >
             <div>
               <Label htmlFor="location-cabinet">Mueble</Label>
@@ -248,7 +250,7 @@ export function CatalogueManagement({ facets }: { facets: ManagementFacets }) {
           <div className="max-h-80 overflow-auto">
             <table className="w-full text-left text-sm">
               <caption className="sr-only">Ubicaciones de la biblioteca</caption>
-              <thead className="sticky top-0 bg-white text-xs uppercase tracking-wider text-gray-500">
+              <thead className="sticky top-0 bg-surface text-xs uppercase tracking-wider text-muted-foreground">
                 <tr className="border-b">
                   <th scope="col" className="px-4 py-2 font-medium">
                     Lugar
@@ -263,15 +265,17 @@ export function CatalogueManagement({ facets }: { facets: ManagementFacets }) {
               </thead>
               <tbody className="divide-y">
                 {facets.locations.map((location) => (
-                  <tr key={location.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium text-gray-800">
-                      <MapPin className="mr-1 inline h-3.5 w-3.5 text-gray-400" />
+                  <tr key={location.id} className="hover:bg-accent">
+                    <td className="px-4 py-2 font-medium text-foreground">
+                      <MapPin className="mr-1 inline h-3.5 w-3.5 text-muted-foreground" />
                       {locationLabel(location)}
-                      <span className="ml-1 text-xs text-gray-500">
+                      <span className="ml-1 text-xs text-muted-foreground">
                         {location.holds === "extra" ? "copias" : "principal"}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-gray-600">{location.categoryCode ?? "—"}</td>
+                    <td className="px-4 py-2 text-muted-foreground">
+                      {location.categoryCode ?? "—"}
+                    </td>
                     <td className="px-4 py-2 text-right">
                       <Button
                         type="button"
@@ -289,16 +293,19 @@ export function CatalogueManagement({ facets }: { facets: ManagementFacets }) {
           </div>
         </section>
 
-        <section className="rounded-lg border bg-white" aria-labelledby="donors-heading">
+        <section className="rounded-lg border bg-surface" aria-labelledby="donors-heading">
           <div className="border-b px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Créditos</p>
-            <h2 id="donors-heading" className="text-base font-semibold text-gray-950">
-              Donantes <span className="font-normal text-gray-500">{facets.donors.length}</span>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Créditos
+            </p>
+            <h2 id="donors-heading" className="text-base font-semibold text-foreground">
+              Donantes{" "}
+              <span className="font-normal text-muted-foreground">{facets.donors.length}</span>
             </h2>
           </div>
           <form
             onSubmit={saveDonor}
-            className="grid gap-2 border-b bg-gray-50/70 p-4 sm:grid-cols-[1fr_1fr_auto]"
+            className="grid gap-2 border-b bg-surface-muted/70 p-4 sm:grid-cols-[1fr_1fr_auto]"
           >
             <div className="min-w-0">
               <Label htmlFor="new-donor">{donorId ? "Editar donante" : "Nuevo donante"}</Label>
@@ -342,12 +349,14 @@ export function CatalogueManagement({ facets }: { facets: ManagementFacets }) {
                 className="flex items-center justify-between gap-3 px-4 py-2 text-sm"
               >
                 <div className="min-w-0">
-                  <span className="block truncate font-medium text-gray-800">{donor.name}</span>
+                  <span className="block truncate font-medium text-foreground">{donor.name}</span>
                   {donor.motivation && (
-                    <span className="block truncate text-xs text-gray-500">{donor.motivation}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {donor.motivation}
+                    </span>
                   )}
                 </div>
-                <span className="shrink-0 text-xs text-gray-500">
+                <span className="shrink-0 text-xs text-muted-foreground">
                   {donor.copyCount} {donor.copyCount === 1 ? "ejemplar" : "ejemplares"}
                 </span>
                 <Button type="button" size="sm" variant="ghost" onClick={() => editDonor(donor)}>

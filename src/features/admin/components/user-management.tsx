@@ -167,8 +167,8 @@ export function UserManagement() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-        <p className="text-gray-500 font-medium">Cargando directorio de usuarios...</p>
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground font-medium">Cargando directorio de usuarios...</p>
       </div>
     );
   }
@@ -178,8 +178,10 @@ export function UserManagement() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Gestión de usuarios</h2>
-          <p className="text-sm text-gray-500">Administra roles y permisos de acceso al sistema</p>
+          <h2 className="text-2xl font-bold text-foreground tracking-tight">Gestión de usuarios</h2>
+          <p className="text-sm text-muted-foreground">
+            Administra roles y permisos de acceso al sistema
+          </p>
         </div>
 
         <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
@@ -247,16 +249,16 @@ export function UserManagement() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Buscar por nombre o correo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12 rounded-2xl border-gray-100 shadow-xs"
+            className="pl-10 h-12 rounded-2xl border-input shadow-xs"
           />
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-full sm:w-50 h-12 rounded-2xl border-gray-100 shadow-xs">
+          <SelectTrigger className="w-full sm:w-50 h-12 rounded-2xl border-input shadow-xs">
             <SelectValue placeholder="Filtrar por rol" />
           </SelectTrigger>
           <SelectContent className="rounded-2xl">
@@ -273,9 +275,9 @@ export function UserManagement() {
       {filteredUsers.length === 0 ? (
         <Card className="border-dashed py-12 rounded-3xl">
           <CardContent className="flex flex-col items-center justify-center text-center">
-            <Filter className="h-12 w-12 text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">No se encontraron usuarios</h3>
-            <p className="text-sm text-gray-500">Intenta con otros criterios de búsqueda</p>
+            <Filter className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground">No se encontraron usuarios</h3>
+            <p className="text-sm text-muted-foreground">Intenta con otros criterios de búsqueda</p>
           </CardContent>
         </Card>
       ) : (
@@ -283,12 +285,12 @@ export function UserManagement() {
           {filteredUsers.map((u) => (
             <Card
               key={u.id}
-              className="group hover:border-blue-200 transition-all duration-300 shadow-xs hover:shadow-xl rounded-3xl border-gray-50 bg-white ring-1 ring-black/5 overflow-hidden"
+              className="group transition-all duration-300 overflow-hidden rounded-3xl border border-border bg-surface shadow-xs hover:border-primary hover:shadow-xl"
             >
-              <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0 p-6 bg-gray-50/30 border-b border-gray-50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border bg-surface-muted/30 p-6 pb-3">
                 <div className="flex items-center space-x-3 truncate">
-                  <Avatar className="h-10 w-10 border-2 border-white shadow-xs rounded-xl overflow-hidden">
-                    <AvatarFallback className="bg-blue-600 font-black text-xs text-white">
+                  <Avatar className="h-10 w-10 overflow-hidden rounded-xl border-2 border-background shadow-xs">
+                    <AvatarFallback className="bg-primary font-black text-xs text-primary-foreground">
                       {u.name
                         ?.split(" ")
                         .map((n) => n[0])
@@ -298,10 +300,10 @@ export function UserManagement() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="truncate">
-                    <CardTitle className="text-sm font-bold truncate text-gray-900">
+                    <CardTitle className="text-sm font-bold truncate text-foreground">
                       {u.name}
                     </CardTitle>
-                    <p className="text-xs text-gray-500 font-medium truncate">{u.email}</p>
+                    <p className="text-xs text-muted-foreground font-medium truncate">{u.email}</p>
                   </div>
                 </div>
                 <Badge
@@ -314,7 +316,7 @@ export function UserManagement() {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-5">
-                  <div className="flex items-center justify-between text-[10px] text-gray-400 font-black uppercase tracking-tighter pb-3 border-b border-gray-50">
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground font-black uppercase tracking-tighter pb-3 border-b border-border">
                     <span>Desde: {new Date(u.createdAt).toLocaleDateString()}</span>
                   </div>
 
@@ -323,7 +325,7 @@ export function UserManagement() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 text-[10px] font-bold rounded-xl border-gray-100 hover:bg-black hover:text-white transition-colors"
+                        className="h-8 rounded-xl border-input text-[10px] font-bold transition-colors hover:bg-foreground hover:text-background"
                         onClick={() => handleRoleChange(u.id, "admin")}
                       >
                         Admin
@@ -333,7 +335,7 @@ export function UserManagement() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 text-[10px] font-bold rounded-xl border-gray-100 hover:bg-black hover:text-white transition-colors"
+                        className="h-8 rounded-xl border-input text-[10px] font-bold transition-colors hover:bg-foreground hover:text-background"
                         onClick={() => handleRoleChange(u.id, "librarian")}
                       >
                         Biliotecario
@@ -343,7 +345,7 @@ export function UserManagement() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 text-[10px] font-bold rounded-xl border-gray-100 hover:bg-black hover:text-white transition-colors"
+                        className="h-8 rounded-xl border-input text-[10px] font-bold transition-colors hover:bg-foreground hover:text-background"
                         onClick={() => handleRoleChange(u.id, "user")}
                       >
                         Usuario
@@ -355,7 +357,7 @@ export function UserManagement() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 text-[10px] font-bold rounded-xl text-red-500 hover:bg-red-50"
+                            className="h-8 text-[10px] font-bold rounded-xl text-destructive hover:bg-destructive/10"
                           >
                             Suspender
                           </Button>
@@ -365,18 +367,19 @@ export function UserManagement() {
                             <AlertDialogTitle className="text-xl font-bold">
                               ¿Suspender usuario?
                             </AlertDialogTitle>
-                            <AlertDialogDescription className="text-gray-500 font-medium">
+                            <AlertDialogDescription className="text-muted-foreground font-medium">
                               Esta acción restringirá el acceso de{" "}
-                              <span className="font-bold text-gray-900">{u.name}</span> al sistema.
+                              <span className="font-bold text-foreground">{u.name}</span> al
+                              sistema.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter className="mt-6">
-                            <AlertDialogCancel className="rounded-2xl font-bold bg-gray-50 border-none">
+                            <AlertDialogCancel className="rounded-2xl border-none bg-surface-muted font-bold">
                               Cancelar
                             </AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleSuspendUser(u.id)}
-                              className="rounded-2xl font-bold bg-red-600 hover:bg-red-700 h-10 px-6"
+                              className="h-10 rounded-2xl bg-destructive px-6 font-bold hover:bg-destructive/90"
                             >
                               Confirmar suspensión
                             </AlertDialogAction>

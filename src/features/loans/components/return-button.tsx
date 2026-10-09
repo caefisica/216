@@ -56,7 +56,7 @@ export function ReturnButton({
         <Button
           type="button"
           variant="outline"
-          className="h-11 w-full border-gray-500 sm:w-auto"
+          className="h-11 w-full border-input sm:w-auto"
           aria-label={`Devolver ${title} a nombre de ${reader}`}
         >
           <Undo2 /> Devolver

@@ -31,12 +31,14 @@ import {
   isLeafCategory,
   ensureDonor,
   listFacets,
+  getCategoryRef,
   listLocations,
   createLocationRecord,
   updateLocationRecord,
   updateDonorRecord,
 } from "./repository";
 import type { BookDetailed, BookPage } from "./types";
+import { defaultLocation } from "./location";
 
 /** The unlabelled and unplaced filters are for staff; anyone else's are ignored. */
 export function getBooksService(
@@ -149,15 +151,37 @@ export async function updateBookService(id: string, data: BookFields) {
   revalidatePath("/");
 }
 
-/** Issues the book code and the first copy's code; the librarian never types either. */
-export async function createBookService(data: BookFields, copy: CopyFields) {
+export async function createIntakeBookService(data: BookFields, copyCount: number) {
   await requireLeafCategory(data.categoryId);
   const code = await allocateBookCode(data.categoryId);
   if (!code) throw new UserError("Categoría no encontrada.");
 
-  const created = await createBookRecord({ ...data, code }, copy);
+  const [categoryRef, locations] = await Promise.all([
+    getCategoryRef(data.categoryId),
+    listLocations(),
+  ]);
+  if (!categoryRef) throw new UserError("Categoría no encontrada.");
+
+  const copy: CopyFields = {
+    origin: "original",
+    volume: null,
+    pieces: 1,
+    edition: null,
+    year: null,
+    country: null,
+    publisher: null,
+    locationId: defaultLocation(locations, categoryRef, 1),
+    donorId: null,
+    status: "present",
+    condition: null,
+    labelled: false,
+    notes: null,
+  };
+  const created = await createBookRecord({ ...data, code }, copy, copyCount, (number) => ({
+    locationId: defaultLocation(locations, categoryRef, number),
+  }));
   revalidatePath("/");
-  return { id: created.id, code, copyCode: created.copyCode };
+  return { id: created.id, code, copyCode: created.copyCode, copies: copyCount };
 }
 
 export async function addCopyService(bookId: string, data: CopyFields) {

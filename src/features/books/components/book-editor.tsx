@@ -1,25 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BookCover } from "@/components/catalogue/book-cover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
-import {
-  addCopy,
-  createBook,
-  createDonor,
-  deleteBook,
-  deleteCopy,
-  getBooks,
-  updateBook,
-  updateCopy,
-} from "../actions";
+import { addCopy, createDonor, deleteBook, deleteCopy, updateBook, updateCopy } from "../actions";
 import { defaultLocation } from "../location";
 import { ORIGIN_LABELS } from "../labels";
 import { draftFromCopy, draftToInput, emptyDraft, findDonor, type CopyDraft } from "../copy-draft";
@@ -27,7 +18,6 @@ import { CopyForm } from "./copy-form";
 import { ImageManager } from "./image-manager";
 import type {
   BookDetailed,
-  BookListItem,
   CatalogueFacets,
   CategoryRef,
   CopyView,
@@ -35,11 +25,11 @@ import type {
 } from "../types";
 
 const selectClass =
-  "h-9 w-full rounded-md border border-gray-200 bg-white px-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500";
+  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/25";
 
 interface BookEditorProps {
   facets: CatalogueFacets & { locations: LocationOption[] };
-  book?: BookDetailed;
+  book: BookDetailed;
 }
 
 interface BookDraft {
@@ -50,26 +40,16 @@ interface BookDraft {
   categoryId: string;
 }
 
-interface Issued {
-  id: string;
-  code: string;
-  copyCode: string;
-}
-
 export function BookEditor({ facets, book }: BookEditorProps) {
   const router = useRouter();
   const [fields, setFields] = useState<BookDraft>({
-    title: book?.title ?? "",
-    author: book?.author ?? "",
-    isbn: book?.isbn ?? "",
-    description: book?.description ?? "",
-    categoryId: book?.categoryId ?? "",
+    title: book.title,
+    author: book.author ?? "",
+    isbn: book.isbn ?? "",
+    description: book.description ?? "",
+    categoryId: book.categoryId,
   });
-  const [copyDraft, setCopyDraft] = useState<CopyDraft>(emptyDraft());
-  const [locationTouched, setLocationTouched] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [issued, setIssued] = useState<Issued | null>(null);
-  const [matches, setMatches] = useState<BookListItem[]>([]);
   const [donors, setDonors] = useState(facets.donors);
 
   const leaves = useMemo(() => {
@@ -94,24 +74,7 @@ export function BookEditor({ facets, book }: BookEditorProps) {
 
   const changeCategory = (categoryId: string) => {
     setField({ categoryId });
-    const category = leaves.get(categoryId);
-    if (!book && category && !locationTouched) {
-      const locationId = defaultLocation(facets.locations, category, 1) ?? "";
-      setCopyDraft((prev) => ({ ...prev, locationId }));
-    }
   };
-
-  useEffect(() => {
-    if (book || fields.title.trim().length < 3) {
-      setMatches([]);
-      return;
-    }
-    const handler = setTimeout(async () => {
-      const result = await getBooks({ search: fields.title });
-      if (!isErr(result)) setMatches(result.value.items.slice(0, 5));
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [fields.title, book]);
 
   async function donorIdFor(name: string) {
     if (name.trim() === "") return { id: null };
@@ -134,54 +97,8 @@ export function BookEditor({ facets, book }: BookEditorProps) {
     categoryId: fields.categoryId,
   });
 
-  const handleCreate = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!fields.categoryId) {
-      toast({ title: "Elige una categoría", variant: "destructive" });
-      return;
-    }
-    setSaving(true);
-    try {
-      const donor = await donorIdFor(copyDraft.donorName);
-      if (!donor) return;
-      const result = await createBook({
-        ...bookInput(),
-        copy: draftToInput(copyDraft, donor.id),
-      });
-      if (isErr(result)) {
-        toastActionError(result.error);
-        return;
-      }
-      setIssued(result.value);
-      router.refresh();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const addAnother = () => {
-    setIssued(null);
-    setFields((prev) => ({
-      title: "",
-      author: "",
-      isbn: "",
-      description: "",
-      categoryId: prev.categoryId,
-    }));
-    setCopyDraft((prev) =>
-      emptyDraft({
-        origin: prev.origin,
-        locationId: prev.locationId,
-        donorName: prev.donorName,
-        country: prev.country,
-        publisher: prev.publisher,
-      }),
-    );
-  };
-
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!book) return;
     setSaving(true);
     try {
       const result = await updateBook({ id: book.id, ...bookInput() });
@@ -198,7 +115,6 @@ export function BookEditor({ facets, book }: BookEditorProps) {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const handleDelete = async () => {
-    if (!book) return;
     const result = await deleteBook({ bookId: book.id });
     if (isErr(result)) {
       toastActionError(result.error);
@@ -209,71 +125,56 @@ export function BookEditor({ facets, book }: BookEditorProps) {
     router.refresh();
   };
 
-  if (issued) {
-    return (
-      <div className="mx-auto max-w-xl space-y-6 rounded border bg-white p-8 text-center">
-        <p className="text-sm text-gray-500">Libro registrado. Escribe este código en el lomo:</p>
-        <p className="font-mono text-5xl font-bold tracking-wide">{issued.copyCode}</p>
-        <p className="text-sm text-gray-500">Código del libro {issued.code}</p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Button onClick={addAnother}>Agregar otro</Button>
-          <Button variant="outline" asChild>
-            <Link href={`/admin/books/${issued.id}`}>Añadir imágenes o ejemplares</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/">Volver al catálogo</Link>
-          </Button>
+  const form = (
+    <form onSubmit={handleUpdate} className="surface space-y-5 p-5 sm:p-8">
+      <div className="flex items-start gap-4">
+        <BookCover
+          title={fields.title || "Tu libro"}
+          author={fields.author || undefined}
+          category={leaves.get(fields.categoryId)?.name}
+          imageUrl={book.imageUrl}
+          priority
+          className="w-20 shrink-0 sm:w-24"
+        />
+        <div>
+          <p className="eyebrow">Ficha del libro</p>
+          <h2 className="mt-2 text-xl font-semibold">Datos del libro</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {book.imageUrl ? "Portada guardada" : "Portada generada"}
+          </p>
         </div>
       </div>
-    );
-  }
-
-  const form = (
-    <form
-      onSubmit={book ? handleUpdate : handleCreate}
-      className="space-y-4 rounded border bg-white p-6"
-    >
-      <h2 className="text-lg font-semibold">{book ? "Datos del libro" : "Nuevo libro"}</h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="md:col-span-2">
-          <Label>Título</Label>
+          <Label htmlFor="book-title">Título</Label>
           <Input
+            id="book-title"
             required
             autoFocus
             value={fields.title}
             onChange={(e) => setField({ title: e.target.value })}
           />
-          {matches.length > 0 && (
-            <ul className="mt-2 divide-y rounded border text-sm">
-              <li className="bg-yellow-50 px-3 py-1.5 text-xs text-yellow-800">
-                Ya hay libros parecidos. Si es el mismo título, agrega un ejemplar en lugar de crear
-                otro.
-              </li>
-              {matches.map((match) => (
-                <li key={match.id} className="flex items-center justify-between px-3 py-1.5">
-                  <span>
-                    <span className="mr-2 font-mono text-xs text-gray-500">{match.code}</span>
-                    {match.title}
-                  </span>
-                  <Link href={`/admin/books/${match.id}`} className="text-blue-600 hover:underline">
-                    Agregar un ejemplar
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
         <div>
-          <Label>Autor</Label>
-          <Input value={fields.author} onChange={(e) => setField({ author: e.target.value })} />
+          <Label htmlFor="book-author">Autor</Label>
+          <Input
+            id="book-author"
+            value={fields.author}
+            onChange={(e) => setField({ author: e.target.value })}
+          />
         </div>
         <div>
-          <Label>ISBN</Label>
-          <Input value={fields.isbn} onChange={(e) => setField({ isbn: e.target.value })} />
+          <Label htmlFor="book-isbn">ISBN</Label>
+          <Input
+            id="book-isbn"
+            value={fields.isbn}
+            onChange={(e) => setField({ isbn: e.target.value })}
+          />
         </div>
         <div className="md:col-span-2">
-          <Label>Categoría</Label>
+          <Label htmlFor="book-category">Categoría</Label>
           <select
+            id="book-category"
             required
             className={selectClass}
             value={fields.categoryId}
@@ -296,35 +197,19 @@ export function BookEditor({ facets, book }: BookEditorProps) {
               ),
             )}
           </select>
-          {book && (
-            <p className="mt-1 text-xs text-gray-500">
-              Cambiar la categoría no cambia el código {book.code}.
-            </p>
-          )}
+          <p className="mt-1 text-xs text-muted-foreground">
+            Cambiar la categoría no cambia el código {book.code}.
+          </p>
         </div>
         <div className="md:col-span-2">
-          <Label>Descripción</Label>
+          <Label htmlFor="book-description">Descripción</Label>
           <Textarea
+            id="book-description"
             value={fields.description}
             onChange={(e) => setField({ description: e.target.value })}
           />
         </div>
       </div>
-
-      {!book && (
-        <>
-          <h3 className="pt-2 text-base font-semibold">Primer ejemplar</h3>
-          <CopyForm
-            draft={copyDraft}
-            onChange={(patch) => {
-              if ("locationId" in patch) setLocationTouched(true);
-              setCopyDraft((prev) => ({ ...prev, ...patch }));
-            }}
-            locations={facets.locations}
-            donors={donors}
-          />
-        </>
-      )}
 
       <Button type="submit" disabled={saving}>
         {saving ? (
@@ -332,12 +217,10 @@ export function BookEditor({ facets, book }: BookEditorProps) {
         ) : (
           <Save className="mr-2 h-4 w-4" />
         )}
-        {book ? "Guardar cambios" : "Registrar libro"}
+        Guardar cambios
       </Button>
     </form>
   );
-
-  if (!book) return form;
 
   return (
     <div className="space-y-6">
@@ -350,9 +233,9 @@ export function BookEditor({ facets, book }: BookEditorProps) {
         donorIdFor={donorIdFor}
       />
       <ImageManager bookId={book.id} images={book.images} />
-      <div className="rounded border border-red-100 bg-white p-6">
-        <h2 className="mb-2 text-lg font-semibold text-red-700">Eliminar libro</h2>
-        <p className="mb-3 text-sm text-gray-600">
+      <div className="surface border-destructive/30 p-5 sm:p-8">
+        <h2 className="mb-2 text-lg font-semibold text-destructive">Eliminar libro</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
           Borra el libro con sus ejemplares, imágenes y préstamos. No se puede deshacer.
         </p>
         {confirmDelete ? (
@@ -450,7 +333,7 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
   };
 
   return (
-    <div className="space-y-3 rounded border bg-white p-6">
+    <div className="surface space-y-3 p-5 sm:p-8">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Ejemplares ({book.copies.length})</h2>
         <Button size="sm" variant="outline" onClick={startAdding}>
@@ -459,7 +342,7 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
       </div>
 
       {book.copies.length === 0 && !adding && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Este libro no tiene ejemplares. Agrega el primero para que se pueda prestar.
         </p>
       )}
@@ -470,7 +353,7 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span>
                 <span className="font-mono">{copy.code}</span>
-                <span className="ml-3 text-gray-600">
+                <span className="ml-3 text-muted-foreground">
                   {ORIGIN_LABELS[copy.origin]}
                   {copy.volume ? ` · ${copy.volume}` : ""}
                   {copy.loanId ? " · prestado" : ""}

@@ -96,7 +96,7 @@ export function RequestActions({
   };
 
   const message = error && (
-    <p id={errorId} role="alert" className="text-sm font-medium text-red-800">
+    <p id={errorId} role="alert" className="text-sm font-medium text-destructive">
       {error}
     </p>
   );
@@ -104,8 +104,9 @@ export function RequestActions({
   if (rejecting) {
     return (
       <form onSubmit={reject} className="flex flex-col gap-2">
-        <label htmlFor={reasonId} className="text-sm font-medium text-gray-900">
-          Motivo del rechazo <span className="font-normal text-gray-700">(lo ve el lector)</span>
+        <label htmlFor={reasonId} className="text-sm font-medium text-foreground">
+          Motivo del rechazo{" "}
+          <span className="font-normal text-muted-foreground">(lo ve el lector)</span>
         </label>
         <Input
           id={reasonId}
@@ -113,7 +114,7 @@ export function RequestActions({
           name="reason"
           maxLength={300}
           autoComplete="off"
-          className="border-gray-500"
+          className="border-input"
           aria-describedby={error ? errorId : undefined}
           onKeyDown={(event) => event.key === "Escape" && closeReject()}
         />
@@ -122,7 +123,7 @@ export function RequestActions({
           <Button
             type="submit"
             variant="destructive"
-            className="h-11 flex-1 bg-red-700 hover:bg-red-800 sm:flex-none"
+            className="h-11 flex-1 sm:flex-none"
             disabled={busy}
           >
             <X /> Confirmar rechazo
@@ -142,7 +143,7 @@ export function RequestActions({
       className="flex flex-col gap-2"
     >
       {copies.length === 0 ? (
-        <p className="text-sm text-gray-800">
+        <p className="text-sm text-foreground">
           Ningún ejemplar disponible. Rechaza la solicitud o espera una devolución.
         </p>
       ) : (
@@ -156,7 +157,7 @@ export function RequestActions({
             defaultValue={copies[0].id}
             onKeyDown={confirmOnEnter}
             aria-describedby={error ? errorId : undefined}
-            className="h-11 w-full rounded-md border border-gray-500 bg-white px-2 text-sm text-gray-900 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="h-11 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             {copies.map((copy) => (
               <option key={copy.id} value={copy.id}>
@@ -171,7 +172,7 @@ export function RequestActions({
         {copies.length > 0 && (
           <Button
             type="submit"
-            className="h-11 flex-1 bg-emerald-700 hover:bg-emerald-800 sm:flex-none"
+            className="h-11 flex-1 sm:flex-none"
             disabled={busy}
             aria-label={`Aprobar ${title} a nombre de ${reader}`}
           >
@@ -182,7 +183,7 @@ export function RequestActions({
           ref={rejectButton}
           type="button"
           variant="outline"
-          className="h-11 flex-1 border-red-700 text-red-800 hover:bg-red-50 hover:text-red-900 sm:flex-none"
+          className="h-11 flex-1 border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive sm:flex-none"
           disabled={busy}
           aria-label={`Rechazar ${title} a nombre de ${reader}`}
           onClick={() => setRejecting(true)}

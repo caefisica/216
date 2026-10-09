@@ -9,8 +9,8 @@ export default async function LoansPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireStaffPage();
-  const { view, page } = DeskQuerySchema.parse((await searchParams) ?? {});
-  const desk = await getDeskService(view, page);
+  const { view, page, q } = DeskQuerySchema.parse((await searchParams) ?? {});
+  const desk = await getDeskService(view, page, undefined, q);
 
   return (
     <main className="container mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8">

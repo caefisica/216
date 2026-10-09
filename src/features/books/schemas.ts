@@ -105,7 +105,9 @@ export const CopyFieldsSchema = z.object({
   notes: optionalText(1000),
 });
 
-export const CreateBookSchema = BookFieldsSchema.extend({ copy: CopyFieldsSchema });
+export const CreateIntakeSchema = BookFieldsSchema.extend({
+  copies: z.number().int().min(1, "Ingresa al menos un ejemplar").max(100),
+});
 
 export const UpdateBookSchema = BookFieldsSchema.extend({ id: z.uuid() });
 

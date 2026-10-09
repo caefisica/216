@@ -42,4 +42,5 @@ export type Desk = DeskPage & {
   total: number;
   pageSize: number;
   now: Date;
+  query: string;
 };

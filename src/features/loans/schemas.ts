@@ -23,5 +23,6 @@ export const DESK_PAGE_SIZE = 25;
 /** The URL search parameters of the desk. A malformed value falls back to its default. */
 export const DeskQuerySchema = z.object({
   view: z.enum(DESK_VIEWS).catch("requests"),
+  q: z.string().trim().max(100).catch(""),
   page: z.coerce.number().int().min(1).max(10_000).catch(1),
 });

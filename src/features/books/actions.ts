@@ -14,7 +14,7 @@ import {
   BookIdSchema,
   BorrowRequestSchema,
   CopyIdSchema,
-  CreateBookSchema,
+  CreateIntakeSchema,
   CreateDonorSchema,
   CreateLocationSchema,
   UpdateDonorSchema,
@@ -37,7 +37,7 @@ import {
   addBookImageService,
   deleteBookService,
   updateBookService,
-  createBookService,
+  createIntakeBookService,
   addCopyService,
   updateCopyService,
   deleteCopyService,
@@ -110,8 +110,8 @@ export const updateBook = staffAction(UpdateBookSchema, async ({ id, ...data }) 
   updateBookService(id, data),
 );
 
-export const createBook = staffAction(CreateBookSchema, async ({ copy, ...data }) =>
-  createBookService(data, copy),
+export const createIntakeBook = staffAction(CreateIntakeSchema, async ({ copies, ...data }) =>
+  createIntakeBookService(data, copies),
 );
 
 export const addCopy = staffAction(AddCopySchema, async ({ bookId, ...data }) =>

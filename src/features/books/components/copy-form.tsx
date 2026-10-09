@@ -9,7 +9,7 @@ import type { CopyDraft } from "../copy-draft";
 import type { LocationOption } from "../types";
 
 const selectClass =
-  "h-9 w-full rounded-md border border-gray-200 bg-white px-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500";
+  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/25";
 
 interface CopyFormProps {
   draft: CopyDraft;

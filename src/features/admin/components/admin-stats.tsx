@@ -86,8 +86,8 @@ export function AdminStats() {
         {[...Array(4)].map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4" />
-              <div className="h-8 bg-gray-200 rounded w-1/2" />
+              <div className="mb-4 h-4 w-3/4 rounded bg-surface-muted" />
+              <div className="h-8 w-1/2 rounded bg-surface-muted" />
             </CardContent>
           </Card>
         ))}
@@ -102,9 +102,9 @@ export function AdminStats() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <BarChart3 className="h-8 w-8 text-blue-600" />
+              <BarChart3 className="h-8 w-8 text-primary" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total de préstamos</p>
+                <p className="text-sm font-medium text-muted-foreground">Total de préstamos</p>
                 <p className="text-2xl font-bold">{overallStats.totalBorrows}</p>
               </div>
             </div>
@@ -114,9 +114,9 @@ export function AdminStats() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="h-8 w-8 text-status-borrowed" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Devoluciones</p>
+                <p className="text-sm font-medium text-muted-foreground">Devoluciones</p>
                 <p className="text-2xl font-bold">{overallStats.totalReturns}</p>
               </div>
             </div>
@@ -126,9 +126,9 @@ export function AdminStats() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <Clock className="h-8 w-8 text-orange-600" />
+              <Clock className="h-8 w-8 text-status-pending" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Mes más activo</p>
+                <p className="text-sm font-medium text-muted-foreground">Mes más activo</p>
                 <p className="text-lg font-bold">{overallStats.mostActiveMonth || "N/A"}</p>
               </div>
             </div>
@@ -138,9 +138,9 @@ export function AdminStats() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <Target className="h-8 w-8 text-purple-600" />
+              <Target className="h-8 w-8 text-status-goal" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Uso de colección</p>
+                <p className="text-sm font-medium text-muted-foreground">Uso de colección</p>
                 <p className="text-2xl font-bold">{overallStats.bookUtilizationRate}%</p>
               </div>
             </div>
@@ -162,30 +162,32 @@ export function AdminStats() {
               {getCurrentBooks().map((book, index) => (
                 <div
                   key={book.id}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent"
                 >
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm font-bold text-blue-600 w-6">
+                    <span className="text-sm font-bold text-primary w-6">
                       #{currentBooksPage * BOOKS_PER_PAGE + index + 1}
                     </span>
                     <div>
                       <h4 className="font-semibold text-sm">{book.title}</h4>
-                      <p className="text-xs text-gray-500">{book.author}</p>
-                      <p className="mt-1 font-mono text-[10px] text-gray-400">{book.code}</p>
+                      <p className="text-xs text-muted-foreground">{book.author}</p>
+                      <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                        {book.code}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-3 text-xs">
                       <div className="flex items-center gap-1">
-                        <BookOpen className="h-3 w-3 text-blue-600" />
+                        <BookOpen className="h-3 w-3 text-primary" />
                         <span>{book.borrowCount}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Heart className="h-3 w-3 text-red-500" />
+                        <Heart className="h-3 w-3 text-status-favorite" />
                         <span>{book.heartsCount}</span>
                       </div>
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-1">
+                    <p className="text-[10px] text-muted-foreground mt-1">
                       Puntaje: {book.popularityScore}
                     </p>
                   </div>
@@ -203,7 +205,7 @@ export function AdminStats() {
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
                 </Button>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   Página {currentBooksPage + 1} de {totalBooksPages}
                 </span>
                 <Button
@@ -232,20 +234,20 @@ export function AdminStats() {
               {getCurrentUsers().map((user, index) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent"
                 >
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm font-bold text-green-600 w-6">
+                    <span className="text-sm font-bold text-status-available w-6">
                       #{currentUsersPage * BOOKS_PER_PAGE + index + 1}
                     </span>
                     <div>
                       <h4 className="font-semibold text-sm">{user.name}</h4>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     {getRoleBadge(user.role)}
-                    <p className="text-xs text-gray-600 mt-1 font-medium">
+                    <p className="text-xs text-muted-foreground mt-1 font-medium">
                       {user.borrowCount} préstamos
                     </p>
                   </div>
@@ -263,7 +265,7 @@ export function AdminStats() {
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
                 </Button>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   Página {currentUsersPage + 1} de {totalUsersPages}
                 </span>
                 <Button
@@ -295,8 +297,8 @@ export function AdminStats() {
               return (
                 <div key={i} className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-gray-700">{m.month}</span>
-                    <span className="text-gray-500">
+                    <span className="font-semibold text-foreground">{m.month}</span>
+                    <span className="text-muted-foreground">
                       {m.borrows} préstamos • {m.returns} devoluciones
                     </span>
                   </div>
@@ -304,7 +306,7 @@ export function AdminStats() {
                     <Progress value={(m.borrows / maxBorrows) * 100} className="h-1.5" />
                     <Progress
                       value={(m.returns / maxBorrows) * 100}
-                      className="h-1.5 bg-green-50 [&>div]:bg-green-500"
+                      className="h-1.5 bg-status-returned-muted [&>div]:bg-status-returned"
                     />
                   </div>
                 </div>

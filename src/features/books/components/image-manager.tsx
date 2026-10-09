@@ -70,12 +70,12 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
   };
 
   return (
-    <div className="space-y-3 rounded border bg-white p-6">
+    <div className="surface space-y-3 p-5 sm:p-8">
       <h2 className="text-lg font-semibold">Imágenes ({images.length})</h2>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {images.map((image) => (
           <div key={image.id} className="space-y-2">
-            <div className="relative aspect-3/4 overflow-hidden rounded border bg-gray-50">
+            <div className="relative aspect-3/4 overflow-hidden rounded border border-border bg-surface-muted">
               <Image src={image.imageUrl} alt="" fill className="object-cover" />
             </div>
             <div className="flex gap-1">
@@ -114,7 +114,7 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
             className="aspect-3/4 p-4"
           />
           {uploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+            <div className="absolute inset-0 flex items-center justify-center bg-surface/70">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
           )}

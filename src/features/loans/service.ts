@@ -5,6 +5,7 @@ import {
   getBorrowRequestStatus,
   getLoanCounts,
   listActiveLoans,
+  countLoanView,
   listPendingRequests,
   rejectPendingRequest,
   returnApprovedLoan,
@@ -24,9 +25,20 @@ function revalidateLoanViews() {
  * Returns one page of a view plus the counts of every view. A page past the end clamps to the
  * last page, so a decision that empties a page does not leave a blank screen.
  */
-export async function getDeskService(view: DeskView, requestedPage: number, now = new Date()) {
+export async function getDeskService(
+  view: DeskView,
+  requestedPage: number,
+  now = new Date(),
+  query = "",
+) {
   const counts = await getLoanCounts(now);
-  const total = view === "requests" ? counts.pending : counts.active;
+  const normalizedQuery = query.trim();
+  let total: number;
+  if (normalizedQuery) {
+    total = await countLoanView(view, normalizedQuery);
+  } else {
+    total = view === "requests" ? counts.pending : counts.active;
+  }
   const pageCount = Math.max(1, Math.ceil(total / DESK_PAGE_SIZE));
   const page = Math.min(requestedPage, pageCount);
   const window = { limit: DESK_PAGE_SIZE, offset: (page - 1) * DESK_PAGE_SIZE };
@@ -38,17 +50,18 @@ export async function getDeskService(view: DeskView, requestedPage: number, now 
     total,
     pageSize: DESK_PAGE_SIZE,
     now,
+    query: normalizedQuery,
   };
   return view === "requests"
     ? ({
         ...shared,
         view,
-        items: await listPendingRequests(window),
+        items: await listPendingRequests(window, normalizedQuery),
       } satisfies Desk)
     : ({
         ...shared,
         view,
-        items: await listActiveLoans(window),
+        items: await listActiveLoans(window, normalizedQuery),
       } satisfies Desk);
 }
 

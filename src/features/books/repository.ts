@@ -349,6 +349,31 @@ export async function isLeafCategory(categoryId: string) {
   return row !== undefined;
 }
 
+export async function getCategoryRef(
+  categoryId: string,
+): Promise<Pick<CategoryRef, "code" | "parent"> | null> {
+  const db = await getDb();
+  const parent = alias(categories, "category_parent");
+  const [row] = await db
+    .select({
+      code: categories.code,
+      parent: {
+        id: parent.id,
+        code: parent.code,
+        name: parent.name,
+      },
+    })
+    .from(categories)
+    .leftJoin(parent, eq(categories.parentId, parent.id))
+    .where(eq(categories.id, categoryId))
+    .limit(1);
+  if (!row) return null;
+  return {
+    code: row.code,
+    parent: row.parent?.id ? row.parent : null,
+  };
+}
+
 export async function listLocations(): Promise<LocationOption[]> {
   const db = await getDb();
   return db
@@ -595,19 +620,33 @@ export async function allocateCopy(bookId: string) {
 }
 
 /** Inserts the title with its first copy in one batch, so a title never exists without it. */
-export async function createBookRecord(book: BookFields & { code: string }, copy: CopyFields) {
+export async function createBookRecord(
+  book: BookFields & { code: string },
+  copy: CopyFields,
+  copyCount = 1,
+  copyPatch: (number: number) => Partial<CopyFields> = () => ({}),
+) {
   const db = await getDb();
   const bookId = crypto.randomUUID();
   const { categoryId, ...fields } = book;
+  const copyStatements = Array.from({ length: copyCount }, (_, index) =>
+    db.insert(copies).values({
+      bookId,
+      number: index + 1,
+      code: `${book.code}.${index + 1}`,
+      ...copy,
+      ...copyPatch(index + 1),
+    }),
+  );
   await db.batch([
     db.insert(books).values({
       id: bookId,
       ...fields,
       categoryId,
       ...derivedTitleColumns(book.title, book.author),
-      nextCopy: 2,
+      nextCopy: copyCount + 1,
     }),
-    db.insert(copies).values({ bookId, number: 1, code: `${book.code}.1`, ...copy }),
+    ...copyStatements,
   ]);
   return { id: bookId, copyCode: `${book.code}.1` };
 }

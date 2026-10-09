@@ -117,16 +117,16 @@ export function BorrowingTimeline() {
   };
 
   const getEventColor = (type: string, status: string) => {
-    if (status === "rejected") return "bg-red-100 text-red-800 border-red-200";
+    if (status === "rejected") return "bg-destructive/10 text-destructive border-destructive/30";
     switch (type) {
       case "request":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-accent text-accent-foreground border-border";
       case "borrow":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-status-borrowed-muted text-status-borrowed-foreground border-status-borrowed-border";
       case "return":
-        return "bg-purple-100 text-purple-800 border-purple-200";
+        return "bg-status-returned-muted text-status-returned-foreground border-status-returned-border";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-surface-muted text-foreground border-border";
     }
   };
 
@@ -165,10 +165,10 @@ export function BorrowingTimeline() {
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : events.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <p>No hay actividad para mostrar</p>
             </div>
           ) : (
@@ -176,26 +176,26 @@ export function BorrowingTimeline() {
               {events.map((event, index) => (
                 <div key={event.id} className="flex items-start space-x-4 relative">
                   <div className="relative z-10">
-                    <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center bg-white overflow-hidden">
+                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-border bg-surface">
                       {event.anonymized ? (
                         getEventIcon(event.type)
                       ) : (
                         <Avatar className="w-8 h-8">
-                          <AvatarFallback className="text-xs bg-gray-100 font-bold">
+                          <AvatarFallback className="bg-surface-muted text-xs font-bold">
                             {event.userInitials}
                           </AvatarFallback>
                         </Avatar>
                       )}
                     </div>
                     {index < events.length - 1 && (
-                      <div className="absolute top-10 left-1/2 w-px h-10 bg-gray-200 -z-10" />
+                      <div className="absolute top-10 left-1/2 -z-10 h-10 w-px bg-border" />
                     )}
                   </div>
                   <div className="flex-1 pt-2">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {event.anonymized ? "Un usuario" : event.userName}
-                        <span className="font-normal text-gray-500 ml-1">
+                        <span className="font-normal text-muted-foreground ml-1">
                           {event.type === "request"
                             ? "solicitó"
                             : event.type === "borrow"
@@ -208,7 +208,9 @@ export function BorrowingTimeline() {
                         {event.status}
                       </Badge>
                     </div>
-                    <p className="text-xs text-gray-400">{formatTimestamp(event.timestamp)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatTimestamp(event.timestamp)}
+                    </p>
                   </div>
                 </div>
               ))}

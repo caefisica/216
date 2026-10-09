@@ -1,12 +1,27 @@
-import { and, asc, eq, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, or, sql, type SQL } from "drizzle-orm";
 import { getDb, type Database } from "@/lib/db";
 import { books, borrowRequests, copies, user } from "@/lib/db/schema";
 import { outer } from "@/lib/db/qualified";
 import { copyIsLendable } from "@/features/books/sql";
+import { normalizeSearch } from "@/features/books/search";
 import type { ActiveLoanRow, LendableCopy, LoanCounts, PendingRequestRow } from "./types";
 
 const isPending = eq(borrowRequests.status, "pending");
 const isApproved = eq(borrowRequests.status, "approved");
+
+function searchCondition(query: string) {
+  const value = `%${query.toLowerCase().replace(/[\\%_]/g, "\\$&")}%`;
+  const normalized = `%${normalizeSearch(query).replace(/[\\%_]/g, "\\$&")}%`;
+  return or(
+    sql`${books.search} LIKE ${normalized} ESCAPE '\\'`,
+    sql`lower(${user.name}) LIKE ${value} ESCAPE '\\'`,
+    sql`lower(${user.email}) LIKE ${value} ESCAPE '\\'`,
+  );
+}
+
+function viewCondition(view: "requests" | "loans") {
+  return view === "requests" ? isPending : isApproved;
+}
 
 interface LendableCopyJson {
   id: string;
@@ -39,7 +54,11 @@ function parseLendableCopies(json: string): LendableCopy[] {
 }
 
 /** Pending requests, oldest first, each with the copies that can be lent. */
-export function pendingRequestsQuery(db: Database, page: { limit: number; offset: number }) {
+export function pendingRequestsQuery(
+  db: Database,
+  page: { limit: number; offset: number },
+  query = "",
+) {
   return db
     .select({
       id: borrowRequests.id,
@@ -52,17 +71,20 @@ export function pendingRequestsQuery(db: Database, page: { limit: number; offset
     .from(borrowRequests)
     .innerJoin(books, eq(borrowRequests.bookId, books.id))
     .innerJoin(user, eq(borrowRequests.userId, user.id))
-    .where(isPending)
+    .where(query ? and(isPending, searchCondition(query)) : isPending)
     .orderBy(asc(borrowRequests.requestDate), asc(borrowRequests.id))
     .limit(page.limit)
     .offset(page.offset);
 }
 
-export async function listPendingRequests(page: {
-  limit: number;
-  offset: number;
-}): Promise<PendingRequestRow[]> {
-  const rows = await pendingRequestsQuery(await getDb(), page);
+export async function listPendingRequests(
+  page: {
+    limit: number;
+    offset: number;
+  },
+  query = "",
+): Promise<PendingRequestRow[]> {
+  const rows = await pendingRequestsQuery(await getDb(), page, query);
   return rows.map(({ lendableCopies, ...row }) => ({
     ...row,
     lendableCopies: parseLendableCopies(lendableCopies),
@@ -70,7 +92,11 @@ export async function listPendingRequests(page: {
 }
 
 /** Approved loans by due date, so the overdue ones come first. */
-export function activeLoansQuery(db: Database, page: { limit: number; offset: number }) {
+export function activeLoansQuery(
+  db: Database,
+  page: { limit: number; offset: number },
+  query = "",
+) {
   return db
     .select({
       id: borrowRequests.id,
@@ -84,17 +110,31 @@ export function activeLoansQuery(db: Database, page: { limit: number; offset: nu
     .innerJoin(books, eq(borrowRequests.bookId, books.id))
     .innerJoin(copies, eq(borrowRequests.copyId, copies.id))
     .innerJoin(user, eq(borrowRequests.userId, user.id))
-    .where(isApproved)
+    .where(query ? and(isApproved, searchCondition(query)) : isApproved)
     .orderBy(asc(borrowRequests.dueDate), asc(borrowRequests.id))
     .limit(page.limit)
     .offset(page.offset);
 }
 
-export async function listActiveLoans(page: {
-  limit: number;
-  offset: number;
-}): Promise<ActiveLoanRow[]> {
-  return activeLoansQuery(await getDb(), page);
+export async function listActiveLoans(
+  page: {
+    limit: number;
+    offset: number;
+  },
+  query = "",
+): Promise<ActiveLoanRow[]> {
+  return activeLoansQuery(await getDb(), page, query);
+}
+
+export async function countLoanView(view: "requests" | "loans", query: string) {
+  const db = await getDb();
+  const [row] = await db
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
+    .from(borrowRequests)
+    .innerJoin(books, eq(borrowRequests.bookId, books.id))
+    .innerJoin(user, eq(borrowRequests.userId, user.id))
+    .where(and(viewCondition(view), searchCondition(query)));
+  return row?.count ?? 0;
 }
 
 /** The size of each view, in one statement. Each count is answered by a partial index. */
