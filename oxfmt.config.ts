@@ -12,7 +12,7 @@ export default defineConfig({
   bracketSameLine: false,
   arrowParens: "always",
   endOfLine: "lf",
-  ignorePatterns: ["worker-configuration.d.ts"],
+  ignorePatterns: ["worker-configuration.d.ts", "src/lib/db/seeds/catalogue.json"],
   overrides: [
     {
       files: ["**/*.md"],

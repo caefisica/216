@@ -17,6 +17,7 @@
     "db:migrate": "wrangler d1 migrations apply DB --local",
     "db:migrate:production": "wrangler d1 migrations apply DB --remote",
     "db:seed": "bun src/lib/db/seed.ts",
+    "db:seed:sql": "bun src/lib/db/seed-sql.ts",
     "admin:create": "bun src/lib/db/create-admin.ts",
     "db:generate": "drizzle-kit generate",
     "knip": "knip",

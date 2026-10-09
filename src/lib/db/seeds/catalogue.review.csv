@@ -1,0 +1,332 @@
+kind,sheet,row,code,what,detail
+skipped sheet,Matemática Básica,,,"older list, superseded by 'Matemática Básica 1 - 2024'",
+skipped sheet,Matemática Básica 1,,,"hidden older list, superseded by 'Matemática Básica 1 - 2024'",
+dropped,Cálculo y Análisis Matemático,51,,free text outside the table,missing
+dropped,Cálculo y Análisis Matemático,58,CACL.1.07.2,same code and same item as an earlier row,"row 57 of Cálculo y Análisis Matemático; the repeat says lost, so the copy is marked missing"
+dropped,Cálculo y Análisis Matemático,76,,no title,en el cajon
+dropped,Cálculo y Análisis Matemático,78,,no title,25/05/24: Falta inventariar las copias
+dropped,Divulgación,18,,no title,
+dropped,Electromagnetismo,21,,free text outside the table,Falta inventariar las copias 27/05/24
+dropped,Física General,91,,no title,5.0; 1.0; Rafael Carlos
+dropped,Física General,102,,free text outside the table,25/05/24: Falta inventariar las copias
+dropped,Física Matemática y Ecuaciones,81,,no title,0
+dropped,Física Nuclear,22,,no title,0.0
+dropped,Geofísica,24,CAGP01.1,same code and same item as an earlier row,row 2 of Geofísica
+dropped,Geofísica,25,CAGP02.1,same code and same item as an earlier row,row 3 of Geofísica
+dropped,Geofísica,26,CAGP03.1,same code and same item as an earlier row,row 4 of Geofísica
+dropped,Geofísica,27,CAGP04.1,no title,CAGP04.1
+dropped,Geofísica,28,CAGP05.1,same code and same item as an earlier row,row 6 of Geofísica
+dropped,Geofísica,29,CAGP06.1,same code and same item as an earlier row,row 7 of Geofísica
+dropped,Geofísica,30,CAGP07.1,same code and same item as an earlier row,row 8 of Geofísica
+dropped,Geofísica,31,CAGP08.1,same code and same item as an earlier row,row 9 of Geofísica
+dropped,Laboratorio de Física,3,CALB00.1,placeholder code,no title
+dropped,Laboratorio de Física,3,CALB00.1,no title,CALB00.1
+dropped,Laboratorio de Física,43,,free text outside the table,27+30
+dropped,Otros,23,CAOT22.1,no title,CAOT22.1; 1.0
+repaired,Electricidad y Electrónica,19,CAEE01.1,"code belongs to 'Radar Circuit Analysis 1'; the title matches CAEE05, filed there as a new copy",Fundamentos de la electrónica y técnica de semi-conductores
+repaired,Electricidad y Electrónica,23,CAEE05.1,code already belongs to 'Fundamentos de la electrónica y técnica de semi-conductores'; a new code is issued,
+repaired,Electricidad y Electrónica,23,CAEE05.1,new code issued: CAEE11.1,Sin título
+repaired,Electricidad y Electrónica,24,CAEE06.1,code already belongs to 'Comunication Circuits Analisis and Design'; a new code is issued,
+repaired,Electricidad y Electrónica,24,CAEE06.1,new code issued: CAEE12.1,Sin título
+repaired,Electricidad y Electrónica,25,CAEE08.1,"code already belongs to 'Design of Phase-Locked Loop Circuits, with Experiments'; a new code is issued",
+repaired,Electricidad y Electrónica,25,CAEE08.1,new code issued: CAEE13.1,Sin título
+repaired,Electromagnetismo,28,CAEL03.2,copy number 2 already used by another copy of this title; a new copy number is issued,
+repaired,Electromagnetismo,28,CAEL03.2,edition was in the publisher column,
+repaired,Electromagnetismo,30,CAEL10.1,quantity 0 was typed in the publisher column,
+repaired,Electromagnetismo,30,CAEL10.1,code already belongs to 'Electomagnetic Fields'; a new code is issued,
+repaired,Electromagnetismo,30,CAEL10.1,new code issued: CAEL16.1,Fundamentos de la Electrodinámica
+repaired,Física Clásica,24,CAFC03.1,code already belongs to 'Problemas de Mecánica Clásica'; a new code is issued,
+repaired,Física Clásica,24,CAFC03.1,new code issued: CAFC15.1,Mecánica
+repaired,Física Cuántica,8,CAFQ07.1,binding words were in the country column; moved to notes,
+repaired,Física Cuántica,10,CAFQ09.1,binding words were in the country column; moved to notes,
+repaired,Física Cuántica,24,CAFQ02.1,code already belongs to 'Modern Quantum Mechanics'; a new code is issued,
+repaired,Física Cuántica,24,CAFQ02.1,new code issued: CAFQ18.1,"Física Cuántica, Teoría y Aplicaciones (tomo 1)"
+repaired,Física Cuántica,25,CAFQ04.1,code already belongs to 'The Physics of Quantum Mechanics'; a new code is issued,
+repaired,Física Cuántica,25,CAFQ04.1,new code issued: CAFQ19.1,Mecánica Cuántica 2
+repaired,Física Cuántica,26,CAFQ08.1,code already belongs to 'Quantum physics'; a new code is issued,
+repaired,Física Cuántica,26,CAFQ08.1,new code issued: CAFQ20.1,Origen de la Teoría de Cuántica
+repaired,Física Cuántica,27,CAFQ15.1,copy number 1 already used by another copy of this title; a new copy number is issued,
+repaired,Física Cuántica,28,#REF!,code is not a valid code; a new code is issued,
+repaired,Física Cuántica,28,#REF!,new code issued: CAFQ21.1,"Path Integrals in Quantum Mechanics, Statistics, Polymer Physics, and Financial Markets: (cap 1 - 2)"
+repaired,Física General,36,CAFG.1.23.1,title and author were swapped,
+repaired,Física General,37,CAFG.1.01.1,code subcategory 1 differs from the subcategory column 2; the column wins,
+repaired,Física General,53,CAFG.3.05.1,publisher and country were typed in the donor and comment columns,
+repaired,Física General,81,,new code issued: CAFG.2.13.1,Física (vol. 2)
+repaired,Física General,82,,new code issued: CAFG.2.14.1,Vibrations and Waves
+repaired,Física General,83,,new code issued: CAFG.3.09.1,Electromagnetismo para ingeniería
+repaired,Física General,84,,new code issued: CAFG.3.10.1,Feynmann Física (vol. 2) Electromagnetismo y materia
+repaired,Física General,85,,new code issued: CAFG.5.23.1,"Curso de Física General 1 (mecánica, física molecular)"
+repaired,Física General,86,,new code issued: CAFG.5.24.1,Física Universitaria (Vol. 1)
+repaired,Física General,87,,new code issued: CAFG.5.25.1,Física General
+repaired,Física General,88,,new code issued: CAFG.5.26.1,Curso de Física General
+repaired,Física General,89,,new code issued: CAFG.5.27.1,Física Universitaria con Física Moderna (vol. 2)
+repaired,Física General,92,,columns shifted and the code CATE00.1 is a placeholder from another category,
+repaired,Física General,92,,new code issued: CAFG.0.13.1,"Theoretical physics, Thermodynamics, Electromagnetism, Waves and Particles"
+repaired,Física Matemática y Ecuaciones,3,CACM02.1,year was in the type column,
+repaired,Física Matemática y Ecuaciones,45,,new code issued: CACM33.1,"Métodos Matemáticos de la Física 2, Variable Compleja"
+repaired,Física Matemática y Ecuaciones,46,,new code issued: CACM34.1,A Brief on Tensor Analysis
+repaired,Física Matemática y Ecuaciones,47,,new code issued: CACM35.1,Ecuaciones Diferenciales y Problemas con Valores en la Frontera
+repaired,Física Matemática y Ecuaciones,48,,new code issued: CACM36.1,Problemas de la Física Matemática 1
+repaired,Física Matemática y Ecuaciones,49,,new code issued: CACM37.1,Problemas de la Física Matemática 2
+repaired,Física Matemática y Ecuaciones,50,,new code issued: CACM38.1,Ecuaciones de la Física Matemática
+repaired,Física Matemática y Ecuaciones,51,,new code issued: CACM39.1,Introducción a la Transformada de Laplace
+repaired,Física Matemática y Ecuaciones,52,,new code issued: CACM40.1,Manual de Transformada de Laplace
+repaired,Física Matemática y Ecuaciones,53,,new code issued: CACM41.1,Ecuaciones Diferenciales
+repaired,Física Matemática y Ecuaciones,54,,new code issued: CACM42.1,Ecuaciones Diferenciales
+repaired,Física Matemática y Ecuaciones,55,,new code issued: CACM43.1,Some Mathematical Methods of Physics
+repaired,Física Matemática y Ecuaciones,56,,new code issued: CACM44.1,Introducción al Análisis de Fourier
+repaired,Física Matemática y Ecuaciones,58,,new code issued: CACM45.1,Ecuaciones Diferenciales (aplicaciones)
+repaired,Física Matemática y Ecuaciones,61,,new code issued: CACM46.1,Complementos de Matemática
+repaired,Física Moderna,14,CAMD01.1,code already belongs to 'Física Contemporánea I'; a new code is issued,
+repaired,Física Moderna,14,CAMD01.1,new code issued: CAMD08.1,Física Moderna
+repaired,Física Moderna,15,CAMD02.1,code already belongs to 'Física Moderna'; a new code is issued,
+repaired,Física Moderna,15,CAMD02.1,new code issued: CAMD09.1,Special Relativity
+repaired,Física Moderna,16,CAMD07.1,code already belongs to 'Relatividad para futuros físicos'; a new code is issued,
+repaired,Física Moderna,16,CAMD07.1,new code issued: CAMD10.1,Introducción a la física moderna
+repaired,Física Nuclear,15,,new code issued: CAFN13.1,Física del Micromundo
+repaired,Física del Estado Sólido,14,CAEL13.1,code is of category EL; filed under ES,
+repaired,Geofísica,2,CAGP01.1,code typed as CACAGP05.101.1; the row is item 1,
+repaired,Geofísica,24,CAGP01.1,code typed as CACAGP05.101.1; the row is item 1,
+repaired,Geometría Analítica,17,CAGN01.1,"code belongs to 'Problemas de Geometría Analítica'; the title matches CAGN02, filed there as a new copy",Geometría Analítica
+repaired,Geometría Analítica,18,CAGN02.1,copy number 1 already used by another copy of this title; a new copy number is issued,
+repaired,Laboratorio de Física,12,,new code issued: CALB10.1,Manual Laboratorio Fisica General
+repaired,Laboratorio de Física,13,,new code issued: CALB11.1,Laboratorio Fisica General(2010)
+repaired,Laboratorio de Física,14,,new code issued: CALB12.1,Laboratorio Fisica General(2008-2009)
+repaired,Laboratorio de Física,15,,new code issued: CALB13.1,Laboratorio Fisica General(2008)
+repaired,Laboratorio de Física,16,,new code issued: CALB14.1,Laboratorio Fisica General(2006)
+repaired,Laboratorio de Física,17,,new code issued: CALB15.1,Laboratorio de Fisica I(2016 - II)
+repaired,Laboratorio de Física,18,,new code issued: CALB16.1,Laboratorio de Fisica I(2013)
+repaired,Laboratorio de Física,19,,new code issued: CALB17.1,Laboratorio de Fisica I(2008)
+repaired,Laboratorio de Física,20,,new code issued: CALB18.1,Laboratorio de Fisica I(2004)
+repaired,Laboratorio de Física,21,,new code issued: CALB19.1,Laboratorio de Fisica I(2002)
+repaired,Laboratorio de Física,22,,new code issued: CALB20.1,Laboratorio de Fisica I(1998)
+repaired,Laboratorio de Física,23,,new code issued: CALB21.1,Manual Laboratorio de Fisica II(2012)
+repaired,Laboratorio de Física,24,,new code issued: CALB22.1,Manual Laboratorio de Fisica II(2011)
+repaired,Laboratorio de Física,25,,new code issued: CALB23.1,Manual Laboratorio de Fisica II(2010)
+repaired,Laboratorio de Física,26,,new code issued: CALB24.1,Manual Laboratorio de Fisica II(2009)
+repaired,Laboratorio de Física,27,,new code issued: CALB25.1,Manual Laboratorio de Fisica II(2008)
+repaired,Laboratorio de Física,28,,new code issued: CALB26.1,Manual Laboratorio de Fisica II(2006)
+repaired,Laboratorio de Física,29,,new code issued: CALB27.1,Manual Laboratorio de Fisica II(1998)
+repaired,Laboratorio de Física,30,,new code issued: CALB28.1,Laboratorio de Fisica III(2011)
+repaired,Laboratorio de Física,31,,new code issued: CALB29.1,Laboratorio de Fisica III
+repaired,Laboratorio de Física,32,,new code issued: CALB30.1,Laboratorio de Fisica III(2003)
+repaired,Laboratorio de Física,33,,new code issued: CALB31.1,Laboratorio de Fisica III(1998)
+repaired,Laboratorio de Física,34,,new code issued: CALB32.1,Manual de Laboratorio de Fisica Aplicada a las ciencias de la vida y la salud
+repaired,Laboratorio de Física,35,,new code issued: CALB33.1,Laboratorio de optica
+repaired,Matemática Básica 1 - 2024,33,CAAM02.1,"code already belongs to 'Desigualdades e Inecuaciones, Números reales'; a new code is issued",
+repaired,Matemática Básica 1 - 2024,33,CAAM02.1,new code issued: CAAM30.1,Números Complejos
+repaired,Matemática Básica 1 - 2024,34,CAAM04.1,"code belongs to 'Álgebra y funciones elementales'; the title matches CAAM18, filed there as a new copy",Tópicos Elementales de Álgebra
+repaired,Matemática Básica 1 - 2024,36,CAAM07.1,code already belongs to 'Distribuciones Multivariadas Regresión y Correlación'; a new code is issued,
+repaired,Matemática Básica 1 - 2024,36,CAAM07.1,new code issued: CAAM31.1,Teoría de Ecuaciones
+repaired,Matemática Básica 1 - 2024,38,CAAM12.1,code already belongs to 'Matematica Básica'; a new code is issued,
+repaired,Matemática Básica 1 - 2024,38,CAAM12.1,new code issued: CAAM32.1,Álgebra 1 (2/3)
+repaired,Matemática Básica 1 - 2024,39,CAAM13.1,code already belongs to 'Complementos de Matemática'; a new code is issued,
+repaired,Matemática Básica 1 - 2024,39,CAAM13.1,new code issued: CAAM33.1,Matemáticas Básicas 2
+repaired,Matemática Básica 1 - 2024,40,CAAM15.1,"code belongs to 'Teoría de los Conjuntos: Introducción a las matemáticas modernas'; the title matches CAAM01, filed there as a new copy",Matemática Básica (2/2)
+repaired,Matemática Básica 1 - 2024,41,CAAM17.1,code already belongs to 'Álgebra I'; a new code is issued,
+repaired,Matemática Básica 1 - 2024,41,CAAM17.1,new code issued: CAAM34.1,Álgebra Lineal (desde el capítulo 6)
+repaired,Matemática Básica 1 - 2024,42,CAAM18.1,code already belongs to 'Topicos elementales de algebra'; a new code is issued,
+repaired,Matemática Básica 1 - 2024,42,CAAM18.1,new code issued: CAAM35.1,Introducción a los sistemas de ecuaciones diferenciales lineales (2/2)
+repaired,Matemática Básica 1 - 2024,43,CAAM19.1,code already belongs to 'Matemática Básica II - Vectores y Matrices (con números complejos)'; a new code is issued,
+repaired,Matemática Básica 1 - 2024,43,CAAM19.1,new code issued: CAAM36.1,Cálculo Diferencial (6/6)
+repaired,Matemática Básica 1 - 2024,44,CAAM21.1,code already belongs to 'Numeros Complejos'; a new code is issued,
+repaired,Matemática Básica 1 - 2024,44,CAAM21.1,new code issued: CAAM37.1,Álgebra Lineal
+repaired,Matemática Básica 1 - 2024,45,CAAM22.1,code already belongs to 'Algebra: Logaritmos'; a new code is issued,
+repaired,Matemática Básica 1 - 2024,45,CAAM22.1,new code issued: CAAM38.1,Álgebra Lineal (1/2)
+repaired,Materia Condensada,3,CAMC02.1,publisher is a donor name; dropped,Robert Guzman
+repaired,Otros,39,CAMD03.1,code is of category MD; filed under OT,
+repaired,Otros,39,CAMD03.1,code already belongs to 'Fundamentos de la Teoría de Números'; a new code is issued,
+repaired,Otros,39,CAMD03.1,new code issued: CAOT45.1,"Relativistic Quantum Mechanics, Wave Equations"
+repaired,Otros,40,CAMD10.1,code is of category MD; filed under OT,
+repaired,Otros,40,CAMD10.1,code already belongs to 'Cálculo Numérico'; a new code is issued,
+repaired,Otros,40,CAMD10.1,new code issued: CAOT46.1,The Special Theory of Relativity A Mathematical Approach
+repaired,Otros,41,CACL07.1,code is of category CL; filed under OT,
+repaired,Otros,41,CACL07.1,code already belongs to 'Acerca de la Geometría de Lobachevski'; a new code is issued,
+repaired,Otros,41,CACL07.1,new code issued: CAOT47.1,Tópicos de Análisis
+repaired,Otros,45,CACL44.1,code is of category CL; filed under OT,
+repaired,Álgebra Lineal,7,CAAL06.1,"imprint, quantity and type were typed past the last column",
+repaired,Álgebra Lineal,12,CAAL11.1,type was typed past the last column,
+repaired,Álgebra Lineal,13,CAAL12.1,type was typed past the last column,
+repaired,Álgebra Lineal,14,CAAL13.1,type was typed past the last column,
+check,,,"CACM31, CACM38",same title and a shared author on several books,Ecuaciones de la física matemática
+check,,,CG,8 copies have no default location,
+check,,,CG,Relatividad General is not on the Clasificación grid; its copies have no location,
+check,,,FP,11 copies have no default location,
+check,,,FP,Partículas is not on the Clasificación grid; its copies have no location,
+check,,,GP,17 copies have no default location,
+check,,,OT,40 copies have no default location,
+check,,,ST,7 copies have no default location,
+check,,,ST,Teoría de Cuerdas is not on the Clasificación grid; its copies have no location,
+check,,,TC,4 copies have no default location,
+check,,,TC,Teoría de Campos is not on the Clasificación grid; its copies have no location,
+check,Cálculo y Análisis Matemático,26,CACL.3.09.1,comment may describe the copy's status ('faltan'),Faltan los dos últimos capítulos
+check,Cálculo y Análisis Matemático,62,CACL.4.03.2,"title differs from 'El Cálculo'; attached by code, register title kept in notes",El Cálculo con Geometría Analítica
+check,Cálculo y Análisis Matemático,63,CACL.4.07.2,"title differs from 'Análisis Matemático: Curso de introducción Volumen 2'; attached by code, register title kept in notes",Intermediate Analysis. Volume II
+check,Cálculo y Análisis Matemático,65,CACL.4.08.2,"title differs from 'Análisis Matemático: Curso de introducción Volumen 1'; attached by code, register title kept in notes",Introduction to Analysis. Volume I
+check,Cálculo y Análisis Matemático,66,CACL.4.08.3,"title differs from 'Análisis Matemático: Curso de introducción Volumen 1'; attached by code, register title kept in notes",Análisis Matemático: Tomo I
+check,Cálculo y Análisis Matemático,67,CACL.4.08.4,"title differs from 'Análisis Matemático: Curso de introducción Volumen 1'; attached by code, register title kept in notes",Análisis Matemático: Tomo I
+check,Cálculo y Análisis Matemático,72,CACL.4.02.2,"title differs from 'Cálculo Infinitesimal'; attached by code, register title kept in notes",Calculus
+check,Divulgación,4,CADV03.1,loan remark kept in notes; no borrower is recorded,DEVUELTO
+check,Electricidad y Electrónica,11,CAEE10.1,loan remark kept in notes; no borrower is recorded,DEVUELTO
+check,Electricidad y Electrónica,23,CAEE05.1,row has no title; loaded as 'Sin título',"Robert L. Boylestad, Louis Nashelky"
+check,Electricidad y Electrónica,24,CAEE06.1,row has no title; loaded as 'Sin título',"Series Schaum, McGraw-Hill"
+check,Electricidad y Electrónica,25,CAEE08.1,row has no title; loaded as 'Sin título',Langmuir Hershberger
+check,Electromagnetismo,7,CAEL06.1,donor cell names no person; kept in notes,Base 2008
+check,Electromagnetismo,14,CAEL13.1,loan remark kept in notes; no borrower is recorded,Prestado
+check,Física Clásica,12,CAFC11.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Física Clásica,15,CAFC14.1,loan remark kept in notes; no borrower is recorded,Préstamo indefinido
+check,Física Cuántica,6,CAFQ05.1,comment may describe the copy's status ('ya existia'),"Empaquetado ya existía, copia adicional donada por prof. Rafael"
+check,Física Cuántica,28,#REF!,listed as lost but quantity is 1,"Path Integrals in Quantum Mechanics, Statistics, Polymer Physics, and Financial Markets: (cap 1 - 2)"
+check,Física General,107,CAFG.3.08.2,"title differs from 'Electricidad y Magnetismo: Ejercicios y Problemas Resuletos'; attached by code, register title kept in notes",Feynmann Física (vol. 2) Electromagnetismo y materia
+check,Física Matemática y Ecuaciones,22,CACM21.1,loan remark kept in notes; no borrower is recorded,Prestamo; DEVUELTO
+check,Física Matemática y Ecuaciones,24,CACM23.1,comment may describe the copy's status ('no habido'),"falta forrar, no habido"
+check,Física Matemática y Ecuaciones,58,,listed as lost but quantity is 1,Ecuaciones Diferenciales (aplicaciones)
+check,Física Matemática y Ecuaciones,61,,listed as lost but quantity is 1,Complementos de Matemática
+check,Física Moderna,6,CAMD05.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Física Moderna,15,CAMD02.1,quantity 0 (loaded as missing) but the row has a donor or comment,Special Relativity
+check,Física del Estado Sólido,15,CAES14.1,loan remark kept in notes; no borrower is recorded,DEVUELTO
+check,Matemática Básica 1 - 2024,26,CAAM25.1,row has no title; loaded as 'Sin título',Armando O. Rojo
+check,Matemática Básica 1 - 2024,34,CAAM04.1,listed as lost but quantity is 1,Tópicos Elementales de Álgebra
+check,Matemática Básica 1 - 2024,38,CAAM12.1,listed as lost but quantity is 2,Álgebra 1 (2/3)
+check,Matemática Básica 1 - 2024,40,CAAM15.1,listed as lost but quantity is 2,Matemática Básica (2/2)
+check,Matemática Básica 1 - 2024,41,CAAM17.1,listed as lost but quantity is 1,Álgebra Lineal (desde el capítulo 6)
+check,Matemática Básica 1 - 2024,42,CAAM18.1,listed as lost but quantity is 2,Introducción a los sistemas de ecuaciones diferenciales lineales (2/2)
+check,Matemática Básica 1 - 2024,43,CAAM19.1,listed as lost but quantity is 6,Cálculo Diferencial (6/6)
+check,Matemática Básica 1 - 2024,45,CAAM22.1,listed as lost but quantity is 1,Álgebra Lineal (1/2)
+check,Matemática Básica 1 - 2024,47,CAAM29.1,listed as lost but quantity is 1,Análisis Vectorial
+check,Matemática Básica 1 - 2024,57,CAAM11.2,"title differs from 'Matemática Básica. A'; attached by code, register title kept in notes",Algebra Extraordinaria
+check,Matemática Básica 1 - 2024,59,CAAM01.2,loan remark kept in notes; no borrower is recorded,devuelto a Ana Morante
+check,Otros,40,CAMD10.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Particulas,3,CAFP02.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Particulas,5,CAFP04.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Particulas,6,CAFP05.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Particulas,7,CAFP06.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Particulas,8,CAFP07.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Particulas,9,CAFP08.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Particulas,10,CAFP09.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Particulas,11,CAFP10.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Química,10,CAQU09.1,comment may describe the copy's status ('no exhibido'),No exhibido
+check,Relatividad General,2,CACG01.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Relatividad General,3,CACG02.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Relatividad General,4,CACG03.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Relatividad General,5,CACG04.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Relatividad General,6,CACG05.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Relatividad General,7,CACG06.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Relatividad General,8,CACG07.1,loan remark kept in notes; no borrower is recorded,Rent
+check,Relatividad General,9,CACG08.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Campos,,,hidden sheet loaded; its books are on loan from a donor until December 2023,
+check,Teoria de Campos,2,CATC01.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Campos,3,CATC02.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Campos,4,CATC03.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Campos,5,CATC04.1,loan remark kept in notes; no borrower is recorded,Prestamo
+check,Teoria de Cuerdas,,,hidden sheet loaded; its books are on loan from a donor until December 2023,
+check,Teoria de Cuerdas,2,CAST01.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Cuerdas,3,CAST02.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Cuerdas,4,CAST03.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Cuerdas,5,CAST04.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Cuerdas,6,CAST05.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Cuerdas,7,CAST06.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Teoria de Cuerdas,8,CAST07.1,loan remark kept in notes; no borrower is recorded,Prestamo hasta diciembre 2023
+check,Termodinámica y Física Estadíst,7,CATE06.1,donor cell names no person; kept in notes,Base 2008
+check,Termodinámica y Física Estadíst,9,CATE08.1,donor cell names no person; kept in notes,C.F.C.F
+check,Álgebra Lineal,4,CAAL03.1,quantity 0 (loaded as missing) but the row has a donor or comment,Algebra Lineal
+check,Álgebra Lineal,6,CAAL05.1,quantity 0 (loaded as missing) but the row has a donor or comment,Algebra Lineal: Problemas resueltos
+guess,Astronomía y Astrofísica,,,4 copies have no type; loaded as original,
+guess,Astronomía y Astrofísica,,,1 copies have no quantity; loaded as 1 present,
+guess,Cálculo y Análisis Matemático,,,7 copies have no type; loaded as original,
+guess,Cálculo y Análisis Matemático,,,19 copies have no quantity; loaded as 1 present,
+guess,Divulgación,,,11 copies have no type; loaded as original,
+guess,Divulgación,,,1 copies have no quantity; loaded as 1 present,
+guess,Electricidad y Electrónica,,,14 copies have no type; loaded as original,
+guess,Electricidad y Electrónica,,,3 copies have no quantity; loaded as 1 present,
+guess,Electromagnetismo,,,2 copies have no type; loaded as original,
+guess,Electromagnetismo,,,4 copies have no quantity; loaded as 1 present,
+guess,Fisica Computacional,,,5 copies have no type; loaded as original,
+guess,Física Clásica,,,2 copies have no type; loaded as original,
+guess,Física Cuántica,,,6 copies have no type; loaded as original,
+guess,Física Cuántica,,,4 copies have no quantity; loaded as 1 present,
+guess,Física General,,,101 copies have no type; loaded as original,
+guess,Física General,,,4 copies have no quantity; loaded as 1 present,
+guess,Física Matemática y Ecuaciones,,,43 copies have no type; loaded as original,
+guess,Física Moderna,,,4 copies have no type; loaded as original,
+guess,Física Nuclear,,,10 copies have no type; loaded as original,
+guess,Física Nuclear,,,1 copies have no quantity; loaded as 1 present,
+guess,Física del Estado Sólido,,,7 copies have no type; loaded as original,
+guess,Geofísica,,,16 copies have no type; loaded as original,
+guess,Geofísica,,,2 copies have no quantity; loaded as 1 present,
+guess,Geometría Analítica,,,2 copies have no type; loaded as original,
+guess,Geometría Analítica,,,2 copies have no quantity; loaded as 1 present,
+guess,Laboratorio de Física,,,33 copies have no type; loaded as original,
+guess,Matemática Básica 1 - 2024,,,38 copies have no type; loaded as original,
+guess,Matemática Básica 1 - 2024,,,1 copies have no quantity; loaded as 1 present,
+guess,Otros,,,39 copies have no type; loaded as original,
+guess,Otros,,,6 copies have no quantity; loaded as 1 present,
+guess,Química,,,20 copies have no type; loaded as original,
+guess,Termodinámica y Física Estadíst,,,3 copies have no type; loaded as original,
+guess,Termodinámica y Física Estadíst,,,2 copies have no quantity; loaded as 1 present,
+guess,Álgebra Lineal,,,11 copies have no type; loaded as original,
+guess,Álgebra Lineal,,,1 copies have no quantity; loaded as 1 present,
+merged,,,,donor 'David Duran',David Durán
+merged,,,,donor 'Franklin Vilca (B21)',Franklin Vilca B21
+merged,,,,donor 'Maria Luisa',prof. Maria Luisa
+merged,,,,donor 'Richard Avalos',Richard Ávalos
+merged,,,,donor 'Robert Guzman',Robert | Robert Guzmán | Robert Guzmán - 2025 | prof. Robert
+merged,,,,donor 'Sergio Cordero',Sergio Cordero B19
+merged,,,,donor 'Steve (Base 16)',Steve (base 16)
+merged,,,,publisher 'Mir',MIR
+merged,,,,publisher 'Editorial Limusa',Editorial LIMUSA
+merged,,,,publisher 'Addison-Wesley',Addison–Wesley
+condition,Astronomía y Astrofísica,6,CAAA05.1,poor: 'maltrat',"sin forrar, cubierta maltratada"
+condition,Cálculo y Análisis Matemático,8,CACL.1.07.1,poor: 'hojas sueltas',Hojas sueltas
+condition,Cálculo y Análisis Matemático,16,CACL.2.04.1,fair: 'tipografia de maquina',Tipografía de máquina de escribir
+condition,Cálculo y Análisis Matemático,19,CACL.3.02.1,fair: 'dobles',Portada con dobleses
+condition,Cálculo y Análisis Matemático,20,CACL.3.03.1,poor: 'despegad',Lomo despegado
+condition,Cálculo y Análisis Matemático,23,CACL.3.06.1,fair: 'tipografia de maquina',Tipografía de máquina de escribir
+condition,Cálculo y Análisis Matemático,24,CACL.3.07.1,fair: 'arrugad',Hojas finales algo arrugadas. Plástico de la porta está doblado en la parte baja.
+condition,Cálculo y Análisis Matemático,26,CACL.3.09.1,poor: 'faltan los dos',Faltan los dos últimos capítulos
+condition,Cálculo y Análisis Matemático,32,CACL.4.03.1,poor: 'maltrat',bastante maltratado
+condition,Cálculo y Análisis Matemático,34,CACL.4.05.1,poor: 'despegad',Una parte del lomo está despegado
+condition,Cálculo y Análisis Matemático,36,CACL.4.07.1,fair: 'resaltador',Algunas hojas están con resaltador verde
+condition,Cálculo y Análisis Matemático,59,CACL.2.03.2,poor: 'maltrat',"Sin forrar, maltratado"
+condition,Cálculo y Análisis Matemático,60,CACL.3.05.2,fair: 'reconstruid',Lomo reconstruido con folder naranja
+condition,Cálculo y Análisis Matemático,64,CACL.4.07.3,poor: 'maltrat',Sin forrar. Lomo maltratado.
+condition,Cálculo y Análisis Matemático,66,CACL.4.08.3,poor: 'incompleto',Incompleto
+condition,Cálculo y Análisis Matemático,69,CACL.4.10.2,poor: 'maltrat',Lomo maltratado
+condition,Electricidad y Electrónica,3,CAEE02.1,poor: 'mal estado',Mal estado
+condition,Electricidad y Electrónica,4,CAEE03.1,fair: 'masomenos',Masomenos
+condition,Electromagnetismo,5,CAEL04.1,poor: 'hojas medio salidas',"copia anillada, sin cubierta de plastico, algunas hojas medio salidas"
+condition,Electromagnetismo,7,CAEL06.1,poor: 'roto',"copia anillada, anillos rotos, hojas salidas"
+condition,Electromagnetismo,10,CAEL09.1,poor: 'apolill',apolillado
+condition,Electromagnetismo,11,CAEL10.1,poor: 'rota',Ambas cubiertas de plástico rotas
+condition,Electromagnetismo,27,CAEL 03.4,poor: 'despegad',Carátula despegada
+condition,Física Cuántica,2,CAFQ01.1,poor: 'falta la tapa',le falta la tapa de encima
+condition,Física General,46,CAFG.2.10.1,poor: 'apolill',"Daños menores, desgaste por apolillamiento"
+condition,Física General,73,CAFG.5.15.1,poor: 'rota',Tapa delantera rota
+condition,Física General,77,CAFG.5.19.1,poor: 'partido',1 y 2/ partido por la mitad
+condition,Física Matemática y Ecuaciones,11,CACM10.1,poor: 'maltrat',Muy maltratado
+condition,Física Matemática y Ecuaciones,26,CACM25.1,fair: 'manchas',manchas oscuras en la parte de atras
+condition,Física Matemática y Ecuaciones,32,CACM31.1,good: 'buen estado',buen estado
+condition,Física Matemática y Ecuaciones,33,CACM32.1,good: 'buen estado',buen estado
+condition,Física Nuclear,2,CAFN01.1,fair: 'escrito en maquina',Escrito en máquina de escribir
+condition,Física Nuclear,5,CAFN04.1,poor: 'maltrat',Encuadernado horizontal maltratado
+condition,Física Nuclear,27,CAFN04.2,poor: 'maltrat',Encuadernado horizontal maltratado
+condition,Geofísica,6,CAGP05.1,fair: 'desgast',tapa desgastada
+condition,Matemática Básica 1 - 2024,7,CAAM06.1,poor: 'despegad',tapa y hojas despegadas
+condition,Matemática Básica 1 - 2024,19,CAAM18.1,poor: 'hojas salidas',hojas salidas
+condition,Química,8,CAQU07.1,poor: 'apolill',apolillado
+condition,Química,9,CAQU08.1,poor: 'maltrat',lomo maltratado
+condition,Termodinámica y Física Estadíst,2,CATE01.1,poor: 'rota',"Rayado con corrector, cubierta trasera rota"
+condition,Termodinámica y Física Estadíst,3,CATE02.1,fair: 'subrayad',Páginas subrayadas de color amarillo
+condition,Termodinámica y Física Estadíst,8,CATE07.1,poor: 'rota',Cubierta trasera rota
+condition,Álgebra Lineal,4,CAAL03.1,poor: 'maltrat',"DONADO EL 30/05/24, cubierta y forro maltratado - apolillado"
+condition,Álgebra Lineal,15,CAAL14.1,good: 'buen estado',En buen estado
+proposal,,,CL.1,subcategory name: Cálculo diferencial,Relaciones y Funciones de R en R | Análisis Matemático 1 | Solucionario de Demidovich. Tomo I | Cálculo 1.Tomo 1
+proposal,,,CL.2,subcategory name: Cálculo integral,"Análisis Matemático 2 | Calculo Integral: Técnicas de Integración | Tópicos de Cálculo: Volumen 2 | Solucionario Cálculo Integral, Willian Anthony Granville"
+proposal,,,CL.3,subcategory name: Cálculo vectorial,"Análisis Vectorial | Calculo Vectorial | Solucionario de G. N. Berman, Análisis Matemático Tomo 3 | Solucionario de problemas de El Calculo Vectorial (Leithold - Larson)"
+proposal,,,CL.4,subcategory name: Análisis matemático y tratados,Theory and Problems of Differential and Integral Calculus | Cálculo Infinitesimal | El Cálculo | Advanced Calculus
+proposal,,,FG.0,subcategory name: Introducción y física recreativa,Física Conceptual | Introducción a la física | Física Fundamental 1 | Física Fundamental 2
+proposal,,,FG.1,subcategory name: Mecánica (Física 1),Dinámica | Introducción a la Dinámica | Estática | Física 1 para estudiantes de ciencias e ingenierías
+proposal,,,FG.2,"subcategory name: Ondas, fluidos y calor (Física 2)",Vibraciones y ondas | Oscilaciones y Ondas (parte 2) Solucionario (cap. 14-16) | Física 2 | Física 2
+proposal,,,FG.3,subcategory name: Electricidad y magnetismo (Física 3),Berkeley Physics Course (vol.2) Electricidad y Magnetismo | Chapter 21: The Electric Field | Capítulo 22: Carga eléctrica y campo eléctrico | Elements to Electron Physics
+proposal,,,FG.4,subcategory name: Óptica,Teoría de Sistemas Ópticos | Óptica
+proposal,,,FG.5,subcategory name: Textos completos y problemas,"Física General | Física para ciencias e ingeniería, Vol I | Física (tomo 1) / incorrecto, tomo II | Física (tomo 2)"

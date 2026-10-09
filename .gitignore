@@ -1,5 +1,8 @@
 /node_modules
 
+# written by bun run db:seed:sql
+/catalogue.sql
+
 # bundlers
 .next
 .wrangler
