@@ -15,12 +15,12 @@ const components = {
     </h1>
   ),
   h2: ({ children, ...props }: HeadingProps) => (
-    <h2 className="text-gray-800 dark:text-zinc-200 font-medium mt-8 mb-3" {...props}>
+    <h2 className="mt-8 mb-3 font-medium text-muted-foreground" {...props}>
       {children}
     </h2>
   ),
   h3: ({ children, ...props }: HeadingProps) => (
-    <h3 className="text-gray-800 dark:text-zinc-200 font-medium mt-8 mb-3" {...props}>
+    <h3 className="mt-8 mb-3 font-medium text-muted-foreground" {...props}>
       {children}
     </h3>
   ),
@@ -29,14 +29,12 @@ const components = {
       {children}
     </h4>
   ),
-  p: (props: ParagraphProps) => (
-    <p className="text-gray-800 dark:text-zinc-300 leading-snug" {...props} />
-  ),
+  p: (props: ParagraphProps) => <p className="leading-snug text-muted-foreground" {...props} />,
   ol: (props: ListProps) => (
-    <ol className="text-gray-800 dark:text-zinc-300 list-decimal pl-5 space-y-2" {...props} />
+    <ol className="list-decimal space-y-2 pl-5 text-muted-foreground" {...props} />
   ),
   ul: (props: ListProps) => (
-    <ul className="text-gray-800 dark:text-zinc-300 list-disc pl-5 space-y-1" {...props} />
+    <ul className="list-disc space-y-1 pl-5 text-muted-foreground" {...props} />
   ),
   li: (props: ListItemProps) => <li className="pl-1" {...props} />,
   em: (props: ComponentPropsWithoutRef<"em">) => <em className="font-medium" {...props} />,
@@ -45,7 +43,7 @@ const components = {
   ),
   a: ({ href, children, ...props }: AnchorProps) => {
     const className =
-      "text-blue-500 hover:text-blue-700 dark:text-gray-400 dark:hover:text-gray-300 dark:underline dark:underline-offset-2 dark:decoration-gray-800";
+      "text-primary underline decoration-border underline-offset-2 hover:text-primary/80";
     if (href?.startsWith("/")) {
       return (
         <Link href={href} className={className} {...props}>
@@ -88,7 +86,7 @@ const components = {
   ),
   blockquote: (props: BlockquoteProps) => (
     <blockquote
-      className="ml-[0.075em] border-l-3 border-gray-300 pl-4 text-gray-700 dark:border-zinc-600 dark:text-zinc-300"
+      className="ml-[0.075em] border-l-3 border-border pl-4 text-muted-foreground"
       {...props}
     />
   ),

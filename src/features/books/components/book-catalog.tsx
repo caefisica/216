@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, Pencil, Plus, Search, X } from "lucide-react";
+import { Heart, LayoutGrid, List, Pencil, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BookCover } from "@/components/catalogue/book-cover";
 import { getBooks, setHeart } from "../actions";
 import { availabilityLabel } from "../labels";
 import { toast, toastActionError } from "@/hooks/use-toast";
@@ -26,7 +27,7 @@ interface BookCatalogProps {
 export const LIST_STORAGE_KEY = "catalogue:list";
 
 const selectClass =
-  "h-9 w-full rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-600 sm:w-auto";
+  "h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20 sm:w-auto";
 
 function filtersToQuery(filters: BookFilters) {
   const query = new URLSearchParams();
@@ -50,6 +51,7 @@ export function BookCatalog({
   const lastPage = Math.max(1, Math.ceil(pageData.total / pageData.pageSize));
   const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [view, setView] = useState<"list" | "grid">("list");
   const searchRef = useRef<HTMLInputElement>(null);
   const firstRun = useRef(true);
 
@@ -161,43 +163,45 @@ export function BookCatalog({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {counts && (
         <section aria-label="Resumen de la colección" className="grid grid-cols-3 gap-2 sm:gap-3">
-          <div className="rounded-lg border bg-white px-3 py-3 shadow-xs sm:px-4">
-            <p className="text-xl font-bold text-gray-950 sm:text-2xl">{counts.titleCount}</p>
-            <p className="text-xs text-gray-600 sm:text-sm">títulos</p>
+          <div className="surface p-3 sm:p-4">
+            <p className="text-xl font-semibold tracking-tight sm:text-2xl">{counts.titleCount}</p>
+            <p className="text-xs text-muted-foreground sm:text-sm">títulos</p>
           </div>
-          <div className="rounded-lg border bg-white px-3 py-3 shadow-xs sm:px-4">
-            <p className="text-xl font-bold text-gray-950 sm:text-2xl">{counts.copyCount}</p>
-            <p className="text-xs text-gray-600 sm:text-sm">ejemplares</p>
+          <div className="surface p-3 sm:p-4">
+            <p className="text-xl font-semibold tracking-tight sm:text-2xl">{counts.copyCount}</p>
+            <p className="text-xs text-muted-foreground sm:text-sm">ejemplares</p>
           </div>
-          <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 shadow-xs sm:px-4">
-            <p className="text-xl font-bold text-blue-800 sm:text-2xl">{counts.availableNow}</p>
-            <p className="text-xs text-blue-900 sm:text-sm">disponibles ahora</p>
+          <div className="surface border-l-4 border-l-status-available p-3 sm:p-4">
+            <p className="text-xl font-semibold tracking-tight text-status-available sm:text-2xl">
+              {counts.availableNow}
+            </p>
+            <p className="text-xs text-muted-foreground sm:text-sm">disponibles ahora</p>
           </div>
         </section>
       )}
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Catálogo</p>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-950">Encuentra un título</h1>
+          <p className="eyebrow">Colección</p>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Encuentra un título</h1>
         </div>
-        <p className="hidden text-right text-xs text-gray-500 sm:block">
+        <p className="hidden text-right text-xs text-muted-foreground sm:block">
           {pageData.total} títulos · página {pageData.page}
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-white p-2 shadow-xs">
+      <div className="surface flex flex-wrap items-center gap-2 p-3">
         <div className="relative min-w-0 flex-1 basis-full sm:min-w-64 sm:basis-auto">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             ref={searchRef}
             aria-label="Buscar"
             placeholder="Título, autor o código (/)"
             value={filters.search ?? ""}
             onChange={(e) => update({ search: e.target.value || undefined })}
-            className="h-9 pl-9"
+            className="h-10 border-border bg-surface-muted pl-9"
           />
         </div>
 
@@ -299,7 +303,7 @@ export function BookCatalog({
 
         {staff && (
           <>
-            <label className="flex items-center gap-1.5 text-sm text-gray-700">
+            <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <input
                 type="checkbox"
                 checked={filters.unlabelled === "1"}
@@ -307,7 +311,7 @@ export function BookCatalog({
               />
               Sin etiqueta
             </label>
-            <label className="flex items-center gap-1.5 text-sm text-gray-700">
+            <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <input
                 type="checkbox"
                 checked={filters.unplaced === "1"}
@@ -317,7 +321,7 @@ export function BookCatalog({
             </label>
             <Button asChild size="sm" className="w-full sm:w-auto">
               <Link href="/admin/books/create">
-                <Plus className="mr-1 h-4 w-4" /> Nuevo libro
+                <Plus className="mr-1 h-4 w-4" /> Nuevo título
               </Link>
             </Button>
           </>
@@ -331,27 +335,27 @@ export function BookCatalog({
               key={chip.key}
               type="button"
               onClick={() => update({ [chip.key]: undefined })}
-              className="inline-flex items-center gap-1 rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-gray-700 hover:bg-gray-100"
+              className="inline-flex items-center gap-1 rounded border border-border bg-surface-muted px-2 py-0.5 text-muted-foreground hover:bg-accent"
             >
               {chip.label}
               <X className="h-3 w-3" aria-label="Quitar filtro" />
             </button>
           ))}
-          <button type="button" onClick={clearAll} className="text-blue-600 hover:underline">
+          <button type="button" onClick={clearAll} className="text-primary hover:underline">
             Limpiar todo
           </button>
         </div>
       )}
 
-      <p className="text-sm text-gray-500" aria-live="polite">
+      <p className="text-sm text-muted-foreground" aria-live="polite">
         {loading ? "Buscando…" : `${pageData.total} ${pageData.total === 1 ? "libro" : "libros"}`}
       </p>
 
       {books.length === 0 && !loading ? (
-        <div className="rounded border border-dashed border-gray-200 py-16 text-center">
+        <div className="surface border-dashed py-16 text-center">
           {chips.length > 0 ? (
             <>
-              <p className="font-medium text-gray-900">
+              <p className="font-medium">
                 Ningún libro coincide con {chips.map((chip) => chip.label).join(", ")}.
               </p>
               <Button variant="outline" size="sm" className="mt-4" onClick={clearAll}>
@@ -360,7 +364,7 @@ export function BookCatalog({
             </>
           ) : (
             <>
-              <p className="font-medium text-gray-900">El catálogo está vacío.</p>
+              <p className="font-medium">El catálogo está vacío.</p>
               {staff && (
                 <Button asChild size="sm" className="mt-4">
                   <Link href="/admin/books/create">Registrar el primer libro</Link>
@@ -370,64 +374,153 @@ export function BookCatalog({
           )}
         </div>
       ) : (
-        <div
-          role="listbox"
-          aria-label="Libros"
-          className="divide-y rounded-lg border bg-white shadow-xs"
-        >
-          {books.map((book, index) => (
+        <>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="text-xs text-muted-foreground">Vista</span>
             <div
-              key={book.id}
-              role="option"
-              aria-selected={index === selected}
-              onMouseEnter={() => setSelected(index)}
-              className={`grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-2 px-2 py-2.5 text-sm sm:gap-3 sm:px-3 md:grid-cols-[7rem_1fr_14rem_12rem_auto] ${
-                index === selected ? "bg-blue-50" : "hover:bg-gray-50"
-              }`}
+              className="flex rounded-md border border-border bg-surface p-0.5"
+              role="group"
+              aria-label="Vista del catálogo"
             >
-              <span className="truncate font-mono text-[11px] text-gray-500">{book.code}</span>
-              <Link href={`/books/${book.id}`} className="min-w-0">
-                <span className="block truncate font-medium text-gray-900">{book.title}</span>
-                {book.author && (
-                  <span className="block truncate text-xs text-gray-500">{book.author}</span>
-                )}
-              </Link>
-              <span className="hidden truncate text-gray-600 md:block">
-                {book.category.parent
-                  ? `${book.category.parent.name} › ${book.category.name}`
-                  : book.category.name}
-              </span>
-              <span
-                className={`hidden text-xs md:block ${
-                  book.lendableCount > 0 ? "text-green-700" : "text-gray-500"
+              <button
+                type="button"
+                aria-label="Vista de lista"
+                aria-pressed={view === "list"}
+                onClick={() => setView("list")}
+                className={`rounded p-1.5 ${
+                  view === "list" ? "bg-foreground text-background" : "text-muted-foreground"
                 }`}
               >
-                {availabilityLabel(book.lendableCount, book.copyCount)}
-              </span>
-              <span className="flex items-center gap-1">
-                {staff && (
-                  <Link
-                    href={`/admin/books/${book.id}`}
-                    aria-label={`Editar ${book.title}`}
-                    className="rounded p-1 text-gray-400 hover:text-gray-700"
-                  >
-                    <Pencil className="h-4 w-4" />
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                aria-label="Vista de cuadrícula"
+                aria-pressed={view === "grid"}
+                onClick={() => setView("grid")}
+                className={`rounded p-1.5 ${
+                  view === "grid" ? "bg-foreground text-background" : "text-muted-foreground"
+                }`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          {view === "grid" ? (
+            <div
+              role="list"
+              aria-label="Libros"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+            >
+              {books.map((book, index) => (
+                <article
+                  key={book.id}
+                  role="listitem"
+                  onMouseEnter={() => setSelected(index)}
+                  className={`surface relative overflow-hidden p-2 transition ${index === selected ? "ring-2 ring-ring" : ""}`}
+                >
+                  <Link href={`/books/${book.id}`} className="block">
+                    <BookCover
+                      title={book.title}
+                      author={book.author}
+                      category={book.category.name}
+                      imageUrl={book.imageUrl}
+                      priority={index < 2}
+                    />
+                    <div className="px-1 pb-1 pt-3">
+                      {book.imageUrl && (
+                        <>
+                          <p className="line-clamp-2 text-sm font-semibold leading-tight">
+                            {book.title}
+                          </p>
+                          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                            {book.author ?? "Autor no registrado"}
+                          </p>
+                        </>
+                      )}
+                      <p
+                        className={`mt-3 text-[0.7rem] font-medium ${
+                          book.lendableCount > 0 ? "text-status-available" : "text-muted-foreground"
+                        }`}
+                      >
+                        {availabilityLabel(book.lendableCount, book.copyCount)}
+                      </p>
+                    </div>
                   </Link>
-                )}
-                <button
-                  type="button"
-                  aria-label={book.isHearted ? "Quitar de favoritos" : "Añadir a favoritos"}
-                  onClick={() => toggleHeart(book)}
-                  className={`rounded p-1 ${
-                    book.isHearted ? "text-red-500" : "text-gray-400 hover:text-red-500"
+                  <button
+                    type="button"
+                    aria-label={book.isHearted ? "Quitar de favoritos" : "Añadir a favoritos"}
+                    onClick={() => toggleHeart(book)}
+                    className={`absolute right-3 top-3 rounded bg-surface/90 p-1 transition hover:bg-surface ${
+                      book.isHearted
+                        ? "text-status-favorite"
+                        : "text-muted-foreground hover:text-status-favorite"
+                    }`}
+                  >
+                    <Heart className={`h-4 w-4 ${book.isHearted ? "fill-current" : ""}`} />
+                  </button>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div role="listbox" aria-label="Libros" className="surface divide-y overflow-hidden">
+              {books.map((book, index) => (
+                <div
+                  key={book.id}
+                  role="option"
+                  aria-selected={index === selected}
+                  onMouseEnter={() => setSelected(index)}
+                  className={`grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 text-sm transition sm:grid-cols-[7rem_1fr_13rem_11rem_auto] ${
+                    index === selected ? "bg-surface-muted" : "hover:bg-surface-muted/60"
                   }`}
                 >
-                  <Heart className={`h-4 w-4 ${book.isHearted ? "fill-current" : ""}`} />
-                </button>
-              </span>
+                  <span className="font-mono text-[10px] text-muted-foreground">{book.code}</span>
+                  <Link href={`/books/${book.id}`} className="col-span-1 min-w-0">
+                    <span className="block truncate font-medium">{book.title}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {book.author ?? "Autor no registrado"}
+                    </span>
+                  </Link>
+                  <span className="hidden truncate text-muted-foreground md:block">
+                    {book.category.parent
+                      ? `${book.category.parent.name} › ${book.category.name}`
+                      : book.category.name}
+                  </span>
+                  <span
+                    className={`hidden text-xs md:block ${
+                      book.lendableCount > 0 ? "text-status-available" : "text-muted-foreground"
+                    }`}
+                  >
+                    {availabilityLabel(book.lendableCount, book.copyCount)}
+                  </span>
+                  <span className="flex items-center justify-end gap-1">
+                    {staff && (
+                      <Link
+                        href={`/admin/books/${book.id}`}
+                        aria-label={`Editar ${book.title}`}
+                        className="rounded p-1 text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={book.isHearted ? "Quitar de favoritos" : "Añadir a favoritos"}
+                      onClick={() => toggleHeart(book)}
+                      className={`rounded p-1 ${
+                        book.isHearted
+                          ? "text-status-favorite"
+                          : "text-muted-foreground hover:text-status-favorite"
+                      }`}
+                    >
+                      <Heart className={`h-4 w-4 ${book.isHearted ? "fill-current" : ""}`} />
+                    </button>
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {lastPage > 1 && (
@@ -435,7 +528,7 @@ export function BookCatalog({
           aria-label="Páginas"
           className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between"
         >
-          <span className="text-gray-500">
+          <span className="text-muted-foreground">
             {(pageData.page - 1) * pageData.pageSize + 1}–
             {(pageData.page - 1) * pageData.pageSize + books.length} de {pageData.total}
           </span>
@@ -448,7 +541,7 @@ export function BookCatalog({
             >
               Anterior
             </Button>
-            <span className="text-gray-500">
+            <span className="text-muted-foreground">
               {pageData.page} / {lastPage}
             </span>
             <Button
@@ -463,7 +556,7 @@ export function BookCatalog({
         </nav>
       )}
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-muted-foreground">
         / buscar · ↑ ↓ moverse · Enter abrir · ← → página · Esc limpiar la búsqueda
       </p>
     </div>

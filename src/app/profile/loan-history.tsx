@@ -9,7 +9,7 @@ export function getStatusBadge(status: string) {
       return (
         <Badge
           variant="outline"
-          className="bg-yellow-50 text-yellow-700 border-yellow-200 font-bold rounded-full px-3"
+          className="border-border bg-surface-muted px-3 font-semibold text-muted-foreground"
         >
           <Clock className="h-3 w-3 mr-1" /> Pendiente
         </Badge>
@@ -18,7 +18,7 @@ export function getStatusBadge(status: string) {
       return (
         <Badge
           variant="outline"
-          className="bg-green-50 text-green-700 border-green-200 font-bold rounded-full px-3"
+          className="border-status-available/30 bg-status-available/10 px-3 font-semibold text-status-available"
         >
           <CheckCircle className="h-3 w-3 mr-1" /> Vigente
         </Badge>
@@ -27,7 +27,7 @@ export function getStatusBadge(status: string) {
       return (
         <Badge
           variant="outline"
-          className="bg-red-50 text-red-700 border-red-200 font-bold rounded-full px-3"
+          className="border-destructive/30 bg-destructive/10 px-3 font-semibold text-destructive"
         >
           <XCircle className="h-3 w-3 mr-1" /> Rechazado
         </Badge>
@@ -36,7 +36,7 @@ export function getStatusBadge(status: string) {
       return (
         <Badge
           variant="outline"
-          className="bg-gray-50 text-gray-500 border-gray-200 font-bold rounded-full px-3"
+          className="border-border bg-surface-muted px-3 font-semibold text-muted-foreground"
         >
           <Info className="h-3 w-3 mr-1" /> Devuelto
         </Badge>
@@ -57,50 +57,52 @@ function copyLabel(req: BorrowRequest) {
 
 export function LoanHistory({ borrowHistory }: { borrowHistory: BorrowRequest[] }) {
   return (
-    <Card className="rounded-3xl border-gray-100 shadow-xs overflow-hidden bg-white">
+    <Card className="surface overflow-hidden shadow-xs">
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-8 py-6 font-black text-gray-400 uppercase tracking-widest text-[10px]">
+              <tr className="border-b border-border bg-surface-muted/50">
+                <th className="px-8 py-6 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Libro
                 </th>
-                <th className="px-8 py-6 font-black text-gray-400 uppercase tracking-widest text-[10px]">
+                <th className="px-8 py-6 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Estado
                 </th>
-                <th className="px-8 py-6 font-black text-gray-400 uppercase tracking-widest text-[10px]">
+                <th className="px-8 py-6 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Ejemplar
                 </th>
-                <th className="px-8 py-6 font-black text-gray-400 uppercase tracking-widest text-[10px]">
+                <th className="px-8 py-6 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Vencimiento
                 </th>
-                <th className="px-8 py-6 font-black text-gray-400 uppercase tracking-widest text-[10px] text-right">
+                <th className="px-8 py-6 text-right text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Fecha
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {borrowHistory.map((req) => (
-                <tr key={req.id} className="hover:bg-gray-50/30 transition-colors group">
+                <tr key={req.id} className="transition-colors group hover:bg-surface-muted/60">
                   <td className="px-8 py-6">
-                    <span className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    <span className="font-semibold transition-colors group-hover:text-primary">
                       {req.book?.title}
                     </span>
                   </td>
                   <td className="px-8 py-6">
                     {getStatusBadge(req.status)}
                     {req.rejectionReason && (
-                      <p className="mt-2 max-w-xs text-xs text-gray-700">
+                      <p className="mt-2 max-w-xs text-xs text-muted-foreground">
                         Motivo: {req.rejectionReason}
                       </p>
                     )}
                   </td>
-                  <td className="px-8 py-6 font-mono text-xs text-gray-600">{copyLabel(req)}</td>
-                  <td className="px-8 py-6 text-gray-600">
+                  <td className="px-8 py-6 font-mono text-xs text-muted-foreground">
+                    {copyLabel(req)}
+                  </td>
+                  <td className="px-8 py-6 text-muted-foreground">
                     {req.dueDate ? new Date(req.dueDate).toLocaleDateString() : "—"}
                   </td>
-                  <td className="px-8 py-6 text-right font-medium text-gray-400">
+                  <td className="px-8 py-6 text-right font-medium text-muted-foreground">
                     {new Date(req.requestDate).toLocaleDateString()}
                   </td>
                 </tr>

@@ -8,6 +8,7 @@
 .wrangler
 .open-next
 out
+/.cache
 
 # env files
 .env*

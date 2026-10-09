@@ -27,18 +27,20 @@ export default function VerifyEmailPage() {
   const [isResending, startTransition] = useTransition();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+    <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center">Verifica tu correo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-gray-600 text-center">
+          <p className="text-center text-sm text-muted-foreground">
             Ingresa el código de 6 dígitos que enviamos a tu correo.
           </p>
           <form action={formAction} className="space-y-4">
             {state?.error && (
-              <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">{state.error}</p>
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {state.error}
+              </p>
             )}
             <div>
               <Label htmlFor="code">Código de verificación</Label>
@@ -58,12 +60,14 @@ export default function VerifyEmailPage() {
           </form>
           <div className="space-y-1">
             {resendError && (
-              <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">{resendError}</p>
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {resendError}
+              </p>
             )}
             <button
               type="button"
               disabled={isResending}
-              className="w-full text-sm text-blue-600 hover:underline mt-2"
+              className="mt-2 w-full text-sm text-primary hover:underline"
               onClick={() =>
                 startTransition(async () => {
                   const r = await resendVerificationEmailAction();

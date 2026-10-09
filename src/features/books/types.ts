@@ -20,7 +20,9 @@ export type Donor = typeof donors.$inferSelect;
 export type { CopyOrigin, CopyStatus, CopyCondition, LocationHolds };
 
 /** Selects the title fields shown in a loan or statistics row. */
-export type BookSummary = Pick<Book, "id" | "code" | "title" | "author" | "imageUrl">;
+export type BookSummary = Pick<Book, "id" | "code" | "title" | "author" | "imageUrl"> & {
+  category: Pick<Category, "id" | "code" | "name">;
+};
 
 export interface CategoryRef {
   id: string;

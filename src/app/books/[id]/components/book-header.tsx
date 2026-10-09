@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Edit, User } from "lucide-react";
+import { Edit } from "lucide-react";
 import type { BookDetailed } from "@/features/books/types";
 
 interface BookHeaderProps {
@@ -11,9 +11,9 @@ interface BookHeaderProps {
 export function BookHeader({ book, canEdit }: BookHeaderProps) {
   const { category } = book;
   return (
-    <div className="mb-5 flex items-start justify-between gap-3 border-b pb-5">
+    <div className="mb-6 flex items-start justify-between gap-3 border-b border-border pb-6">
       <div className="flex-1">
-        <p className="mb-2 text-sm text-gray-500">
+        <p className="mb-3 text-xs font-medium text-muted-foreground">
           <Link
             href={`/?category=${(category.parent ?? category).code}`}
             className="hover:underline"
@@ -28,17 +28,12 @@ export function BookHeader({ book, canEdit }: BookHeaderProps) {
               </Link>
             </>
           )}
-          <span className="ml-3 font-mono text-xs">{book.code}</span>
+          <span className="ml-3 font-mono text-[11px]">{book.code}</span>
         </p>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">
+        <h1 className="max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
           {book.title}
         </h1>
-        {book.author && (
-          <div className="mb-2 flex items-center text-base text-gray-600">
-            <User className="h-5 w-5 mr-2" />
-            {book.author}
-          </div>
-        )}
+        {book.author && <div className="mt-3 text-base text-muted-foreground">{book.author}</div>}
       </div>
       {canEdit && (
         <Button asChild variant="outline" size="sm">

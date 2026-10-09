@@ -4,53 +4,52 @@ import { useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getPlaceholderUrl } from "@/lib/placeholders";
+import { BookCover } from "@/components/catalogue/book-cover";
 
 interface BookImageProps {
   images?: Array<{ imageUrl: string; altText?: string | null; isCover?: boolean }>;
   title?: string;
+  author?: string | null;
+  category?: string;
 }
 
-export function BookImage({ images = [], title = "Book cover" }: BookImageProps) {
+export function BookImage({ images = [], title = "Book cover", author, category }: BookImageProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // If no images provided, use a placeholder
   if (!images || images.length === 0) {
     return (
-      <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg border bg-gray-100 mb-6">
-        <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-          No image available
-        </div>
-      </div>
+      <BookCover
+        title={title}
+        author={author}
+        category={category}
+        className="mx-auto mb-6 max-w-[15rem] lg:max-w-none"
+        priority
+      />
     );
   }
 
-  // If only one image, just show it
   if (images.length === 1) {
     return (
-      <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg border mb-6">
-        <Image
-          src={images[0].imageUrl || getPlaceholderUrl(300, 400)}
-          alt={images[0].altText || title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 33vw"
-          priority
-        />
-      </div>
+      <BookCover
+        title={title}
+        author={author}
+        category={category}
+        imageUrl={images[0].imageUrl}
+        className="mx-auto mb-6 max-w-[15rem] lg:max-w-none"
+        priority
+      />
     );
   }
 
   // Multiple images - show carousel
   return (
-    <div className="space-y-2 mb-6">
-      <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg border">
-        <Image
-          src={images[currentImageIndex].imageUrl || getPlaceholderUrl(300, 400)}
-          alt={images[currentImageIndex].altText || `${title} - Image ${currentImageIndex + 1}`}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 33vw"
+    <div className="mx-auto mb-6 max-w-[15rem] space-y-2 lg:max-w-none">
+      <div className="relative">
+        <BookCover
+          title={title}
+          author={author}
+          category={category}
+          imageUrl={images[currentImageIndex].imageUrl}
           priority
         />
 
@@ -65,7 +64,7 @@ export function BookImage({ images = [], title = "Book cover" }: BookImageProps)
             }
           >
             <ChevronLeft className="h-4 w-4" />
-            <span className="sr-only">Previous</span>
+            <span className="sr-only">Anterior</span>
           </Button>
           <Button
             variant="secondary"
@@ -76,12 +75,11 @@ export function BookImage({ images = [], title = "Book cover" }: BookImageProps)
             }
           >
             <ChevronRight className="h-4 w-4" />
-            <span className="sr-only">Next</span>
+            <span className="sr-only">Siguiente</span>
           </Button>
         </div>
 
-        {/* Image counter */}
-        <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+        <div className="absolute bottom-2 right-2 rounded bg-foreground/80 px-2 py-1 text-xs text-background">
           {currentImageIndex + 1} / {images.length}
         </div>
       </div>
@@ -97,15 +95,16 @@ export function BookImage({ images = [], title = "Book cover" }: BookImageProps)
             onClick={() => setCurrentImageIndex(index)}
           >
             <Image
-              src={image.imageUrl || getPlaceholderUrl(300, 400)}
-              alt={image.altText || `Thumbnail ${index + 1}`}
-              fill
-              className="object-cover"
-              sizes="48px"
+              src={image.imageUrl}
+              alt={image.altText || `Miniatura ${index + 1}`}
+              width={48}
+              height={72}
+              className="h-full w-full object-cover"
+              loading="lazy"
             />
             {image.isCover && (
-              <div className="absolute bottom-0 left-0 right-0 bg-yellow-500 bg-opacity-80 text-white text-[8px] text-center">
-                Cover
+              <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-center text-[8px] text-primary-foreground">
+                Portada
               </div>
             )}
           </button>

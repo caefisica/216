@@ -22,7 +22,7 @@ export default function SignInPage() {
   const [state, formAction] = useActionState(signInAction, null);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center">Iniciar sesión</CardTitle>
@@ -30,7 +30,9 @@ export default function SignInPage() {
         <CardContent>
           <form action={formAction} className="space-y-4">
             {state?.error && (
-              <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">{state.error}</p>
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {state.error}
+              </p>
             )}
             <div>
               <Label htmlFor="email">Correo electrónico</Label>
@@ -42,13 +44,13 @@ export default function SignInPage() {
             </div>
             <SubmitButton />
           </form>
-          <div className="mt-4 flex flex-col items-center gap-2 text-sm text-gray-600">
-            <Link href="/auth/reset-password" className="text-blue-600 hover:underline">
+          <div className="mt-4 flex flex-col items-center gap-2 text-sm text-muted-foreground">
+            <Link href="/auth/reset-password" className="text-primary hover:underline">
               ¿Olvidaste tu contraseña?
             </Link>
             <span>
               ¿No tienes una cuenta?{" "}
-              <Link href="/auth/signup" className="text-blue-600 hover:underline">
+              <Link href="/auth/signup" className="text-primary hover:underline">
                 Registrarse
               </Link>
             </span>

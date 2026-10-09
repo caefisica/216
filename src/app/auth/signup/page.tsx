@@ -22,7 +22,7 @@ export default function SignUpPage() {
   const [state, formAction] = useActionState(signUpAction, null);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center">Registrarse</CardTitle>
@@ -30,7 +30,9 @@ export default function SignUpPage() {
         <CardContent>
           <form action={formAction} className="space-y-4">
             {state?.error && (
-              <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">{state.error}</p>
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {state.error}
+              </p>
             )}
             <div>
               <Label htmlFor="name">Nombre completo</Label>
@@ -46,9 +48,9 @@ export default function SignUpPage() {
             </div>
             <SubmitButton />
           </form>
-          <p className="mt-4 text-center text-sm text-gray-600">
+          <p className="mt-4 text-center text-sm text-muted-foreground">
             ¿Ya tienes una cuenta?{" "}
-            <Link href="/auth/signin" className="text-blue-600 hover:underline">
+            <Link href="/auth/signin" className="text-primary hover:underline">
               Iniciar sesión
             </Link>
           </p>

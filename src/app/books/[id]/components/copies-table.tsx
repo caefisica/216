@@ -14,7 +14,7 @@ import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import type { CopyView } from "@/features/books/types";
 
-const selectClass = "h-8 rounded border border-gray-200 bg-white px-1 text-sm";
+const selectClass = "h-8 rounded border border-border bg-surface px-1 text-sm";
 
 interface CopiesTableProps {
   copies: CopyView[];
@@ -53,14 +53,23 @@ export function CopiesTable({ copies, canEdit }: CopiesTableProps) {
   };
 
   if (copies.length === 0) {
-    return <p className="text-sm text-gray-500">Este libro no tiene ejemplares registrados.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">Este libro no tiene ejemplares registrados.</p>
+    );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
+    <div className="min-w-0 overflow-x-auto">
+      <table className="w-full min-w-[36rem] table-fixed text-left text-sm md:min-w-0">
+        <colgroup>
+          <col className="w-[14%]" />
+          <col className="w-[32%]" />
+          <col className="w-[24%]" />
+          <col className="w-[18%]" />
+          <col className="w-[12%]" />
+        </colgroup>
         <thead>
-          <tr className="border-b text-xs uppercase tracking-wide text-gray-500">
+          <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
             <th className="py-2 pr-3 font-medium">Código</th>
             <th className="py-2 pr-3 font-medium">Ejemplar e imprint</th>
             <th className="py-2 pr-3 font-medium">Ubicación</th>
@@ -72,18 +81,18 @@ export function CopiesTable({ copies, canEdit }: CopiesTableProps) {
           {copies.map((copy) => (
             <tr key={copy.id} className="align-top">
               <td className="py-2 pr-3 font-mono text-xs">{copy.code}</td>
-              <td className="py-2 pr-3">
-                <span className="block text-gray-700">
+              <td className="break-words py-2 pr-3">
+                <span className="block">
                   {ORIGIN_LABELS[copy.origin]}
                   {copy.volume ? ` · ${copy.volume}` : ""}
                   {copy.pieces > 1 ? ` · ${copy.pieces} piezas` : ""}
                 </span>
-                <span className="mt-0.5 block text-xs text-gray-500">
+                <span className="mt-0.5 block text-xs text-muted-foreground">
                   {[copy.edition, copy.year, copy.publisher, copy.country]
                     .filter(Boolean)
                     .join(" · ") || "Sin datos de edición"}
                 </span>
-                <span className="block text-xs text-gray-500">
+                <span className="block text-xs text-muted-foreground">
                   Donante: {copy.donor?.name ?? "—"}
                 </span>
               </td>
@@ -106,14 +115,14 @@ export function CopiesTable({ copies, canEdit }: CopiesTableProps) {
                     ))}
                   </select>
                 ) : copy.loanId ? (
-                  <span className="font-medium text-amber-700">Prestado</span>
+                  <span className="font-medium text-muted-foreground">Prestado</span>
                 ) : copy.status === "present" ? (
-                  <span className="font-medium text-emerald-700">Disponible</span>
+                  <span className="font-medium text-status-available">Disponible</span>
                 ) : (
                   STATUS_LABELS[copy.status]
                 )}
                 {canEdit && copy.loanId && (
-                  <span className="ml-2 text-xs text-orange-600">Prestado</span>
+                  <span className="ml-2 text-xs text-muted-foreground">Prestado</span>
                 )}
               </td>
               <td className="py-2">

@@ -50,15 +50,15 @@ interface HeaderClientProps {
 
 export function HeaderClient({ user }: HeaderClientProps) {
   return (
-    <header className="border-b bg-white/95 backdrop-blur-sm supports-backdrop-filter:bg-white/60 sticky top-0 z-50">
-      <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-sm">
+      <div className="container mx-auto px-3 sm:px-6">
+        <div className="flex h-14 items-center justify-between">
           <Link href="/" className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
-              <BookOpen className="h-5 w-5 text-white" />
+            <div className="flex h-8 w-8 items-center justify-center rounded bg-primary text-primary-foreground">
+              <BookOpen className="h-4 w-4" />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-semibold leading-none">216</span>
+              <span className="text-base font-semibold leading-none tracking-tight">216</span>
             </div>
           </Link>
 
@@ -98,14 +98,14 @@ export function HeaderClient({ user }: HeaderClientProps) {
                       <li className="row-span-3">
                         <NavigationMenuLink asChild>
                           <Link
-                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-blue-500 to-blue-600 p-6 no-underline outline-hidden focus:shadow-md"
+                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-primary p-6 no-underline outline-hidden focus:shadow-md"
                             href="/about"
                           >
-                            <BookOpen className="h-6 w-6 text-white" />
-                            <div className="mb-2 mt-4 text-lg font-medium text-white">
+                            <BookOpen className="h-6 w-6 text-primary-foreground" />
+                            <div className="mb-2 mt-4 text-lg font-medium text-primary-foreground">
                               Acerca de la biblioteca
                             </div>
-                            <p className="text-sm leading-tight text-blue-100">
+                            <p className="text-sm leading-tight text-primary-foreground/75">
                               Conoce nuestra misión, historia y compromiso con la educación en
                               física
                             </p>
@@ -144,12 +144,12 @@ export function HeaderClient({ user }: HeaderClientProps) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center space-x-2 h-9">
-                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <User className="h-3 w-3 text-blue-600" />
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-accent">
+                      <User className="h-3 w-3 text-accent-foreground" />
                     </div>
                     <span className="hidden sm:inline font-medium">{user.name}</span>
                     {(user.role === "librarian" || user.role === "admin") && (
-                      <span className="hidden sm:inline text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                      <span className="hidden rounded-full bg-accent px-2 py-1 text-xs text-accent-foreground sm:inline">
                         {user.role === "admin" ? "Admin" : "Bibliotecario"}
                       </span>
                     )}
@@ -157,7 +157,7 @@ export function HeaderClient({ user }: HeaderClientProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="px-2 py-1.5 text-sm font-medium">{user.name}</div>
-                  <div className="px-2 py-1.5 text-xs text-gray-500">{user.email}</div>
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">{user.email}</div>
                   <DropdownMenuSeparator />
                   {(user.role === "librarian" || user.role === "admin") && (
                     <DropdownMenuItem asChild>
@@ -182,7 +182,7 @@ export function HeaderClient({ user }: HeaderClientProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <form action={signOutAction}>
-                      <button type="submit" className="flex items-center text-red-600 w-full">
+                      <button type="submit" className="flex w-full items-center text-destructive">
                         <LogOut className="h-4 w-4 mr-2" />
                         Cerrar sesión
                       </button>

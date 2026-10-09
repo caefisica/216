@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db";
-import { user, borrowRequests, books, copies, type Role } from "@/lib/db/schema";
+import { user, borrowRequests, books, categories, copies, type Role } from "@/lib/db/schema";
 import { bookSummaryColumns } from "@/features/books/repository";
 import { eq, desc } from "drizzle-orm";
 
@@ -20,7 +20,7 @@ export async function listUsers() {
 
 export async function listUserActivity(userId: string) {
   const db = await getDb();
-  return db
+  const rows = await db
     .select({
       id: borrowRequests.id,
       userId: borrowRequests.userId,
@@ -37,13 +37,27 @@ export async function listUserActivity(userId: string) {
       createdAt: borrowRequests.createdAt,
       updatedAt: borrowRequests.updatedAt,
       book: bookSummaryColumns,
+      categoryId: categories.id,
+      categoryCode: categories.code,
+      categoryName: categories.name,
       copy: { id: copies.id, code: copies.code, volume: copies.volume },
     })
     .from(borrowRequests)
     .leftJoin(books, eq(borrowRequests.bookId, books.id))
+    .leftJoin(categories, eq(books.categoryId, categories.id))
     .leftJoin(copies, eq(borrowRequests.copyId, copies.id))
     .where(eq(borrowRequests.userId, userId))
     .orderBy(desc(borrowRequests.requestDate));
+
+  return rows.map(({ categoryId, categoryCode, categoryName, ...row }) => ({
+    ...row,
+    book: row.book
+      ? {
+          ...row.book,
+          category: { id: categoryId!, code: categoryCode!, name: categoryName! },
+        }
+      : null,
+  }));
 }
 
 export async function updateUserName(userId: string, name?: string) {

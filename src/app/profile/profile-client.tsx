@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { BookCover } from "@/components/catalogue/book-cover";
 import type { AuthUser } from "@/features/auth/core/session";
 import { signOutAction } from "@/features/auth/actions/session";
 import { updateUserProfile } from "@/features/users/actions";
@@ -50,24 +50,24 @@ export function ProfileClient({
   );
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <div className="bg-white border-b border-gray-100">
-        <div className="container mx-auto px-6 py-12">
+    <div className="min-h-screen">
+      <div className="border-b border-border bg-surface">
+        <div className="container mx-auto px-3 py-8 sm:px-6 sm:py-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-6">
-              <div className="h-20 w-20 rounded-3xl bg-blue-600 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-600/20">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">
                 {user.name?.charAt(0) || <User className="h-10 w-10" />}
               </div>
               <div>
-                <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 leading-none mb-2">
+                <h1 className="mb-2 text-3xl font-semibold leading-none tracking-tight">
                   Mi Perfil
                 </h1>
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-blue-50 text-blue-600 border-none font-bold text-[10px] tracking-widest px-2 uppercase">
+                  <Badge className="border-none bg-accent px-2 text-[10px] font-semibold uppercase tracking-widest text-accent-foreground">
                     {user.role}
                   </Badge>
-                  <span className="text-gray-400 font-medium text-sm">•</span>
-                  <span className="text-gray-400 font-medium text-sm">{user.email}</span>
+                  <span className="text-sm font-medium text-muted-foreground">·</span>
+                  <span className="text-sm font-medium text-muted-foreground">{user.email}</span>
                 </div>
               </div>
             </div>
@@ -75,7 +75,7 @@ export function ProfileClient({
               <Button
                 type="submit"
                 variant="ghost"
-                className="text-red-500 hover:text-red-600 hover:bg-red-50 font-bold rounded-2xl h-12"
+                className="h-10 font-medium text-destructive hover:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Cerrar Sesión
@@ -85,25 +85,25 @@ export function ProfileClient({
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-12">
-        <Tabs defaultValue="account" className="space-y-10">
+      <div className="container mx-auto px-3 py-8 sm:px-6 sm:py-10">
+        <Tabs defaultValue="account" className="space-y-6">
           <div className="flex justify-start">
-            <TabsList className="bg-white p-1.5 rounded-2xl h-auto gap-1 border border-gray-100 shadow-xs">
+            <TabsList className="h-auto gap-1 border border-border bg-surface p-1.5">
               <TabsTrigger
                 value="account"
-                className="rounded-xl px-10 py-3 data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold text-sm transition-all"
+                className="px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground sm:px-8"
               >
                 Ajustes
               </TabsTrigger>
               <TabsTrigger
                 value="borrowed"
-                className="rounded-xl px-10 py-3 data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold text-sm transition-all"
+                className="px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground sm:px-8"
               >
                 Libros en Curso ({activeLoans.length})
               </TabsTrigger>
               <TabsTrigger
                 value="history"
-                className="rounded-xl px-10 py-3 data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold text-sm transition-all"
+                className="px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground sm:px-8"
               >
                 Historial
               </TabsTrigger>
@@ -111,10 +111,10 @@ export function ProfileClient({
           </div>
 
           <TabsContent value="account">
-            <Card className="rounded-3xl border-gray-100 shadow-xs overflow-hidden bg-white">
-              <CardHeader className="p-8 border-b border-gray-50 bg-gray-50/30">
+            <Card className="surface overflow-hidden shadow-xs">
+              <CardHeader className="border-b border-border bg-surface-muted/50 p-6 sm:p-8">
                 <CardTitle className="text-xl font-bold">Información Personal</CardTitle>
-                <CardDescription className="font-medium text-gray-400">
+                <CardDescription className="font-medium text-muted-foreground">
                   Actualiza los datos básicos de tu cuenta.
                 </CardDescription>
               </CardHeader>
@@ -123,7 +123,7 @@ export function ProfileClient({
                   <div className="space-y-4">
                     <Label
                       htmlFor="name"
-                      className="text-xs font-black uppercase tracking-widest text-gray-400"
+                      className="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
                     >
                       Nombre Completo
                     </Label>
@@ -133,30 +133,27 @@ export function ProfileClient({
                           id="name"
                           value={newName}
                           onChange={(e) => setNewName(e.target.value)}
-                          className="h-14 rounded-2xl border-gray-100 bg-gray-50/50"
+                          className="h-12 border-border bg-surface-muted"
                         />
-                        <Button
-                          onClick={handleNameUpdate}
-                          className="h-14 px-6 rounded-2xl font-bold shadow-lg shadow-blue-600/10"
-                        >
+                        <Button onClick={handleNameUpdate} className="h-12 px-6 font-medium">
                           Guardar
                         </Button>
                         <Button
                           onClick={() => setIsEditingName(false)}
                           variant="ghost"
-                          className="h-14 rounded-2xl font-bold"
+                          className="h-12 font-medium"
                         >
                           Cancelar
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50 group">
-                        <p className="text-gray-900 font-bold text-lg">{user.name}</p>
+                      <div className="flex items-center justify-between border border-border bg-surface-muted p-4 group">
+                        <p className="text-lg font-semibold">{user.name}</p>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setIsEditingName(true)}
-                          className="rounded-xl font-bold text-blue-600 hover:bg-blue-50"
+                          className="font-medium text-primary hover:bg-accent"
                         >
                           <Edit className="h-4 w-4 mr-2" /> Cambiar
                         </Button>
@@ -166,13 +163,13 @@ export function ProfileClient({
                   <div className="space-y-4">
                     <Label
                       htmlFor="email"
-                      className="text-xs font-black uppercase tracking-widest text-gray-400"
+                      className="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
                     >
                       Correo Institucional
                     </Label>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 opacity-60">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                      <span className="font-bold text-gray-700">{user.email}</span>
+                    <div className="flex items-center gap-3 border border-border bg-surface-muted p-4 opacity-70">
+                      <Mail className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-semibold text-muted-foreground">{user.email}</span>
                     </div>
                   </div>
                 </div>
@@ -183,12 +180,10 @@ export function ProfileClient({
           <TabsContent value="borrowed">
             <div className="grid grid-cols-1 gap-6">
               {activeLoans.length === 0 ? (
-                <Card className="rounded-3xl border-dashed border-2 border-gray-200 bg-transparent text-center py-20">
-                  <BookOpen className="h-14 w-14 text-gray-200 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    No tienes préstamos activos
-                  </h3>
-                  <p className="text-gray-400 font-medium mb-6">
+                <Card className="border-2 border-dashed border-border bg-transparent py-20 text-center">
+                  <BookOpen className="mx-auto mb-4 h-14 w-14 text-muted-foreground/40" />
+                  <h3 className="mb-2 text-xl font-semibold">No tienes préstamos activos</h3>
+                  <p className="mb-6 font-medium text-muted-foreground">
                     Explora el catálogo y solicita tu próximo libro.
                   </p>
                   <Button asChild className="rounded-2xl font-bold px-8" variant="secondary">
@@ -199,37 +194,39 @@ export function ProfileClient({
                 activeLoans.map((req) => (
                   <Card
                     key={req.id}
-                    className="rounded-3xl border-gray-100 shadow-xs overflow-hidden bg-white hover:shadow-md transition-shadow group"
+                    className="surface overflow-hidden shadow-xs transition-shadow group hover:shadow-md"
                   >
                     <CardContent className="p-8">
                       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div className="flex gap-6">
-                          <div className="h-20 w-16 relative bg-gray-50 rounded-xl overflow-hidden border shrink-0">
-                            {req.book?.imageUrl && (
-                              <Image
-                                src={req.book.imageUrl}
-                                alt={req.book.title}
-                                fill
-                                className="object-cover"
-                                sizes="64px"
+                          <div className="h-20 w-16 shrink-0 overflow-hidden rounded border border-border">
+                            {req.book && (
+                              <BookCover
+                                title={req.book.title}
+                                author={req.book.author}
+                                category={req.book.category.name}
+                                imageUrl={req.book.imageUrl}
+                                className="h-20 w-16"
                               />
                             )}
                           </div>
                           <div>
                             <Link
                               href={`/books/${req.book?.id}`}
-                              className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors"
+                              className="text-xl font-semibold transition-colors group-hover:text-primary"
                             >
                               {req.book?.title}
                             </Link>
-                            <p className="text-gray-500 font-medium mb-2">{req.book?.author}</p>
+                            <p className="mb-2 font-medium text-muted-foreground">
+                              {req.book?.author}
+                            </p>
                             {req.copy && (
-                              <p className="mb-2 font-mono text-xs text-gray-500">
+                              <p className="mb-2 font-mono text-xs text-muted-foreground">
                                 Ejemplar {req.copy.code}
                                 {req.copy.volume ? ` · ${req.copy.volume}` : ""}
                               </p>
                             )}
-                            <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-tighter">
+                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tighter text-muted-foreground">
                               <Calendar className="h-3.5 w-3.5" />
                               Solicitado el {new Date(req.requestDate).toLocaleDateString()}
                             </div>
@@ -238,7 +235,7 @@ export function ProfileClient({
                         <div className="flex flex-col items-end gap-3 self-end md:self-center">
                           {getStatusBadge(req.status)}
                           {req.status === "approved" && req.dueDate && (
-                            <span className="text-[10px] font-black text-red-500 uppercase">
+                            <span className="text-[10px] font-semibold uppercase text-destructive">
                               Vence el {new Date(req.dueDate).toLocaleDateString()}
                             </span>
                           )}

@@ -52,12 +52,17 @@ export default function BookClient({ book, user }: BookClientProps) {
   }, [book.id, router]);
 
   return (
-    <div className="bg-gray-50/70">
-      <div className="container mx-auto max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[18rem_1fr] lg:gap-8">
+    <div>
+      <div className="container mx-auto max-w-6xl px-3 py-6 sm:px-6 sm:py-10">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6">
           <div>
-            <div className="lg:sticky lg:top-24">
-              <BookImage images={book.images} title={book.title} />
+            <div className="lg:sticky lg:top-20">
+              <BookImage
+                images={book.images}
+                title={book.title}
+                author={book.author}
+                category={book.category.name}
+              />
               <BookActions
                 book={book}
                 isHearted={isHearted}
@@ -72,13 +77,15 @@ export default function BookClient({ book, user }: BookClientProps) {
               />
             </div>
           </div>
-          <div className="space-y-5">
-            <div className="rounded-lg border bg-white p-4 shadow-xs sm:p-6">
+          <div className="space-y-6">
+            <div className="surface h-fit p-4 sm:p-6">
               <BookHeader book={book} canEdit={canEdit} />
-              <BookDetails book={book} canEdit={canEdit} />
-              <p className="mt-6 text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 ↑ ↓ título anterior o siguiente de la lista
               </p>
+            </div>
+            <div className="surface h-fit p-4 sm:p-6">
+              <BookDetails book={book} canEdit={canEdit} />
             </div>
           </div>
         </div>

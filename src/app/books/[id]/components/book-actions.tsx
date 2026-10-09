@@ -39,18 +39,20 @@ export function BookActions({
   onBorrowRequest,
 }: BookActionsProps) {
   return (
-    <div className="space-y-3">
+    <div className="surface space-y-3 p-3">
       <Button
-        variant="outline"
+        variant="ghost"
         onClick={onHeart}
-        className={`w-full ${isHearted ? "text-red-500 border-red-200" : ""}`}
+        className={`w-full ${isHearted ? "border-status-favorite/30 text-status-favorite" : ""}`}
       >
         <Heart className={`h-4 w-4 mr-2 ${isHearted ? "fill-current" : ""}`} />
         {isHearted ? "Te gusta" : "Me gusta"} ({heartsCount})
       </Button>
 
       {book.lendableCount === 0 && (
-        <p className="text-center text-sm text-gray-500">Ningún ejemplar está disponible ahora.</p>
+        <p className="px-2 text-center text-sm text-muted-foreground">
+          Ningún ejemplar está disponible ahora.
+        </p>
       )}
 
       {book.lendableCount > 0 && (
