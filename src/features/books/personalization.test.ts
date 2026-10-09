@@ -77,7 +77,12 @@ async function favoriteBooks() {
 const redirectError = { digest: expect.stringContaining("NEXT_REDIRECT") };
 
 describe("what a verified session sees", () => {
-  it("sets a favorite and reads it through homeBooks", async () => {
+  it("sets a favorite and reads it through homeBooks, getBooks, and getBookById", async () => {
+    await setHeart({ bookId, hearted: false });
+    const before = await getBooks();
+    expect(before.ok && before.value.items.map((b) => b.isHearted)).toEqual([false]);
+    expect((await homeBooks()).map((b) => b.isHearted)).toEqual([false]);
+
     await setHeart({ bookId, hearted: true });
     const list = await getBooks();
     expect(list.ok && list.value.items.map((b) => b.isHearted)).toEqual([true]);

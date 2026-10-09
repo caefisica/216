@@ -40,7 +40,7 @@ describe("cover matching", () => {
 });
 
 describe("the cover fetch entry point", () => {
-  it("uses a stub server, sends the project user agent, caches misses, and stores no upstream URL", async () => {
+  it("sends the project user agent, caches misses but not failures, and rejects results without author data", async () => {
     let searches = 0;
     let images = 0;
     const server = createServer((request, response) => {
@@ -77,7 +77,10 @@ describe("the cover fetch entry point", () => {
     const directory = await mkdtemp(join(tmpdir(), "216-covers-test-"));
     const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const value = String(input);
-      return fetch(value.includes("covers.openlibrary.org") ? `${base}/cover.jpg` : value, init);
+      return fetch(
+        new URL(value).hostname === "covers.openlibrary.org" ? `${base}/cover.jpg` : value,
+        init,
+      );
     }) as typeof fetch;
 
     try {
@@ -145,7 +148,10 @@ describe("the cover fetch entry point", () => {
     const base = `http://127.0.0.1:${address.port}`;
     const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const value = String(input);
-      return fetch(value.includes("covers.openlibrary.org") ? `${base}/cover.jpg` : value, init);
+      return fetch(
+        new URL(value).hostname === "covers.openlibrary.org" ? `${base}/cover.jpg` : value,
+        init,
+      );
     }) as typeof fetch;
     const directory = await mkdtemp(join(tmpdir(), "216-covers-write-test-"));
     const storedBook = await insertBook({ title: "Stored title", author: "Ana Author" });
@@ -174,28 +180,31 @@ describe("the cover fetch entry point", () => {
       expect(result).toEqual({ found: 1, missed: 0, errors: 0, total: 1 });
       expect(memory.put).toHaveBeenCalledTimes(1);
       expect(memory.objects.size).toBe(1);
-      expect(
-        await testDb.query("SELECT image_url FROM book_images WHERE book_id = ?", storedBook.id),
-      ).toHaveLength(1);
+      const stored = await testDb.query<{ image_url: string }>(
+        "SELECT image_url FROM book_images WHERE book_id = ?",
+        storedBook.id,
+      );
+      expect(stored).toHaveLength(1);
+      expect(stored[0].image_url).toMatch(/^\/media\//);
 
-      await expect(
-        fetchCovers({
-          books: [
-            {
-              id: failedBook.id,
-              title: failedBook.title,
-              author: failedBook.author,
-              imageUrl: null,
-            },
-          ],
-          db,
-          bucket: failedMemory.bucket,
-          fetcher,
-          searchUrl: `${base}/search`,
-          cacheFile: join(directory, "failed-results.json"),
-          missFile: join(directory, "failed-misses.json"),
-        }),
-      ).rejects.toThrow("R2 upload failed");
+      const failed = await fetchCovers({
+        books: [
+          {
+            id: failedBook.id,
+            title: failedBook.title,
+            author: failedBook.author,
+            imageUrl: null,
+          },
+        ],
+        db,
+        bucket: failedMemory.bucket,
+        fetcher,
+        searchUrl: `${base}/search`,
+        cacheFile: join(directory, "failed-results.json"),
+        missFile: join(directory, "failed-misses.json"),
+      });
+      expect(failed).toEqual({ found: 0, missed: 0, errors: 1, total: 1 });
+      expect(JSON.parse(await readFile(join(directory, "failed-misses.json"), "utf8"))).toEqual([]);
       expect(
         await testDb.query("SELECT image_url FROM book_images WHERE book_id = ?", failedBook.id),
       ).toHaveLength(0);
