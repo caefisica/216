@@ -35,6 +35,7 @@ export interface BookListItem extends BookSummary {
   category: CategoryRef;
   copyCount: number;
   lendableCount: number;
+  heartsCount: number;
   isHearted: boolean;
 }
 

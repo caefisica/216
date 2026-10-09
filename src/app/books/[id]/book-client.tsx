@@ -10,6 +10,7 @@ import { BookActions } from "./components/book-actions";
 import { BookHeader } from "./components/book-header";
 import { BookDetails } from "./components/book-details";
 import { LIST_STORAGE_KEY } from "@/features/books/catalogue-state";
+import type { FavoriteState } from "@/features/books/catalogue-state";
 import type { BookDetailed } from "@/features/books/types";
 import type { AuthUser } from "@/features/auth/core/session";
 import { useBookActions } from "./hooks/use-book-actions";
@@ -19,9 +20,18 @@ interface BookClientProps {
   user: AuthUser | null;
   variant?: "page" | "pane";
   onClose?: () => void;
+  favorite?: FavoriteState;
+  onFavoriteChange?: (favorite: FavoriteState) => void;
 }
 
-export default function BookClient({ book, user, variant = "page", onClose }: BookClientProps) {
+export default function BookClient({
+  book,
+  user,
+  variant = "page",
+  onClose,
+  favorite,
+  onFavoriteChange,
+}: BookClientProps) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const inPane = variant === "pane";
@@ -34,11 +44,16 @@ export default function BookClient({ book, user, variant = "page", onClose }: Bo
     heartsCount,
     handleBorrowRequest,
     handleToggleHeart,
-  } = useBookActions(user, book.id, {
-    id: book.id,
-    isHearted: book.isHearted,
-    heartsCount: book.heartsCount,
-  });
+  } = useBookActions(
+    user,
+    book.id,
+    {
+      id: book.id,
+      isHearted: book.isHearted,
+      heartsCount: book.heartsCount,
+    },
+    { favorite, onFavoriteChange },
+  );
 
   const canEdit = user?.role === "librarian" || user?.role === "admin";
 

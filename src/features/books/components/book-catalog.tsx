@@ -16,7 +16,7 @@ import type { BookFilters } from "../schemas";
 import type { BookDetailed, BookListItem, BookPage, CatalogueFacets } from "../types";
 import type { AuthUser } from "@/features/auth/core/session";
 import type { LibraryCounts } from "@/features/readers/types";
-import { LIST_STORAGE_KEY } from "../catalogue-state";
+import { LIST_STORAGE_KEY, type FavoriteState } from "../catalogue-state";
 
 interface BookCatalogProps {
   initialPage: BookPage;
@@ -50,8 +50,29 @@ export function BookCatalog({
 }: BookCatalogProps) {
   const router = useRouter();
   const [pageData, setPageData] = useState(initialPage);
+  const [favoriteById, setFavoriteById] = useState<Record<string, FavoriteState>>(() =>
+    Object.fromEntries([
+      ...initialPage.items.map((book) => [
+        book.id,
+        { isHearted: book.isHearted, heartsCount: book.heartsCount },
+      ]),
+      ...(initialSelectedBook
+        ? [
+            [
+              initialSelectedBook.id,
+              {
+                isHearted: initialSelectedBook.isHearted,
+                heartsCount: initialSelectedBook.heartsCount,
+              },
+            ],
+          ]
+        : []),
+    ]),
+  );
   const [filters, setFilters] = useState<BookFilters>(initialFilters);
-  const books = pageData.items;
+  const favoriteFor = (book: Pick<BookListItem, "id" | "isHearted" | "heartsCount">) =>
+    favoriteById[book.id] ?? { isHearted: book.isHearted, heartsCount: book.heartsCount };
+  const books = pageData.items.map((book) => ({ ...book, ...favoriteFor(book) }));
   const lastPage = Math.max(1, Math.ceil(pageData.total / pageData.pageSize));
   const [selected, setSelected] = useState(() =>
     initialSelectedBook ? books.findIndex((book) => book.id === initialSelectedBook.id) : 0,
@@ -106,6 +127,13 @@ export function BookCatalog({
         setSelectedBook(null);
         setDetailError(true);
       } else {
+        setFavoriteById((prev) => ({
+          ...prev,
+          [bookId]: {
+            isHearted: result.value.isHearted,
+            heartsCount: result.value.heartsCount,
+          },
+        }));
         setSelectedBook(result.value);
       }
       setDetailLoading(false);
@@ -209,17 +237,22 @@ export function BookCatalog({
     detailError,
   ]);
 
+  const updateFavorite = (bookId: string, favorite: FavoriteState) => {
+    setFavoriteById((prev) => ({ ...prev, [bookId]: favorite }));
+  };
+
   const toggleHeart = async (book: BookListItem) => {
-    const result = await setHeart({ bookId: book.id, hearted: !book.isHearted });
+    const favorite = favoriteFor(book);
+    const result = await setHeart({ bookId: book.id, hearted: !favorite.isHearted });
     if (isErr(result)) {
       toastActionError(result.error);
       return;
     }
     const hearted = result.value.hearted;
-    setPageData((prev) => ({
-      ...prev,
-      items: prev.items.map((b) => (b.id === book.id ? { ...b, isHearted: hearted } : b)),
-    }));
+    updateFavorite(book.id, {
+      isHearted: hearted,
+      heartsCount: Math.max(0, favorite.heartsCount + (hearted ? 1 : -1)),
+    });
     toast({ title: hearted ? "Añadido a favoritos" : "Eliminado de favoritos" });
   };
 
@@ -693,10 +726,12 @@ export function BookCatalog({
               >
                 <BookClient
                   key={selectedBook.id}
-                  book={selectedBook}
+                  book={{ ...selectedBook, ...favoriteFor(selectedBook) }}
                   user={user}
                   variant="pane"
                   onClose={closeDetail}
+                  favorite={favoriteFor(selectedBook)}
+                  onFavoriteChange={(favorite) => updateFavorite(selectedBook.id, favorite)}
                 />
               </div>
             ) : detailLoading ? (

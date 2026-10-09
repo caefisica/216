@@ -157,6 +157,7 @@ export function bookListQuery(
       parent: { id: parent.id, code: parent.code, name: parent.name },
       copyCount: copyCount(bookIdRef),
       lendableCount: lendableCopyCount(bookIdRef),
+      heartsCount: heartsOf.mapWith(Number),
       isHearted: isHeartedBy(options.userId),
     })
     .from(books)
