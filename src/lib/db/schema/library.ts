@@ -147,6 +147,7 @@ export const copies = sqliteTable(
     unique("copies_book_id_unique").on(table.bookId, table.id),
     index("copies_location_idx").on(table.locationId),
     index("copies_donor_idx").on(table.donorId),
+    index("copies_status_idx").on(table.status),
     check("copies_origin_check", inList(table.origin, CopyOrigin)),
     check("copies_status_check", inList(table.status, CopyStatus)),
     check(

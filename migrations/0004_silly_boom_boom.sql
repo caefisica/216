@@ -1,0 +1,1 @@
+CREATE INDEX `copies_status_idx` ON `copies` (`status`);
