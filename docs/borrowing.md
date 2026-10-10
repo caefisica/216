@@ -60,8 +60,12 @@ reader name or email, title, or copy code, and the text is kept in `?q=`.
 
 Keyboard: `/` focuses the search, Enter in the search presses the main button of
 the row when exactly one row matches, and `↑` and `↓` move between the main
-buttons of the list. After a decision, focus goes back to the search when it has
-text, so the next reader's name can be typed over it, and to the list otherwise.
+buttons of the list. Enter never acts on a list that is older than the text: it
+waits for the list of that text to arrive, and the list is not clickable until
+then. Typing again, a failed search or a different list cancels that Enter, so
+nothing is approved without a new one. After a decision, focus goes back to the
+search when it has text, so the next reader's name can be typed over it, and to
+the list otherwise.
 
 Which copies are offered is decided by `copyIsLendable`, the predicate defined
 in [Architecture](architecture.md#shared-state); the desk does not repeat it.

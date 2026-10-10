@@ -263,11 +263,14 @@ question first: is it available.
   catalogue stores that query in `sessionStorage` as `216:catalogue`.
 - Below a rule, the availability, then where to find it (the place of a copy on
   the shelf) or, when all copies are out, _Vuelve hacia el_ the earliest due
-  date. Then the one action: _Solicitar préstamo_, with a note behind _Añadir
-  una nota_. A visitor is asked to sign in and an unverified account to verify
-  its email. After a request the action becomes the state of the request. That
-  state also shows when no copy is lendable, so a reader who holds the last copy
-  reads _Lo tienes prestado hasta_ the due date.
+  date that is still ahead, or _Prestado, sin fecha de vuelta_ when every due
+  date has passed. A copy past its date reads _vencido hace_ the days late, here
+  and in the copies table. Then the one action: _Solicitar préstamo_, with a
+  note behind _Añadir una nota_. A visitor is asked to sign in and an unverified
+  account to verify its email. After a request the action becomes the state of
+  the request. That state also shows when no copy is lendable, so a reader who
+  holds the last copy reads _Lo tienes prestado hasta_ the due date, or _vencido
+  hace_ the days late.
 - Readers with a verified account can save the title. Staff see _Editar libro_
   instead of the request.
 - The description follows. The copies sit in a closed _Ejemplares_ section: for

@@ -21,8 +21,7 @@ sizes and radii, so a class that is not defined there does not exist.
   `base` reading text and touch inputs, `lg` a section or row title, `xl` a page
   title, `2xl` a book title. Inter is the sans face and Source Serif the face of
   page and book titles. Weights are 400, 500 and 600.
-- Spacing: Tailwind's `0.25rem` unit. The steps in use are 1, 2, 3, 4, 6, 8
-  and 12.
+- Spacing: Tailwind's `0.25rem` unit, with no custom scale.
 - Shape: radii `sm`, `md` and `full`, one shadow (`shadow-pop`, for popovers and
   toasts) and three container widths: `prose` (40rem), `page` (56rem) and `wide`
   (72rem).
@@ -72,11 +71,9 @@ sized from its own width.
 
 ## Admin
 
-The loans desk and intake are built for the keyboard: `/` focuses the search,
-Enter on a single match does what the row's main button does, `↑` and `↓` move
-between rows and focus returns to the list after an action. Hints appear only
-where a keyboard exists. The librarian's last intake category is remembered in
-the browser.
+The loans desk is built for the keyboard; its shortcuts are in
+[borrowing](borrowing.md#loan-desk). Keyboard hints appear only where a keyboard
+exists. Intake remembers the librarian's last category in the browser.
 
 ## Imported covers
 
