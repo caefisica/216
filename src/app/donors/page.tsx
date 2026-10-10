@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Empty } from "@/components/ui/empty";
-import { Page } from "@/components/ui/page";
+import { Page, PageTitle, SectionTitle } from "@/components/ui/page";
 import { listDonorGifts } from "@/features/donors/repository";
 
 export default async function DonorsPage() {
@@ -8,7 +8,7 @@ export default async function DonorsPage() {
 
   return (
     <Page width="prose">
-      <h1 className="font-serif text-2xl font-semibold">Donantes</h1>
+      <PageTitle>Donantes</PageTitle>
       <p className="mt-2 text-muted-foreground">
         {donors.length === 0
           ? "Los libros donados a la biblioteca aparecerán aquí."
@@ -21,7 +21,7 @@ export default async function DonorsPage() {
         <ul className="mt-6 grid gap-8">
           {donors.map((donor) => (
             <li key={donor.id}>
-              <h2 className="text-lg font-semibold">{donor.name}</h2>
+              <SectionTitle>{donor.name}</SectionTitle>
               {donor.motivation && <p className="text-muted-foreground">“{donor.motivation}”</p>}
               <ul className="mt-2 divide-y border-y">
                 {donor.books.map((book) => (

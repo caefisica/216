@@ -7,6 +7,7 @@ export function NotFoundState() {
   return (
     <Page width="prose">
       <Empty
+        as="h1"
         title="No encontramos este libro"
         action={
           <Link href="/" className={buttonVariants({ variant: "secondary" })}>

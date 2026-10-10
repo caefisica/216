@@ -7,6 +7,7 @@ export default function NotFound() {
   return (
     <Page width="prose">
       <Empty
+        as="h1"
         title="Esta página no existe"
         action={
           <Link href="/" className={buttonVariants({ variant: "secondary" })}>

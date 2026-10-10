@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Page } from "@/components/ui/page";
+import { Page, PageTitle } from "@/components/ui/page";
 import { getLibraryCounts } from "@/features/readers/repository";
 
 export default async function AboutPage() {
@@ -7,8 +7,8 @@ export default async function AboutPage() {
 
   return (
     <Page width="prose">
-      <h1 className="font-serif text-2xl font-semibold">Biblioteca de Física</h1>
-      <div className="mt-4 grid gap-4">
+      <PageTitle>Biblioteca de Física</PageTitle>
+      <div className="mt-4 grid gap-4 text-pretty">
         <p>
           La biblioteca del ambiente 216 presta libros de física a estudiantes y docentes de la
           Facultad de Ciencias Físicas. Tiene {titleCount} títulos en {copyCount} ejemplares, y{" "}

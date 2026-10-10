@@ -8,6 +8,7 @@ export default function ErrorPage({ reset }: { error: Error; reset: () => void }
   return (
     <Page width="prose">
       <Empty
+        as="h1"
         title="Algo salió mal"
         action={
           <Button variant="primary" onClick={reset}>
