@@ -5,7 +5,7 @@ export function Kbd({ className, children }: { className?: string; children: Rea
   return (
     <kbd
       className={cn(
-        "hidden h-5 min-w-5 items-center justify-center rounded-sm border bg-sunken px-1 font-sans text-xs text-muted-foreground pointer-fine:inline-flex",
+        "hidden h-5 min-w-5 items-center justify-center rounded-xs border bg-raised px-1 font-mono text-xs text-muted-foreground shadow-[0_1px_0_var(--border)] pointer-fine:inline-flex",
         className,
       )}
     >

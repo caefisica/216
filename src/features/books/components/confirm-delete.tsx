@@ -31,7 +31,7 @@ export function ConfirmDelete({ label, title, description, onConfirm }: ConfirmD
         <Button variant="danger">{label}</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
-        <AlertDialogTitle className="text-lg font-semibold">{title}</AlertDialogTitle>
+        <AlertDialogTitle>{title}</AlertDialogTitle>
         <AlertDialogDescription>{description}</AlertDialogDescription>
         <div className="flex justify-end gap-2">
           <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
