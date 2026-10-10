@@ -1,15 +1,16 @@
 import Link from "next/link";
 
-const link = "inline-flex min-h-control items-center rounded-md hover:text-foreground";
+const link =
+  "inline-flex min-h-control items-center rounded-sm transition-colors duration-100 hover:text-foreground";
 
 export function Footer() {
   return (
-    <footer className="mt-12 border-t">
+    <footer className="mt-16 border-t">
       <nav
         aria-label="Información"
-        className="mx-auto flex max-w-wide flex-wrap items-center gap-x-4 px-4 py-3 text-sm text-muted-foreground"
+        className="mx-auto flex max-w-page flex-wrap items-center gap-x-5 px-4 py-4 text-sm text-muted-foreground sm:px-6"
       >
-        <span>Biblioteca 216</span>
+        <span className="font-serif text-base text-foreground">Biblioteca 216</span>
         <Link href="/about" className={link}>
           Acerca de
         </Link>

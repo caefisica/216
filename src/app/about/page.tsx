@@ -16,7 +16,7 @@ export default async function AboutPage() {
         </p>
         <p>
           Busca un libro en el{" "}
-          <Link href="/" className="text-link underline underline-offset-2">
+          <Link href="/" className="text-accent underline underline-offset-2">
             catálogo
           </Link>
           . Si hay un ejemplar disponible, solicítalo con tu cuenta. Cuando el equipo lo aprueba, lo
@@ -24,7 +24,7 @@ export default async function AboutPage() {
         </p>
         <p>
           La colección crece con libros donados. Los nombres de quienes los dieron están en la{" "}
-          <Link href="/donors" className="text-link underline underline-offset-2">
+          <Link href="/donors" className="text-accent underline underline-offset-2">
             lista de donantes
           </Link>
           .

@@ -41,4 +41,4 @@ export function SubmitButton({ idle, busy }: { idle: string; busy: string }) {
 }
 
 export const authLink =
-  "inline-flex min-h-control items-center text-link underline underline-offset-2";
+  "inline-flex min-h-control items-center text-accent underline underline-offset-2";

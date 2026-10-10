@@ -1,7 +1,7 @@
 import type { ComponentPropsWithoutRef } from "react";
 import Link from "next/link";
 
-const linkClass = "text-link underline underline-offset-2";
+const linkClass = "text-accent underline underline-offset-2";
 
 const components = {
   h1: (props: ComponentPropsWithoutRef<"h1">) => (

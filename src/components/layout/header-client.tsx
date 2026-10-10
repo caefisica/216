@@ -15,7 +15,7 @@ interface HeaderClientProps {
 }
 
 const link =
-  "inline-flex h-control items-center gap-1.5 rounded-md px-1 text-sm sm:px-3 font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:underline aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-8";
+  "inline-flex h-control items-center gap-1.5 rounded-sm px-1.5 text-sm sm:px-3 font-medium whitespace-nowrap text-muted-foreground transition-colors duration-100 hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:underline aria-[current=page]:decoration-[1.5px] aria-[current=page]:underline-offset-8";
 
 export function HeaderClient({ user, staff, pending }: HeaderClientProps) {
   const pathname = usePathname() ?? "";
@@ -55,11 +55,11 @@ export function HeaderClient({ user, staff, pending }: HeaderClientProps) {
   ];
 
   return (
-    <header className="border-b">
-      <div className="mx-auto flex max-w-wide items-center gap-1 px-2 py-2 sm:gap-4 sm:px-4">
+    <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur-md">
+      <div className="mx-auto flex max-w-page items-center gap-1 px-4 py-2 sm:gap-4 sm:px-6">
         <Link
           href="/"
-          className="inline-flex min-h-control items-center rounded-md px-1 font-serif text-xl font-semibold leading-none tracking-tight"
+          className="-ml-1 inline-flex min-h-control items-center rounded-sm px-1 font-serif text-xl font-medium leading-none"
           aria-label="216, inicio"
         >
           216

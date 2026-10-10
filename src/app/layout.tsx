@@ -1,15 +1,20 @@
 import { siteConfig } from "@/config/site";
 import type React from "react";
 import type { Metadata } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import { Geist_Mono, Inter, Newsreader } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Toaster } from "@/components/ui/toaster";
 import { ViewTransition } from "react";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const sourceSerif = Source_Serif_4({ subsets: ["latin"], variable: "--font-source-serif" });
+const inter = Inter({ subsets: ["latin"], axes: ["opsz"], variable: "--font-inter" });
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  axes: ["opsz"],
+  variable: "--font-newsreader",
+});
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
   title: {
@@ -51,8 +56,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body className={`${inter.variable} ${sourceSerif.variable}`}>
+    <html lang="es" className={`${inter.variable} ${newsreader.variable} ${geistMono.variable}`}>
+      <body>
         <a
           href="#contenido"
           className="fixed left-2 top-2 z-100 -translate-y-16 rounded-md bg-primary px-4 py-2 text-primary-foreground focus:translate-y-0"
