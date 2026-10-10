@@ -1,6 +1,5 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Dates are shown in the library's time zone, whatever the zone of the server or the browser.
 const day = new Intl.DateTimeFormat("es-PE", {
   day: "numeric",
   month: "short",

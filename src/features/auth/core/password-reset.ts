@@ -42,11 +42,6 @@ export async function createPasswordResetSession(
 /** Wrong-code tries per account, shared by every reset session the account has. */
 export const resetCodeBucket = new ExpiringTokenBucket("reset-code", 5, 60 * 10);
 
-/**
- * The token alone proves nothing, because whoever asks for a reset receives it in a cookie. The
- * emailed code is what proves control of the address. `invalid` covers an unknown token, an expired
- * session and a wrong code alike, so the answer does not say whether the address has an account.
- */
 export async function claimPasswordReset(
   token: string,
   code: string,
@@ -104,10 +99,6 @@ async function validatePasswordResetToken(
   });
 }
 
-/**
- * `delivery` sends the code without delaying the caller. It never rejects and deletes only this
- * session if sending fails.
- */
 export async function issuePasswordReset(
   userId: string,
   email: string,

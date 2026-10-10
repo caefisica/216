@@ -21,10 +21,7 @@ export type DeskView = (typeof DESK_VIEWS)[number];
 
 export const DESK_PAGE_SIZE = 25;
 
-/**
- * The URL search parameters of the desk. A malformed value falls back to its default. Without a
- * view the desk opens on whichever list has work in it.
- */
+/** The URL search parameters of the desk. A malformed value falls back to its default. */
 export const DeskQuerySchema = z.object({
   view: z.enum(DESK_VIEWS).optional().catch(undefined),
   q: z.string().trim().max(100).catch(""),

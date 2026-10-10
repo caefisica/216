@@ -84,10 +84,6 @@ async function describeRejection(response: Response) {
   return `Resend rejected the email (${response.status})${detail ? `: ${detail}` : "."}`;
 }
 
-/**
- * Why mail cannot be sent in production, or null when it can or when the environment only logs
- * codes. Lets a caller refuse a request up front instead of discovering it after the send.
- */
 export async function mailUnavailableReason(options: MailOptions = {}): Promise<string | null> {
   const config = await resolveOptions(options);
   return config.production ? describeMissing(config) : null;

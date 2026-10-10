@@ -36,10 +36,6 @@ export async function createEmailVerificationRequest(
   return { id, userId, email, code, expiresAt };
 }
 
-/**
- * Earlier requests stay valid until the new code is sent. A failed send deletes only the new
- * request, so the user's current code and cookie continue to work.
- */
 export async function issueEmailVerification(
   userId: string,
   email: string,

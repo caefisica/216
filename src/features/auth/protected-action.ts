@@ -12,23 +12,17 @@ export async function getSession() {
   return await getCurrentSession();
 }
 
-/**
- * The id to personalize a read for, or null for the anonymous view. An unverified email may belong
- * to someone else, so an unverified session sees what a visitor sees.
- */
 export async function getVerifiedUserId() {
   const { user } = await getCurrentSession();
   return user?.emailVerified ? user.id : null;
 }
 
-/** Guard for staff-only pages: anyone who is not a verified librarian or admin goes home. */
 export async function requireStaffPage(): Promise<AuthSession> {
   const { session, user } = await getCurrentSession();
   if (!session || !isVerifiedStaff(user)) redirect("/");
   return { session, user };
 }
 
-/** Guard for pages of signed-in users: sends anonymous visitors to sign in and unverified ones to verify. */
 export async function requireVerifiedPage(): Promise<AuthSession> {
   const { session, user } = await getCurrentSession();
   if (!session) redirect("/auth/signin");
@@ -47,11 +41,6 @@ type Handler<TInput extends z.ZodTypeAny, TOutput> = (
   session: AuthSession,
 ) => Promise<TOutput>;
 
-/**
- * Wraps a server action. In order it refuses a caller with no session, a disallowed role and an
- * unverified email (no role acts before verification), then validates the input, then runs the
- * handler. Every refusal is an `Err` value, so production shows the same message as development.
- */
 export function protectedAction<TInput extends z.ZodTypeAny, TOutput>(
   schema: TInput,
   allowedRoles: Role[],

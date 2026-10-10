@@ -2,12 +2,6 @@ import { eq, lte, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { rateLimit } from "@/lib/db/schema";
 
-/*
- * Limits are rows in the `rate_limit` D1 table, shared by every instance. Each decision is one
- * upsert with `RETURNING` (a row means allowed), and D1 runs statements one at a time, so
- * concurrent attempts cannot both take the last token. Instance clocks must agree to about 1 s.
- */
-
 type Decision = {
   key: string;
   now: number;
@@ -90,13 +84,9 @@ export class ExpiringTokenBucket {
   }
 }
 
-/** A throttled subject that stays quiet this long starts again from the first step. */
 const THROTTLE_MEMORY_MS = 24 * 60 * 60 * 1000;
 
-/**
- * Makes each allowed attempt lengthen the wait before the next one, following `timeoutSeconds`
- * and staying on the last step. The row's `count` is the index of the current step.
- */
+/** The row's `count` is the index of the current step in `timeoutSeconds`. */
 export class Throttler {
   constructor(
     private readonly name: string,

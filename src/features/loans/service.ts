@@ -24,11 +24,6 @@ function revalidateLoanViews() {
 
 export const getDeskCounts = (now = new Date()) => getLoanCounts(now);
 
-/**
- * Returns one page of a view plus the counts of every view. A page past the end clamps to the
- * last page, so a decision that empties a page does not leave a blank screen. Without a view it
- * opens the requests when any are waiting and the loans otherwise.
- */
 export async function getDeskService(
   requestedView: DeskView | undefined,
   requestedPage: number,
