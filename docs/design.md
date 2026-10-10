@@ -47,11 +47,16 @@ Newsreader's optical sizes already space each size.
 | `xs`   | 12px | 16px        | 0        | Codes, keycaps                            |
 | `sm`   | 13px | 20px        | −0.003em | Buttons, badges, metadata, category lines |
 | `base` | 15px | 24px        | −0.009em | Body text, fields (16px on touch screens) |
-| `md`   | 17px | 28px        | −0.011em | Author on the book page, description      |
+| `md`   | 17px | 28px        | −0.011em | Author on the book page, section heading  |
 | `lg`   | 19px | 24px        | −0.012em | Title in a list row, dialog title         |
 | `xl`   | 24px | 32px        | −0.014em | Wordmark, empty-state title               |
 | `2xl`  | 30px | 36px        | −0.018em | Page and book title on phones             |
 | `3xl`  | 38px | 44px        | −0.02em  | Page and book title from 640px            |
+
+A page title is the serif at weight 500 (`PageTitle`). A section heading is the
+sans at `md` and weight 600 (`SectionTitle`), so the serif stays for what is
+printed on a book and for the title of the page. The code to write on a spine,
+shown once after intake, is the mono at `2xl`.
 
 The 15px base and 17px reading size are Linear's. A field on a touch screen uses
 16px because iOS Safari zooms into a field whose text is smaller. Headings
@@ -164,17 +169,27 @@ Results dim 150ms after a search starts, so a fast answer never flickers.
   half opacity and ignores the pointer, so it shows no hover state.
 - `Field`, `Input`, `Select` and `Textarea`, with the label above and the hint
   or error under the field. An invalid field turns its edge `destructive`.
+- `FormError`, a destructive-tint sentence with an alert icon for a refusal that
+  belongs to a whole form, such as _Credenciales inválidas_. A refusal of one
+  field goes through `Field`.
 - `Segmented`, a set of mutually exclusive filters on a sunken track. It is a
   fieldset of native radios, so it is one tab stop and the arrow keys move and
-  select.
+  select. `SegmentedNav` is the same track made of links, for views that are
+  their own URL: the current one carries `aria-current="page"`, and each link is
+  a tab stop.
+- `Disclosure`, a `details` whose summary is as tall as a control, with a
+  chevron and an optional count, for detail few readers need. It opens in place
+  and needs no script.
 - `Badge`, a soft-tinted pill in `neutral`, `accent`, `success`, `warning` or
   `destructive`, with an icon before the word.
 - `Card`, a bordered surface; `CardList` and `CardRow`, a bordered list with a
   rule between rows. `rowLink`, the props that make one link cover its whole row
   so the row is one target without nesting other controls in a link.
 - `Skeleton`, a pulsing block for a loading layout.
-- `Empty`, a serif title, one sentence and at most one action.
-- `Page`, the width container.
+- `Empty`, a serif title, one sentence and at most one action. When it is the
+  whole page, as for an error or a missing page, its title is the `h1`.
+- `Page`, the width container, with `PageTitle` and `SectionTitle` for the
+  headings in it.
 - `Kbd`, a keycap for a shortcut hint. It is hidden on touch screens.
 - `AlertDialog`, `Toast` and `Toaster`, over Radix.
 - `ImageDropzone`, the file chooser of the cover manager.
@@ -198,7 +213,8 @@ it shows only the title's first letter.
 - Typing searches after a short pause. The previous results stay on screen,
   dimmed, until the new ones arrive. The first load of a page shows a skeleton
   in the shape of what is coming: list rows on the catalogue, the cover, title
-  and availability card on a book.
+  and availability card on a book, and the same shape on each of "Mis libros",
+  the loans desk, intake and the about page.
 - A decision with a safe reverse has no confirmation. Returning a loan shows a
   toast with _Deshacer_ for eight seconds. Deleting a book or a copy, which
   cannot be reversed, asks first.
@@ -206,13 +222,24 @@ it shows only the title's first letter.
   _Ejemplares_, the note on a request behind _Añadir una nota_, the account
   form, past loans.
 - An empty list says why and offers the next step, never more than one.
-- Errors stay next to the thing that failed. A toast confirms what happened.
+- Errors stay next to the thing that failed. A toast confirms what happened. A
+  refused name, reason, book, copy, donor, location, photo, role or return shows
+  as a `FormError` under its field or above its button, in the row it belongs
+  to, and what the person typed stays in place. The one exception is the undo of
+  a return, whose row is already gone. A page that fails to load shows an
+  `Empty` with _Reintentar_.
+- A request or loan shows its state as a badge with the sentence for the next
+  step under it: _Esperando respuesta_ (warning, clock), _Aprobado_ (success,
+  check), _No aprobado_ and a loan's days overdue (destructive, X or alert).
 
 ## Admin
 
 The loans desk is built for the keyboard; its shortcuts are in
-[borrowing](borrowing.md#loan-desk). Keyboard hints appear only where a keyboard
-exists. Intake remembers the librarian's last category in the browser.
+[borrowing](borrowing.md#loan-desk). Its two lists are a `SegmentedNav`, and a
+destructive badge beside it counts the overdue loans. Keyboard hints appear only
+where a keyboard exists. Intake remembers the librarian's last category in the
+browser. After a book is saved, a card shows the spine code and puts focus on
+_Registrar otro_.
 
 ## Imported covers
 

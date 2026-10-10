@@ -37,28 +37,29 @@ conditions, the indexes behind them and the definition of a lendable copy are in
 ## Loan desk
 
 `/admin/loans` is staff-only. The header links to it as **Préstamos** for staff
-on every width. It has two lists, **Solicitudes** and **Prestados**, each tab
+on every width. It has two lists, **Solicitudes** and **Prestados**, each a link
 with its count, chosen by `?view=requests|loans`, and 25 rows per page, chosen
 by `?page=`. A page past the last one shows the last page. With no `view`, the
 desk opens on the requests when any are pending and on the loans otherwise. When
-a loan is overdue, the tabs say how many.
+a loan is overdue, a badge beside the links says how many.
 
 The search field has focus when the desk opens. It narrows the current list by
 reader name or email, title or author, and the text is kept in `?q=`. On
 **Prestados** it also matches the code of the lent copy; a request has no copy
 yet.
 
-- **Solicitudes** lists `pending` requests oldest first: title and code, reader,
-  note, the date requested and the decision. The decision names the copy to
-  fetch, the lowest-numbered lendable one with its code, volume and place. A
-  choice appears only when the title has more than one lendable copy.
-  **Aprobar** is the main button. **Rechazar** opens a field for the reason,
-  which the reader sees; Escape closes it. A title with no lendable copy offers
-  only **Rechazar**.
+- **Solicitudes** lists `pending` requests oldest first: title, reader, note,
+  the date requested and the decision. The decision names the copy to fetch, the
+  lowest-numbered lendable one with its code, volume and place. A choice appears
+  only when the title has more than one lendable copy. **Aprobar** is the main
+  button. **Rechazar** opens a field for the reason, which the reader sees;
+  Escape closes it, and an empty or refused reason is shown under that field. A
+  title with no lendable copy says _Sin ejemplares libres_ and offers only
+  **Rechazar**.
 - **Prestados** lists `approved` loans by due date, so the overdue ones come
   first. An overdue loan says how many days late it is in words, with the
-  reader's email. **Devolver** returns the loan at once and a toast offers
-  **Deshacer** for eight seconds.
+  reader's email as a link. **Devolver** returns the loan at once and a toast
+  offers **Deshacer** for eight seconds.
 
 Keyboard: `/` focuses the search, Enter in the search presses the main button of
 the row when exactly one row matches, and `↑` and `↓` move between the main
@@ -78,8 +79,9 @@ Below the `sm` breakpoint each row stacks its decision under the text. The
 approve and reject buttons name the title and the reader, and the copy select
 names the reader, so a screen reader can tell rows apart. The search field and
 the lists have labels. An overdue loan pairs a warning icon with its text, and
-the current tab is underlined, so state is never carried by colour alone. The
-colour, contrast and motion rules are in [design](design.md).
+the current list is the raised segment and has `aria-current="page"`, so state
+is never carried by colour alone. While the desk loads, a skeleton in its shape
+stands in. The colour, contrast and motion rules are in [design](design.md).
 
 ## Favorites
 
@@ -92,7 +94,9 @@ heart is on the title page. The saved titles are listed under **Guardados** on
 
 `/profile` is the reader's page. **Ahora** lists the requests that are waiting,
 the loans in progress with the date to return them, and a request that was
-rejected in the last 14 days with its reason. Each row has one line that says
-where it stands. **Guardados** lists the favorites. **Anteriores** (returned
-loans and older rejections) and **Cuenta** (the name, the only field a reader
-can edit) are closed until opened.
+rejected in the last 14 days with its reason. Each row has a badge that says
+where it stands (_Esperando respuesta_, _Aprobado_, _No aprobado_ or the days
+overdue) and, under it, what to do next. **Guardados** lists the favorites.
+**Anteriores** (returned loans and older rejections) and **Cuenta** (the name,
+the only field a reader can edit) are closed until opened. A list with nothing
+in it says so and offers one next step.
