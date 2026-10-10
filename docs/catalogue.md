@@ -167,13 +167,12 @@ no borrower. They load as notes, not as loans.
 ## Search and filters
 
 The list searches by title, author and copy code, and filters by category (a
-top-level category includes its subcategories), cabinet and shelf, donor and
-availability. Staff also get _Sin etiqueta_ (`labelled = false`) and _Sin
-ubicación_ (a copy with no location). The list is ordered by title, or by code
-with `sort=code`, and comes in pages of 50 (`page=` in the URL; a page past the
-end shows the last one). One query reads the page and a second counts the
-matches; availability, the copy count and the reader's favorite mark are
-computed inside the page query, never per row from the client.
+top-level category includes its subcategories) and availability. Staff also get
+_Sin etiqueta_ (`labelled = false`) and _Sin ubicación_ (a copy with no
+location). The list is ordered by title and comes in pages of 50 (`page=` in the
+URL; a page past the end shows the last one). One query reads the page and a
+second counts the matches; availability, the copy count and the reader's
+favorite mark are computed inside the page query, never per row from the client.
 
 - Titles are ordered by `books.title_key`, the normalised title without the
   quotes or `¿` it opens with, then by code. The order is word by word on that
@@ -196,11 +195,10 @@ computed inside the page query, never per row from the client.
   FTS table adds a virtual table and sync triggers for no gain at that size.
 - The unlabelled and unplaced filters are for staff. For any other caller the
   service ignores them ([`getBooksService`](../src/features/books/service.ts)).
-- Filters on a copy's place, donor or availability are semi-joins on `copies`
+- The availability and unplaced filters are semi-joins on `copies`
   (`book_id IN (SELECT book_id FROM copies WHERE …)`) that use
-  `copies_location_idx`, `copies_donor_idx` and `copies_book_number_unique`. A
-  lendable copy is found through the partial index
-  `borrow_requests_active_copy_idx`.
+  `copies_location_idx` and `copies_book_number_unique`. A lendable copy is
+  found through the partial index `borrow_requests_active_copy_idx`.
 - Two scans remain, both on purpose. A text search scans `books.search`, because
   `LIKE '%word%'` has a leading wildcard that no B-tree serves; at a few hundred
   titles that is a read of one narrow column. The staff-only _Sin etiqueta_
@@ -234,58 +232,47 @@ the file holds no contact data.
 
 ### List
 
-`/` shows the list
-([`book-catalog.tsx`](../src/features/books/components/book-catalog.tsx)).
+`/` is one search field and the list under it
+([`catalogue-search.tsx`](../src/features/books/components/catalogue-search.tsx),
+[`book-list.tsx`](../src/features/books/components/book-list.tsx)). The field is
+the largest control on the page and has focus on `/`.
 
-- One row per title: code, title, author, availability (_Disponible_, with
-  lendable and total copies when the title has several, _No disponible_ or _Sin
-  ejemplares_), and, at 1536 pixels and wider, category and subcategory. The
-  code is monospace in the first column.
-- Filters sit in one bar above the list: category, cabinet and shelf, donor,
-  availability. The category and donor lists show how many titles or copies each
-  has.
-- Active filters appear as chips above the list. Each chip removes its filter,
-  and _Limpiar todo_ removes all of them.
-- A count of the matching titles sits above the list. Below it, when there is
-  more than one page, a pager shows the range (`51–100 de 120`), _Anterior_,
-  _Siguiente_ and the page number.
-- When a search returns nothing, the empty state names the query and the filters
-  and offers _Limpiar filtros_. An empty catalogue says so and, for staff,
-  offers _Registrar el primer libro_.
-- At 1024 pixels and wider, list view has a detail pane on the right. Selecting
-  a row keeps the list, its scroll position and filters, and shows the title's
-  cover, header, borrow action and copies in the pane, with each copy as label
-  and value rows. The previous title stays in the pane, dimmed, until the next
-  one loads. The URL's `book` parameter stores the selection, so a reload or a
-  shared link opens the same pane; when that title is not on the current page,
-  the pane shows it and no row is highlighted. Below 1024 pixels, selecting a
-  row opens `/books/<id>`.
-- The list and detail pane share each title's favorite state and heart count
-  while the catalogue is open.
-- Grid view has no pane: its cards link to the book page, and switching to the
-  grid closes the pane.
-- Keys: `/` focuses the search, `↑` and `↓` move the highlighted row, `←` and
-  `→` change page, `Enter` opens the full page, and `Esc` clears the search when
-  it is focused or closes the detail pane otherwise. In list view at 1024 pixels
-  and wider, `↑` and `↓` also show the highlighted title in the pane. A footer
-  line names the keys.
-- The page keeps the ids of the titles on screen in `sessionStorage`, so the
-  detail page's previous and next titles follow the current page.
+- One row per title: cover, title, author, category and availability
+  (_Disponible_, _2 de 3 disponibles_, _No disponible_ or _Sin ejemplares_).
+  Staff also see the code. The whole row links to the title.
+- Typing searches after a short pause. Two controls sit under the field: the
+  category (top-level categories group their subcategories) and _Solo
+  disponibles_. Staff get a third, to review copies without a label or a place,
+  with how many there are. Everything is in the URL.
+- A count of the matches sits above the list, with _Quitar filtros_ when any
+  filter is on. Below it, when there is more than one page, the range
+  (`51–100 de 120`) sits between _Anteriores_ and _Siguientes_.
+- When nothing matches, the empty state suggests fewer words and offers _Quitar
+  filtros_. An empty catalogue says so.
+- The list stays on screen, dimmed, while a new search loads.
+- `/` focuses the search from anywhere on the page.
 
 ### Detail
 
-`/books/<id>` shows the title page
-([`book-client.tsx`](../src/app/books/[id]/book-client.tsx)).
+`/books/<id>` ([`page.tsx`](../src/app/books/[id]/page.tsx)) answers one
+question first: is it available.
 
-- Header: category and subcategory as links to the filtered list, the book code,
-  title and author.
-- `↑` and `↓` open the previous and next title of the list the reader came from.
-- A copies table: code, origin, volume and pieces, imprint, place (cabinet,
-  shelf, bay), donor, status and condition. Staff change status and condition
-  from selects that save on change; readers see a copy on loan as _Prestado_.
-- Readers can request the title when it is available. The pending request shows
-  the lendable copies to staff on the [loan desk](borrowing.md#loan-desk), who
-  pick one when they approve it.
+- Cover, title and author, with the category and its parent as links to the
+  filtered list. The back link returns to the last search, filters and page of
+  the catalogue in this browser tab, however the reader reached the book. The
+  catalogue stores that query in `sessionStorage` as `216:catalogue`.
+- Below a rule, the availability, then where to find it (the place of a copy on
+  the shelf) or, when all copies are out, _Vuelve hacia el_ the earliest due
+  date. Then the one action: _Solicitar préstamo_, with a note behind _Añadir
+  una nota_. A visitor is asked to sign in and an unverified account to verify
+  its email. After a request the action becomes the state of the request. That
+  state also shows when no copy is lendable, so a reader who holds the last copy
+  reads _Lo tienes prestado hasta_ the due date.
+- Readers with a verified account can save the title. Staff see _Editar libro_
+  instead of the request.
+- The description follows. The copies sit in a closed _Ejemplares_ section: for
+  a reader, the state, the place and the edition of each; for staff, open by
+  default, with the donor and a select to change the status.
 
 ### Intake and edit
 
@@ -294,30 +281,24 @@ the file holds no contact data.
 the existing-title editor uses
 [`book-editor.tsx`](../src/features/books/components/book-editor.tsx).
 
-- Intake starts with the title. Matching titles are listed with _Agregar un
-  ejemplar_, which adds a default copy to that title, so a second copy does not
-  become a duplicate title.
-- Intake asks for the title, author, ISBN, category and number of copies. It
-  shows a generated cover, because a new title has no stored cover. Codes and
-  default copy data, including the category's default location when one is
-  unambiguous, are generated when the form is saved. Later copies use the
-  category's extra bay when one is configured.
+- Intake starts with the title, which has focus. Matching titles are listed with
+  _Agregar ejemplar_, which adds a default copy to that title, so a second copy
+  does not become a duplicate title.
+- Intake asks for the title, author, ISBN, category and number of copies. The
+  category chosen last is remembered in the browser. Codes and default copy
+  data, including the category's default location when one is unambiguous, are
+  generated when the form is saved. Later copies use the category's extra bay
+  when one is configured.
 - Saving shows the issued copy code in large type, for the librarian to write on
-  the spine and offers _Agregar otro_.
+  the spine, with _Registrar otro_ as the focused primary action and a link to
+  the editor for the place and photos.
 - Edit changes the title fields, adds, edits and deletes copies, manages the
   cover and other images, and deletes the book after a confirmation. The codes
   and copy numbers are read-only.
 
-## References
+### Settings
 
-The layout follows two codebases read for how they lay out dense data screens.
-
-From the Huly platform: the no-results state with a clear action, filter chips
-with a clear-all, and the previous and next record on a detail page.
-
-From Orca: dense one-line rows with small monochrome type, keyboard-first
-navigation with a key-hint footer, and errors that stay on the page while toasts
-confirm.
-
-Not built: saved filters, a command palette and virtual scrolling. A small
-library needs none of them.
+`/admin/settings` is staff-only. Its long lists are closed until opened. It
+lists the locations (cabinet, shelf, bay, category), where a location is added
+or edited, and the donors, where a donor and their motivation line are added or
+edited. For an admin it also lists the people with a role select each.

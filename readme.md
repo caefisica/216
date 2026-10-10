@@ -33,20 +33,20 @@ password `password123`. Demo accounts are listed in
 
 ## What you can do
 
-- Search the catalogue by title, author or copy code, and filter by category,
-  cabinet, donor and availability.
-- Browse the public catalogue as a dense list or a cover grid. Titles without a
-  stored image receive a generated typographic cover.
-- Favorite books and request a loan with a note.
-- Work the loan desk as a librarian: approve a request by choosing the copy that
-  goes out (14-day due date), reject it with a reason the reader sees, mark a
-  loan returned, and see overdue loans first.
+- Search the catalogue by title, author or copy code, filter by category and
+  availability, and see on the result whether a book is available. Titles
+  without a stored image receive a generated typographic cover.
+- Favorite books and request a loan with a note. "Mis libros" shows the
+  requests, loans and favorites of a reader.
+- Work the loan desk as a librarian, mostly from the keyboard: approve a request
+  with the copy that goes out (14-day due date), reject it with a reason the
+  reader sees, mark a loan returned (with an undo), and see overdue loans first.
 - Register titles and their physical copies (each with a code for the spine, a
   place, a donor and a condition), edit them and upload cover images as a
   librarian.
 - Complete missing cover matches from Open Library with `bun run covers:fetch`.
-- Change user roles and suspend users as an admin.
-- Read the activity dashboard: popular books, active users, monthly borrows.
+- Manage locations and donors as a librarian, and change user roles (which
+  includes suspending) as an admin, under Ajustes.
 - Sign up and confirm the account with a six-digit code, and reset a password
   with an emailed code. If the email cannot be sent, the signup is not created.
 

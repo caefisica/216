@@ -193,9 +193,9 @@ On the seeded local database, `EXPLAIN QUERY PLAN` reports:
 The donors page uses one grouped read that inner-joins `donors`, `copies` and
 `books`, so a donor without copies is not listed. It orders donors by their
 total copies and groups the returned rows in memory to show each donor's titles.
-The favorites and profile pages each use one authenticated read. The profile
-read joins each loan to its title and assigned copy, including its due date and,
-for a rejected request, the reason.
+The profile page ("Mis libros") uses two authenticated reads. One joins each
+loan to its title and assigned copy, including its due date and, for a rejected
+request, the reason. The other lists the favorites with their availability.
 
 ## Loan desk queries
 
@@ -210,6 +210,11 @@ the page size, in
   lendable copies of its title as a JSON array built by a correlated subquery
   over `copyIsLendable`, ordered by copy number, so no row triggers a further
   query.
+
+A search (`?q=`) adds a third statement, `countLoanView`, because the count of a
+filtered view is not one of the three scalar counts. The search is a `LIKE` over
+the normalised title, the reader's name and email, and the copy code; the desk
+holds only the loans in progress, so it scans a small set.
 
 `EXPLAIN QUERY PLAN` on a migrated database reports:
 

@@ -116,29 +116,30 @@ it ends, the next request starts a new window of 3 codes.
 
 `user.role` is one of four values. Sign-up creates `user`.
 
-| Role        | Can do                                                                  |
-| ----------- | ----------------------------------------------------------------------- |
-| `user`      | Browse, favorite, request loans, edit own name.                         |
-| `librarian` | Everything a user can, plus manage books and images, and approve loans. |
-| `admin`     | Everything a librarian can, plus change roles and suspend users.        |
-| `suspended` | Sign in and browse. Every action that needs a role is refused.          |
+| Role        | Can do                                                                    |
+| ----------- | ------------------------------------------------------------------------- |
+| `user`      | Browse, favorite, request loans, edit own name.                           |
+| `librarian` | Everything a user can, plus manage books and images, and approve loans.   |
+| `admin`     | Everything a librarian can, plus change roles, which includes suspending. |
+| `suspended` | Sign in and browse. Every action that needs a role is refused.            |
 
 Roles are enforced in server actions by `protectedAction`, `staffAction` and
 `authenticatedAction` in
 [`protected-action.ts`](../src/features/auth/protected-action.ts). `staffAction`
 admits a librarian or admin, and every action that creates, edits or deletes a
-book, an image or a loan decision uses it, including those in
-`src/features/books/actions/editor.ts`. An `admin` passes every role check. A
-wrapper checks the session and role before it validates the input. The
-`/admin/books/create` and `/admin/books/[id]` pages call `requireStaffPage` and
-redirect users who are not a librarian or admin.
+book, an image, a location, a donor or a loan decision uses it. An `admin`
+passes every role check. A wrapper checks the session and role before it
+validates the input. The `/admin/loans`, `/admin/books/create`,
+`/admin/books/[id]` and `/admin/settings` pages call `requireStaffPage` and
+redirect users who are not a librarian or admin. The roles list on
+`/admin/settings` is read and rendered only for an admin.
 
 No role acts before its email is verified, because anyone can sign up with any
 address. The wrapper refuses an unverified caller with the `unverified` code.
 The pages that need a session send an unverified user to `/auth/verify-email`.
 Reads that anyone may call (`getBooks`, `getBookById` and the home page) show an
 unverified account the same view as a visitor, without its favorites, and the
-book page hides staff controls from it. The favorites and profile pages send an
+book page hides staff controls from it. The profile page ("Mis libros") sends an
 unverified account to `/auth/verify-email`.
 
 A wrapped action never throws to the browser. Production Next.js replaces the
@@ -148,12 +149,14 @@ message of a thrown error, so the wrapper returns a result: `Ok(value)`, or
 user should read, and the wrapper passes its Spanish message on. Any other error
 is logged and shown as a generic message.
 
-A role change is refused when the actor targets their own account.
+A role change is refused when the actor targets their own account. Suspending a
+person is a role change to `suspended`, undone by changing the role back.
 
 The sign-in, sign-up, verification and reset actions in
 `src/features/auth/actions/` do not use the wrappers. They run before there is a
 role to check.
 
-The admin dashboard is the home page (`/`) for a librarian or admin. It has tabs
-for the collection, users, activity, statistics and the room, and a link to the
-[loan desk](borrowing.md#loan-desk).
+Staff use the same home page as readers. Their header adds **Préstamos** (the
+[loan desk](borrowing.md#loan-desk)), **Registrar** (intake) and **Ajustes**
+(`/admin/settings`). Every signed-in user, staff included, has **Mis libros**
+(`/profile`), where the account name is changed.
