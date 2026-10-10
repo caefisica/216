@@ -8,7 +8,15 @@ import { toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 
 /** Update the icon optimistically, then restore it if the server rejects the change. */
-export function FavoriteButton({ bookId, saved }: { bookId: string; saved: boolean }) {
+export function FavoriteButton({
+  bookId,
+  saved,
+  className,
+}: {
+  bookId: string;
+  saved: boolean;
+  className?: string;
+}) {
   const [hearted, setHearted] = useState(saved);
 
   async function toggle() {
@@ -22,7 +30,7 @@ export function FavoriteButton({ bookId, saved }: { bookId: string; saved: boole
   }
 
   return (
-    <Button variant="quiet" aria-pressed={hearted} onClick={toggle}>
+    <Button variant="quiet" aria-pressed={hearted} onClick={toggle} className={className}>
       <Heart aria-hidden className={hearted ? "fill-current" : undefined} />
       {hearted ? "Guardado" : "Guardar"}
     </Button>

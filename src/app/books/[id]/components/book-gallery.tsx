@@ -16,7 +16,7 @@ export function BookGallery({ images, title, author, category }: BookGalleryProp
   const [current, setCurrent] = useState(0);
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-3">
       <BookCover
         title={title}
         author={author}
@@ -34,8 +34,8 @@ export function BookGallery({ images, title, author, category }: BookGalleryProp
               aria-pressed={index === current}
               onClick={() => setCurrent(index)}
               className={cn(
-                "relative size-control overflow-hidden rounded-sm border-2",
-                index === current ? "border-foreground" : "border-transparent",
+                "relative aspect-[2/3] w-9 overflow-hidden rounded-xs ring-offset-2 ring-offset-background transition-opacity duration-100 pointer-coarse:w-11",
+                index === current ? "ring-2 ring-foreground" : "opacity-70 hover:opacity-100",
               )}
             >
               <Image

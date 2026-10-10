@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { Availability } from "@/components/catalogue/availability";
 import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Page } from "@/components/ui/page";
 import { getSession, isVerifiedStaff } from "@/features/auth/protected-action";
 import { getBookById } from "@/features/books/actions";
@@ -26,8 +28,12 @@ function whereOrWhen(book: BookDetailed, now: Date) {
     .filter((date) => daysOverdue(date, now) === null)
     .sort((a, b) => a.getTime() - b.getTime())[0];
   if (back) return `Vuelve hacia el ${formatDay(back)}`;
-  return dates.length > 0 ? "Prestado, sin fecha de vuelta" : null;
+  if (dates.length > 0) return "Prestado, sin fecha de vuelta";
+  return book.copies.length > 0 ? "Ningún ejemplar está en circulación" : null;
 }
+
+const crumb =
+  "inline-flex items-center rounded-xs transition-colors duration-100 hover:text-foreground pointer-coarse:min-h-control";
 
 export default async function BookPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,97 +52,104 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
   const where = whereOrWhen(detail, now);
 
   return (
-    <Page width="prose">
+    <Page>
       <BackLink />
 
-      <article className="mt-2">
-        <header className="flex gap-4 sm:gap-6">
-          <div className="w-28 shrink-0 sm:w-40">
-            <BookGallery
-              images={detail.images}
-              title={detail.title}
-              author={detail.author}
-              category={detail.category.name}
-            />
-          </div>
-          <div className="min-w-0">
-            <h1 className="font-serif text-xl font-semibold leading-tight text-balance sm:text-2xl">
-              {detail.title}
-            </h1>
-            {detail.author && (
-              <p className="mt-1 text-base text-muted-foreground">{detail.author}</p>
-            )}
-            <p className="mt-2 text-xs text-muted-foreground">
+      <article className="mt-4 grid gap-6 sm:mt-6 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-8 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-12">
+        <div className="w-32 sm:w-auto">
+          <BookGallery
+            images={detail.images}
+            title={detail.title}
+            author={detail.author}
+            category={detail.category.name}
+          />
+        </div>
+
+        <div className="min-w-0">
+          <header>
+            <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
               {parent && (
                 <>
-                  <Link
-                    href={`/?category=${parent.code}`}
-                    className="inline-flex items-center underline underline-offset-2 pointer-coarse:min-h-control"
-                  >
+                  <Link href={`/?category=${parent.code}`} className={crumb}>
                     {parent.name}
                   </Link>
-                  {" / "}
+                  <ChevronRight aria-hidden className="size-3.5 opacity-60" />
                 </>
               )}
-              <Link
-                href={`/?category=${detail.category.code}`}
-                className="inline-flex items-center underline underline-offset-2 pointer-coarse:min-h-control"
-              >
+              <Link href={`/?category=${detail.category.code}`} className={crumb}>
                 {detail.category.name}
               </Link>
-              {staff && <span className="ml-2 font-mono">{detail.code}</span>}
+              {staff && <span className="ml-2 font-mono text-xs">{detail.code}</span>}
             </p>
-          </div>
-        </header>
+            <h1 className="mt-2 font-serif text-2xl font-medium text-balance hyphens-auto sm:text-3xl">
+              {detail.title}
+            </h1>
+            {detail.author && <p className="mt-2 text-md text-muted-foreground">{detail.author}</p>}
+          </header>
 
-        <section aria-label="Disponibilidad" className="mt-6 grid gap-3 border-y py-4">
-          <div>
-            <Availability
-              lendable={detail.lendableCount}
-              total={detail.copies.length}
-              className="text-base"
-            />
-            {where && <p className="mt-0.5 text-muted-foreground">{where}</p>}
-          </div>
-          {showBorrow && (
-            <BorrowPanel bookId={detail.id} reader={reader} request={detail.request} now={now} />
-          )}
-          {reader === "verified" && !staff && (
-            <div className="-ml-4">
-              <FavoriteButton bookId={detail.id} saved={detail.isHearted} />
+          <Card aria-label="Disponibilidad" role="region" className="mt-6 grid gap-4 p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="grid min-w-0 justify-items-start gap-1.5">
+                <Availability lendable={detail.lendableCount} total={detail.copies.length} />
+                {where && <p className="text-sm text-pretty text-muted-foreground">{where}</p>}
+              </div>
+              {reader === "verified" && !staff && (
+                <FavoriteButton
+                  bookId={detail.id}
+                  saved={detail.isHearted}
+                  className="-my-1.5 -mr-2 shrink-0 pointer-coarse:-my-2.5"
+                />
+              )}
             </div>
+            {showBorrow && (
+              <div className="border-t pt-4">
+                <BorrowPanel
+                  bookId={detail.id}
+                  reader={reader}
+                  request={detail.request}
+                  now={now}
+                />
+              </div>
+            )}
+            {staff && (
+              <div className="border-t pt-4">
+                <Link
+                  href={`/admin/books/${detail.id}`}
+                  className={buttonVariants({ variant: "secondary" })}
+                >
+                  Editar libro
+                </Link>
+              </div>
+            )}
+          </Card>
+
+          {detail.description && (
+            <p className="mt-8 max-w-measure text-md text-pretty">{detail.description}</p>
           )}
-          {staff && (
-            <div>
-              <Link
-                href={`/admin/books/${detail.id}`}
-                className={buttonVariants({ variant: "secondary" })}
-              >
-                Editar libro
-              </Link>
+
+          <details className="group mt-8" open={staff}>
+            <summary className="-ml-1 inline-flex min-h-control list-none items-center gap-1.5 rounded-sm pr-2 pl-1 font-medium transition-colors duration-100 hover:bg-sunken [&::-webkit-details-marker]:hidden">
+              <ChevronRight
+                aria-hidden
+                className="size-4 text-muted-foreground transition-transform duration-150 ease-out group-open:rotate-90"
+              />
+              Ejemplares
+              <span className="text-muted-foreground tabular-nums">{detail.copies.length}</span>
+            </summary>
+            <div className="mt-3 grid gap-3">
+              {detail.copies.length > 0 ? (
+                <CopyList copies={detail.copies} staff={staff} now={now} />
+              ) : (
+                <p className="text-muted-foreground">Aún no hay ejemplares registrados.</p>
+              )}
+              {detail.isbn && (
+                <p className="text-sm text-muted-foreground">
+                  ISBN <span className="font-mono text-xs">{detail.isbn}</span>
+                </p>
+              )}
             </div>
-          )}
-        </section>
-
-        {detail.description && (
-          <p className="mt-6 max-w-prose text-base leading-relaxed">{detail.description}</p>
-        )}
-
-        <details className="mt-6" open={staff}>
-          <summary className="inline-flex min-h-control items-center font-medium">
-            Ejemplares ({detail.copies.length})
-          </summary>
-          <div className="mt-2">
-            {detail.copies.length > 0 ? (
-              <CopyList copies={detail.copies} staff={staff} now={now} />
-            ) : (
-              <p className="text-muted-foreground">Aún no hay ejemplares registrados.</p>
-            )}
-            {detail.isbn && (
-              <p className="mt-3 text-xs text-muted-foreground">ISBN {detail.isbn}</p>
-            )}
-          </div>
-        </details>
+          </details>
+        </div>
       </article>
     </Page>
   );

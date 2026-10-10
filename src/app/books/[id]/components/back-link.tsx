@@ -13,7 +13,7 @@ export function BackLink() {
   return (
     <Link
       href={href}
-      className="-ml-2 inline-flex min-h-control items-center gap-1.5 rounded-md px-2 text-sm text-muted-foreground hover:text-foreground"
+      className="-ml-2 inline-flex min-h-control items-center gap-1.5 rounded-sm px-2 text-sm font-medium text-muted-foreground transition-colors duration-100 hover:bg-sunken hover:text-foreground"
     >
       <ArrowLeft aria-hidden className="size-4" />
       Catálogo
