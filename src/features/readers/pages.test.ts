@@ -211,6 +211,19 @@ describe("book page for a reader", () => {
     expect(markup).not.toContain("Vuelve hacia");
   });
 
+  it("says why a title whose copies are all out of circulation is unavailable", async () => {
+    const book = await insertBook({
+      title: "Perdido",
+      copies: [{ status: "missing" }, { status: "maintenance" }],
+    });
+
+    const markup = await page(book.id);
+
+    expect(markup).toContain("No disponible");
+    expect(markup).toContain("Ningún ejemplar está en circulación");
+    expect(markup).not.toContain("Solicitar préstamo");
+  });
+
   it("offers the request on a title with a copy on the shelf", async () => {
     const book = await insertBook({ title: "En estante", copies: 1 });
 

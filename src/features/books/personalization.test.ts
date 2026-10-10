@@ -66,11 +66,21 @@ const asUnverified = () => {
   current.verified = false;
 };
 
+type Books = Promise<{ items: { isHearted: boolean }[] }>;
+
+/** The results load inside a Suspense boundary, so the page's element tree holds them as a promise. */
+function findBooks(node: unknown): Books | undefined {
+  if (Array.isArray(node)) return node.map(findBooks).find(Boolean);
+  if (!node || typeof node !== "object" || !("props" in node)) return undefined;
+  const props = (node as ReactElement<{ books?: Books; children?: unknown }>).props;
+  return props.books ?? findBooks(props.children);
+}
+
 async function homeBooks() {
-  const page = (await HomePage({ searchParams: Promise.resolve({}) })) as ReactElement<{
-    children: [unknown, ReactElement<{ children: ReactElement<{ result: { items: unknown[] } }> }>];
-  }>;
-  return page.props.children[1].props.children.props.result.items as { isHearted: boolean }[];
+  const page = await HomePage({ searchParams: Promise.resolve({}) });
+  const books = findBooks(page);
+  if (!books) throw new Error("The catalogue page renders no results");
+  return (await books).items;
 }
 
 async function savedSection() {
