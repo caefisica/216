@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Input, Select } from "@/components/ui/field";
 import { Kbd } from "@/components/ui/kbd";
+import { Segmented } from "@/components/ui/segmented";
 import { cn } from "@/lib/utils";
 import { rememberCatalogue } from "../catalogue-memory";
 import type { BookFilters } from "../schemas";
@@ -30,6 +31,11 @@ function toQuery(search: string, category: string, available: boolean, review: R
 }
 
 const SEARCH_DELAY_MS = 250;
+
+const AVAILABILITY = [
+  { value: "all", label: "Todos" },
+  { value: "available", label: "Disponibles" },
+] as const;
 
 /**
  * The URL is the state. Navigation preserves the list for the back button, shared links, and
@@ -104,7 +110,7 @@ export function CatalogueSearch({ filters, categories, review, children }: Catal
         <div className="relative">
           <Search
             aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute left-3.5 top-1/2 size-[1.125rem] -translate-y-1/2 text-muted-foreground"
           />
           <Input
             ref={input}
@@ -115,7 +121,7 @@ export function CatalogueSearch({ filters, categories, review, children }: Catal
             autoComplete="off"
             enterKeyHint="search"
             value={search}
-            className="h-12 pl-9 pr-10 text-base sm:h-12"
+            className="h-11 rounded-md pl-10 pr-11 [&::-webkit-search-cancel-button]:hidden"
             onChange={(event) => {
               setSearch(event.target.value);
               clearTimeout(timer.current);
@@ -126,14 +132,30 @@ export function CatalogueSearch({ filters, categories, review, children }: Catal
               );
             }}
           />
-          {!search && <Kbd className="absolute right-3 top-1/2 -translate-y-1/2">/</Kbd>}
+          {search ? (
+            <button
+              type="button"
+              aria-label="Borrar la búsqueda"
+              className="absolute right-1 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-100 hover:bg-sunken hover:text-foreground"
+              onClick={() => {
+                clearTimeout(timer.current);
+                setSearch("");
+                go({ search: "", category, available, review: reviewing });
+                input.current?.focus();
+              }}
+            >
+              <X aria-hidden className="size-4" />
+            </button>
+          ) : (
+            <Kbd className="absolute right-3.5 top-1/2 -translate-y-1/2">/</Kbd>
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Select
             aria-label="Categoría"
             value={category}
-            className="w-auto max-w-full"
+            className="w-full sm:w-auto sm:min-w-56"
             onChange={(event) => {
               setCategory(event.target.value);
               go({ search, category: event.target.value, available, review: reviewing });
@@ -152,24 +174,22 @@ export function CatalogueSearch({ filters, categories, review, children }: Catal
             ))}
           </Select>
 
-          <label className="inline-flex min-h-control cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              checked={available}
-              className="size-4 accent-primary"
-              onChange={(event) => {
-                setAvailable(event.target.checked);
-                go({ search, category, available: event.target.checked, review: reviewing });
-              }}
-            />
-            Solo disponibles
-          </label>
+          <Segmented
+            label="Disponibilidad"
+            value={available ? "available" : "all"}
+            options={AVAILABILITY}
+            className="max-sm:w-full max-sm:[&>label]:flex-1 max-sm:[&>label]:justify-center"
+            onChange={(value) => {
+              setAvailable(value === "available");
+              go({ search, category, available: value === "available", review: reviewing });
+            }}
+          />
 
           {review && (
             <Select
               aria-label="Revisión de ejemplares"
               value={reviewing}
-              className="w-auto max-w-full"
+              className="w-full sm:w-auto"
               onChange={(event) => {
                 const value = event.target.value as Review;
                 setReviewing(value);
@@ -184,9 +204,13 @@ export function CatalogueSearch({ filters, categories, review, children }: Catal
         </div>
       </form>
 
+      {/* Delay the fade so fast searches do not flash a loading state. */}
       <div
         aria-busy={pending}
-        className={cn("mt-6 transition-opacity duration-150", pending && "opacity-50")}
+        className={cn(
+          "mt-6 transition-opacity duration-150 ease-out",
+          pending && "opacity-55 delay-150",
+        )}
       >
         {children}
       </div>

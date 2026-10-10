@@ -1,6 +1,6 @@
 import { Check, Clock, Minus } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 interface AvailabilityProps {
   lendable: number;
@@ -8,25 +8,28 @@ interface AvailabilityProps {
   className?: string;
 }
 
-/** Use both an icon and text so colour is not the only state cue. */
+/** Keep the title's state in text as well as the icon and colour. */
 export function Availability({ lendable, total, className }: AvailabilityProps) {
-  const state =
-    total === 0
-      ? { Icon: Minus, text: "Sin ejemplares", tone: "text-muted-foreground" }
-      : lendable === 0
-        ? { Icon: Clock, text: "No disponible", tone: "text-warning" }
-        : {
-            Icon: Check,
-            text: total === 1 ? "Disponible" : `${lendable} de ${total} disponibles`,
-            tone: "text-success",
-          };
-
+  if (total === 0) {
+    return (
+      <Badge tone="neutral" className={className}>
+        <Minus aria-hidden />
+        Sin ejemplares
+      </Badge>
+    );
+  }
+  if (lendable === 0) {
+    return (
+      <Badge tone="warning" className={className}>
+        <Clock aria-hidden />
+        No disponible
+      </Badge>
+    );
+  }
   return (
-    <span
-      className={cn("inline-flex items-center gap-1 text-sm font-medium", state.tone, className)}
-    >
-      <state.Icon aria-hidden className="size-4 shrink-0" />
-      {state.text}
-    </span>
+    <Badge tone="success" className={className}>
+      <Check aria-hidden />
+      {total === 1 ? "Disponible" : `${lendable} de ${total} disponibles`}
+    </Badge>
   );
 }

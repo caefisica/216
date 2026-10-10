@@ -1,20 +1,28 @@
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-const palettes = [
-  "bg-cover-1 text-cover-1-foreground",
-  "bg-cover-2 text-cover-2-foreground",
-  "bg-cover-3 text-cover-3-foreground",
-  "bg-cover-4 text-cover-4-foreground",
+const cloths = [
+  "bg-cover-1 text-cover-light",
+  "bg-cover-2 text-cover-light",
+  "bg-cover-3 text-cover-light",
+  "bg-cover-4 text-cover-dark",
 ] as const;
 
-function paletteFor(category: string) {
+function clothFor(category: string) {
   let hash = 0;
   for (const character of category) {
     hash = (hash * 31 + character.charCodeAt(0)) | 0;
   }
-  return palettes[Math.abs(hash) % palettes.length];
+  return cloths[Math.abs(hash) % cloths.length];
 }
+
+// The hairline keeps a white or pale cover from melting into the page.
+const frame =
+  "relative aspect-[2/3] w-full overflow-hidden rounded-xs shadow-cover after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:shadow-[inset_0_0_0_1px_rgb(0_0_0/0.1)] after:content-['']";
+
+// Shading at the left edge reads as the spine of a cloth binding.
+const spine =
+  "before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:w-[8%] before:bg-[linear-gradient(90deg,rgb(0_0_0/0.28),rgb(255_255_255/0.1)_70%,transparent)] before:content-['']";
 
 interface BookCoverProps {
   title: string;
@@ -22,12 +30,12 @@ interface BookCoverProps {
   category?: string;
   imageUrl?: string | null;
   priority?: boolean;
-  /** For a thumbnail beside the title: a generated cover is only a coloured initial. */
+  /** For a thumbnail beside the title: a generated cover is only its initial. */
   compact?: boolean;
   className?: string;
 }
 
-/** A photo when the book has one, otherwise a typeset cover coloured by its category. */
+/** A photo when the book has one, otherwise a cloth binding coloured by its category. */
 export function BookCover({
   title,
   author,
@@ -37,19 +45,17 @@ export function BookCover({
   compact = false,
   className,
 }: BookCoverProps) {
-  const frame = cn("relative aspect-[2/3] w-full overflow-hidden rounded-sm", className);
-
   if (imageUrl) {
     return (
-      <div className={cn(frame, "bg-sunken")}>
+      <div className={cn(frame, "bg-sunken", className)}>
         <Image
           src={imageUrl}
-          alt={`Portada de ${title}`}
+          alt={compact ? "" : `Portada de ${title}`}
           width={480}
           height={720}
           priority={priority}
           loading={priority ? undefined : "lazy"}
-          sizes="(max-width: 640px) 96px, 240px"
+          sizes={compact ? "64px" : "(max-width: 640px) 160px, 224px"}
           className="h-full w-full object-cover"
         />
       </div>
@@ -60,9 +66,11 @@ export function BookCover({
     return (
       <div
         aria-hidden
-        className={cn(frame, paletteFor(category), "flex items-center justify-center")}
+        className={cn(frame, spine, clothFor(category), "grid place-items-center", className)}
       >
-        <span className="font-serif text-xl font-semibold">{title.match(/\p{L}|\d/u)?.[0]}</span>
+        <span className="pl-[8%] font-serif text-2xl font-medium">
+          {title.match(/\p{L}|\d/u)?.[0]}
+        </span>
       </div>
     );
   }
@@ -70,15 +78,18 @@ export function BookCover({
   return (
     <div
       role="img"
-      className={cn(frame, paletteFor(category), "@container")}
       aria-label={`Portada generada de ${title}`}
+      className={cn(frame, spine, clothFor(category), "@container", className)}
     >
-      <div className="absolute inset-0 flex flex-col justify-between p-[clamp(0.375rem,8cqi,1.25rem)]">
-        <p className="line-clamp-5 font-serif text-[clamp(0.7rem,12cqi,1.5rem)] font-semibold leading-[1.1] break-words">
+      <div className="absolute inset-0 flex flex-col py-[10cqi] pr-[9cqi] pl-[15cqi]">
+        <p className="line-clamp-8 font-serif text-[clamp(0.75rem,11cqi,1.75rem)] leading-[1.12] font-medium hyphens-auto break-words">
           {title}
         </p>
+        <span className="mt-[7cqi] h-px w-[18cqi] shrink-0 bg-current opacity-50" />
         {author && (
-          <p className="line-clamp-2 text-[clamp(0.6rem,6cqi,0.75rem)] opacity-75">{author}</p>
+          <p className="mt-auto line-clamp-2 text-[clamp(0.625rem,6.5cqi,0.875rem)] leading-snug">
+            {author}
+          </p>
         )}
       </div>
     </div>

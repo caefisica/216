@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { CardList, CardRow } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { BookFilters } from "../schemas";
 import { BookRow } from "./book-row";
 import type { BookPage } from "../types";
@@ -64,25 +66,28 @@ export function BookList({ result, filters, staff }: BookListProps) {
 
   return (
     <>
-      <div className="mb-1 flex items-center justify-between gap-4">
-        <p role="status" className="text-sm text-muted-foreground">
+      <div className="mb-2 flex min-h-control items-center justify-between gap-4">
+        <p role="status" className="text-sm text-muted-foreground tabular-nums">
           {countLabel(total, filters)}
         </p>
         {filtered && (
-          <Link href="/" className="inline-flex min-h-control items-center text-sm underline">
+          <Link
+            href="/"
+            className="-mr-2 inline-flex min-h-control items-center rounded-sm px-2 text-sm font-medium text-muted-foreground transition-colors duration-100 hover:text-foreground"
+          >
             Quitar filtros
           </Link>
         )}
       </div>
 
-      <ul className="divide-y border-y">
+      <CardList>
         {items.map((book, index) => (
           <BookRow key={book.id} book={book} staff={staff} priority={index < 4} />
         ))}
-      </ul>
+      </CardList>
 
       {pageCount > 1 && (
-        <nav aria-label="Páginas" className="mt-4 flex items-center justify-between gap-4">
+        <nav aria-label="Páginas" className="mt-6 flex items-center justify-between gap-4">
           {page > 1 ? (
             <Link
               href={hrefFor(filters, page - 1)}
@@ -95,7 +100,7 @@ export function BookList({ result, filters, staff }: BookListProps) {
           ) : (
             <span />
           )}
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground tabular-nums">
             {first}–{last} de {total}
           </span>
           {page < pageCount ? (
@@ -113,5 +118,32 @@ export function BookList({ result, filters, staff }: BookListProps) {
         </nav>
       )}
     </>
+  );
+}
+
+export function BookListSkeleton({ rows = 6 }: { rows?: number }) {
+  return (
+    <div role="status" aria-busy>
+      <span className="sr-only">Cargando libros…</span>
+      <div className="mb-2 flex min-h-control items-center">
+        <Skeleton className="h-4 w-20" />
+      </div>
+      <CardList aria-hidden>
+        {Array.from({ length: rows }, (_, index) => (
+          <CardRow
+            key={index}
+            className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-4 sm:grid-cols-[4rem_minmax(0,1fr)_auto] sm:gap-x-5"
+          >
+            <Skeleton className="aspect-[2/3] w-full" />
+            <div className="grid content-center gap-2">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-2/5" />
+              <Skeleton className="h-3.5 w-1/4" />
+            </div>
+            <Skeleton className="hidden h-6 w-28 self-center rounded-full sm:block" />
+          </CardRow>
+        ))}
+      </CardList>
+    </div>
   );
 }

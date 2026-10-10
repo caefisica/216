@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Availability } from "@/components/catalogue/availability";
 import { BookCover } from "@/components/catalogue/book-cover";
+import { CardRow, rowLink } from "@/components/ui/card";
 import type { BookListItem } from "../types";
 
 export function BookRow({
@@ -13,36 +14,33 @@ export function BookRow({
   priority?: boolean;
 }) {
   return (
-    <li>
-      <Link
-        href={`/books/${book.id}`}
-        className="-mx-2 grid grid-cols-[3rem_1fr] gap-x-3 gap-y-1 rounded-md px-2 py-3 hover:bg-sunken sm:grid-cols-[3rem_1fr_auto] sm:items-center"
-      >
-        <BookCover
-          title={book.title}
-          author={book.author}
-          category={book.category.name}
-          imageUrl={book.imageUrl}
-          priority={priority}
-          compact
-          className="row-span-2 sm:row-span-1"
-        />
-        <div className="min-w-0">
-          <h2 className="font-serif text-lg font-semibold leading-snug text-balance">
+    <CardRow className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-4 sm:grid-cols-[4rem_minmax(0,1fr)_auto] sm:gap-x-5">
+      <BookCover
+        title={book.title}
+        author={book.author}
+        category={book.category.name}
+        imageUrl={book.imageUrl}
+        priority={priority}
+        compact
+        className="row-span-2 self-start sm:row-span-1"
+      />
+      <div className="min-w-0 self-center">
+        <h2 className="font-serif text-lg font-medium text-pretty">
+          <Link href={`/books/${book.id}`} {...rowLink}>
             {book.title}
-          </h2>
-          {book.author && <p className="text-muted-foreground">{book.author}</p>}
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {staff && <span className="mr-2 font-mono">{book.code}</span>}
-            {book.category.name}
-          </p>
-        </div>
-        <Availability
-          lendable={book.lendableCount}
-          total={book.copyCount}
-          className="col-start-2 sm:col-start-3"
-        />
-      </Link>
-    </li>
+          </Link>
+        </h2>
+        {book.author && <p className="mt-0.5 text-muted-foreground">{book.author}</p>}
+        <p className="mt-1 text-sm text-muted-foreground">
+          {book.category.name}
+          {staff && <span className="ml-2 font-mono text-xs">{book.code}</span>}
+        </p>
+      </div>
+      <Availability
+        lendable={book.lendableCount}
+        total={book.copyCount}
+        className="col-start-2 mt-2.5 justify-self-start sm:col-start-3 sm:row-start-1 sm:mt-0 sm:self-center"
+      />
+    </CardRow>
   );
 }
