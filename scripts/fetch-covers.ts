@@ -1,11 +1,20 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { getPlatformProxy } from "wrangler";
+import { parseArgs } from "node:util";
+import { getPlatformProxy, unstable_readConfig } from "wrangler";
 import { drizzle } from "drizzle-orm/d1";
 import { isNull } from "drizzle-orm";
 import * as schema from "../src/lib/db/schema";
-import { deleteFileFromBucket, putFileInBucket, getFileUrl } from "../src/lib/storage";
+import type { Database } from "../src/lib/db";
+import { getFileUrl } from "../src/lib/storage";
 import { addBookImageRecord } from "../src/features/books/repository";
+import { remoteBucket, remoteDatabase, runCf, type ObjectBucket } from "./cloudflare-remote";
+
+const USAGE = `Usage: bun run covers:fetch -- [--remote] [--dry-run]
+
+Matches titles without a cover on Open Library and stores the covers in R2 and the database.
+Without --remote it uses the local database and bucket. With --remote it uses production through
+the cf CLI. With --dry-run it matches and prints what it would write, and writes nothing.`;
 
 const DEFAULT_SEARCH_URL = "https://openlibrary.org/search.json";
 const USER_AGENT = "216-library-covers/1.0 (https://github.com/caefisica/216)";
@@ -107,8 +116,8 @@ async function searchCover(
 
 export interface CoverFetchOptions {
   books: Array<{ id: string; title: string; author: string | null; imageUrl: string | null }>;
-  bucket: R2Bucket;
-  db: ReturnType<typeof drizzle<typeof schema>>;
+  bucket: ObjectBucket;
+  db: Database;
   fetcher?: typeof fetch;
   searchUrl?: string;
   cacheFile?: string;
@@ -156,7 +165,7 @@ export async function fetchCovers({
         continue;
       }
       cache[cacheKey] = entry;
-      await saveJson(cacheFile, cache);
+      if (!dryRun) await saveJson(cacheFile, cache);
     }
     if (entry.status === "miss" || !entry.result?.cover_i) {
       missed++;
@@ -173,11 +182,15 @@ export async function fetchCovers({
       errors++;
       continue;
     }
-    if (!dryRun) {
+    if (dryRun) {
+      console.log(`Se guardaría la portada de «${book.title}» (${book.id}) desde ${source}.`);
+    } else {
       const key = `book-images/${crypto.randomUUID()}.jpg`;
       const storedUrl = getFileUrl(key);
       try {
-        await putFileInBucket(bucket, key, new Uint8Array(await image.arrayBuffer()), "image/jpeg");
+        await bucket.put(key, new Uint8Array(await image.arrayBuffer()), {
+          httpMetadata: { contentType: "image/jpeg" },
+        });
       } catch (error) {
         console.error(`No se pudo guardar la portada de «${book.title}»:`, error);
         errors++;
@@ -189,26 +202,59 @@ export async function fetchCovers({
           db,
         );
         if (!attached) {
-          await deleteFileFromBucket(bucket, key);
+          await bucket.delete(key);
           missed++;
           missSet.add(`${book.title}${book.author ? ` — ${book.author}` : ""}`);
           continue;
         }
       } catch (error) {
-        await deleteFileFromBucket(bucket, key);
+        await bucket.delete(key);
         throw error;
       }
     }
     found++;
   }
-  await saveJson(missFile, [...missSet].sort());
+  if (!dryRun) await saveJson(missFile, [...missSet].sort());
   return { found, missed, errors, total: books.filter((book) => !book.imageUrl).length };
 }
 
+async function connect(remote: boolean) {
+  if (!remote) {
+    const proxy = await getPlatformProxy<CloudflareEnv>({ envFiles: [] });
+    return {
+      db: drizzle(proxy.env.DB, { schema }),
+      bucket: proxy.env._216_storage,
+      target: "local",
+      close: () => proxy.dispose(),
+    };
+  }
+  const config = unstable_readConfig({ config: "wrangler.jsonc" }) as {
+    d1_databases: Array<{ binding: string; database_name?: string; database_id?: string }>;
+    r2_buckets: Array<{ binding: string; bucket_name?: string }>;
+  };
+  const database = config.d1_databases.find((item) => item.binding === "DB");
+  const bucket = config.r2_buckets.find((item) => item.binding === "_216_storage");
+  if (!database?.database_id || !bucket?.bucket_name)
+    throw new Error("wrangler.jsonc binds no DB database or _216_storage bucket.");
+  return {
+    db: remoteDatabase(runCf, database.database_id) as unknown as Database,
+    bucket: remoteBucket(runCf, bucket.bucket_name),
+    target: `producción (D1 ${database.database_name}, R2 ${bucket.bucket_name})`,
+    close: async () => {},
+  };
+}
+
 async function main() {
-  const proxy = await getPlatformProxy<CloudflareEnv>({ envFiles: [] });
+  const { values } = parseArgs({
+    options: {
+      remote: { type: "boolean", default: false },
+      "dry-run": { type: "boolean", default: false },
+      help: { type: "boolean", default: false },
+    },
+  });
+  if (values.help) return console.log(USAGE);
+  const { db, bucket, target, close } = await connect(values.remote);
   try {
-    const db = drizzle(proxy.env.DB, { schema });
     const books = await db
       .select({
         id: schema.books.id,
@@ -218,20 +264,22 @@ async function main() {
       })
       .from(schema.books)
       .where(isNull(schema.books.imageUrl));
-    const result = await fetchCovers({
-      db,
-      bucket: proxy.env._216_storage,
-      books,
-      dryRun: process.argv.includes("--dry-run"),
-    });
+    console.log(
+      `Destino: ${target}${values["dry-run"] ? " (simulacro: no se escribe nada)" : ""}. ` +
+        `Títulos sin portada: ${books.length}.`,
+    );
+    const result = await fetchCovers({ db, bucket, books, dryRun: values["dry-run"] });
     console.log(
       `Portadas encontradas: ${result.found}. Sin coincidencia: ${result.missed}. ` +
         `Errores: ${result.errors}. ` +
         `Pendientes: ${result.total - result.found}.`,
     );
-    console.log(`Las coincidencias se guardaron en ${CACHE_FILE}; las faltantes en ${MISS_FILE}.`);
+    if (!values["dry-run"])
+      console.log(
+        `Las coincidencias se guardaron en ${CACHE_FILE}; las faltantes en ${MISS_FILE}.`,
+      );
   } finally {
-    await proxy.dispose();
+    await close();
   }
 }
 
