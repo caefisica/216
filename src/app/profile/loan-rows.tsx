@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { AlertTriangle, Check, Clock } from "lucide-react";
+import { AlertTriangle, Check, Clock, X } from "lucide-react";
+import { BookCover } from "@/components/catalogue/book-cover";
+import { Badge } from "@/components/ui/badge";
+import { CardRow, rowLink } from "@/components/ui/card";
 import { daysOverdue, formatDay, overdueLabel } from "@/features/loans/format";
 import type { BorrowRequest } from "@/features/users/types";
 
@@ -14,38 +17,54 @@ export function isCurrent(request: BorrowRequest, now: Date) {
 function Status({ request, now }: { request: BorrowRequest; now: Date }) {
   if (request.status === "pending") {
     return (
-      <p className="flex items-center gap-1.5 text-warning">
-        <Clock aria-hidden className="size-4" />
-        Esperando respuesta de la biblioteca
-      </p>
+      <Badge tone="warning">
+        <Clock aria-hidden />
+        Esperando respuesta
+      </Badge>
     );
   }
   if (request.status === "approved") {
     const late = daysOverdue(request.dueDate, now);
     if (late !== null) {
       return (
-        <p className="flex items-center gap-1.5 font-medium text-destructive">
-          <AlertTriangle aria-hidden className="size-4" />
-          {overdueLabel(late)}. Devuélvelo en el ambiente 216.
-        </p>
+        <>
+          <Badge tone="destructive">
+            <AlertTriangle aria-hidden />
+            {overdueLabel(late)}
+          </Badge>
+          <p className="text-sm text-muted-foreground">Devuélvelo en el ambiente 216.</p>
+        </>
       );
     }
     return (
-      <p className="flex items-center gap-1.5 text-success">
-        <Check aria-hidden className="size-4" />
-        {request.dueDate ? `Devuélvelo antes del ${formatDay(request.dueDate)}` : "Aprobado"}
-      </p>
+      <>
+        <Badge tone="success">
+          <Check aria-hidden />
+          Aprobado
+        </Badge>
+        {request.dueDate && (
+          <p className="text-sm text-muted-foreground">
+            Devuélvelo antes del {formatDay(request.dueDate)}
+          </p>
+        )}
+      </>
     );
   }
   if (request.status === "rejected") {
     return (
-      <p className="text-destructive">
-        No aprobado{request.rejectionReason ? `: ${request.rejectionReason}` : ""}
-      </p>
+      <>
+        <Badge tone="destructive">
+          <X aria-hidden />
+          No aprobado
+        </Badge>
+        {request.rejectionReason && (
+          <p className="text-sm text-muted-foreground">{request.rejectionReason}</p>
+        )}
+      </>
     );
   }
   return (
-    <p className="text-muted-foreground">
+    <p className="text-sm text-muted-foreground">
       Devuelto{request.returnDate ? ` el ${formatDay(request.returnDate)}` : ""}
     </p>
   );
@@ -54,21 +73,38 @@ function Status({ request, now }: { request: BorrowRequest; now: Date }) {
 export function LoanRow({ request, now }: { request: BorrowRequest; now: Date }) {
   const book = request.book;
   return (
-    <li className="py-3">
-      {book ? (
-        <Link
-          href={`/books/${book.id}`}
-          className="inline-flex items-center font-serif text-lg font-semibold leading-snug underline-offset-2 hover:underline pointer-coarse:min-h-control"
-        >
-          {book.title}
-        </Link>
-      ) : (
-        <p className="font-serif text-lg font-semibold">Libro retirado del catálogo</p>
+    <CardRow
+      className={
+        book
+          ? "grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-4 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-x-5"
+          : undefined
+      }
+    >
+      {book && (
+        <BookCover
+          title={book.title}
+          author={book.author}
+          category={book.category.name}
+          imageUrl={book.imageUrl}
+          compact
+          className="self-start"
+        />
       )}
-      {book?.author && <p className="text-muted-foreground">{book.author}</p>}
-      <div className="mt-1">
-        <Status request={request} now={now} />
+      <div className="min-w-0 self-center">
+        <h3 className="font-serif text-lg font-medium text-pretty">
+          {book ? (
+            <Link href={`/books/${book.id}`} {...rowLink}>
+              {book.title}
+            </Link>
+          ) : (
+            "Libro retirado del catálogo"
+          )}
+        </h3>
+        {book?.author && <p className="mt-0.5 text-muted-foreground">{book.author}</p>}
+        <div className="mt-2 grid justify-items-start gap-1.5">
+          <Status request={request} now={now} />
+        </div>
       </div>
-    </li>
+    </CardRow>
   );
 }

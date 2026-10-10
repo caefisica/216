@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { CardList } from "@/components/ui/card";
+import { Disclosure } from "@/components/ui/disclosure";
 import { Empty } from "@/components/ui/empty";
-import { Page } from "@/components/ui/page";
+import { Page, PageTitle, SectionTitle } from "@/components/ui/page";
 import { requireVerifiedPage } from "@/features/auth/protected-action";
 import { BookRow } from "@/features/books/components/book-row";
 import { getFavoriteBooksService } from "@/features/books/service";
 import { listUserActivity } from "@/features/users/repository";
 import { AccountForm } from "./account-form";
 import { LoanRow, isCurrent } from "./loan-rows";
-
-const heading = "text-lg font-semibold";
 
 export default async function ProfilePage() {
   const { user } = await requireVerifiedPage();
@@ -23,22 +23,22 @@ export default async function ProfilePage() {
 
   return (
     <Page width="prose">
-      <h1 className="text-xl font-semibold">Mis libros</h1>
+      <PageTitle>Mis libros</PageTitle>
 
-      <section aria-labelledby="ahora" className="mt-6">
-        <h2 id="ahora" className={heading}>
+      <section aria-labelledby="ahora" className="mt-8">
+        <SectionTitle id="ahora" className="mb-3">
           Ahora
-        </h2>
+        </SectionTitle>
         {current.length > 0 ? (
-          <ul className="mt-1 divide-y border-y">
+          <CardList>
             {current.map((request) => (
               <LoanRow key={request.id} request={request} now={now} />
             ))}
-          </ul>
+          </CardList>
         ) : (
           <Empty
             title="No tienes libros pedidos"
-            className="py-6"
+            className="py-4"
             action={
               <Link href="/" className={buttonVariants({ variant: "secondary" })}>
                 Buscar un libro
@@ -50,42 +50,36 @@ export default async function ProfilePage() {
         )}
       </section>
 
-      <section aria-labelledby="guardados" className="mt-8">
-        <h2 id="guardados" className={heading}>
+      <section aria-labelledby="guardados" className="mt-10">
+        <SectionTitle id="guardados" className="mb-3">
           Guardados
-        </h2>
+        </SectionTitle>
         {saved.length > 0 ? (
-          <ul className="mt-1 divide-y border-y">
+          <CardList>
             {saved.map((book) => (
-              <BookRow key={book.id} book={book} />
+              <BookRow key={book.id} book={book} heading="h3" />
             ))}
-          </ul>
+          </CardList>
         ) : (
-          <p className="mt-1 text-muted-foreground">
+          <Empty title="Nada guardado" className="py-4">
             Guarda un libro desde su página para ver aquí si ya está disponible.
-          </p>
+          </Empty>
         )}
       </section>
 
       {past.length > 0 && (
-        <details className="mt-8">
-          <summary className="inline-flex min-h-control items-center text-lg font-semibold">
-            Anteriores ({past.length})
-          </summary>
-          <ul className="mt-1 divide-y border-y">
+        <Disclosure title="Anteriores" detail={past.length} className="mt-10">
+          <CardList>
             {past.map((request) => (
               <LoanRow key={request.id} request={request} now={now} />
             ))}
-          </ul>
-        </details>
+          </CardList>
+        </Disclosure>
       )}
 
-      <details className="mt-8">
-        <summary className="inline-flex min-h-control items-center text-lg font-semibold">
-          Cuenta
-        </summary>
+      <Disclosure title="Cuenta" className="mt-6">
         <AccountForm name={user.name} email={user.email} />
-      </details>
+      </Disclosure>
     </Page>
   );
 }
