@@ -2,13 +2,15 @@
 
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type * as Actions from "../actions";
 import type { CatalogueFacets, LocationOption } from "../types";
 import { BookIntakeForm } from "./book-intake-form";
 
+// Typed against the real actions, so a fixture that drifts from their results fails the type check.
 const actionMocks = vi.hoisted(() => ({
-  addCopy: vi.fn(),
-  createIntakeBook: vi.fn(),
-  getBooks: vi.fn(),
+  addCopy: vi.fn<typeof Actions.addCopy>(),
+  createIntakeBook: vi.fn<typeof Actions.createIntakeBook>(),
+  getBooks: vi.fn<typeof Actions.getBooks>(),
 }));
 
 vi.mock("../actions", () => actionMocks);
@@ -37,7 +39,10 @@ beforeEach(() => {
   actionMocks.createIntakeBook.mockReset();
   actionMocks.addCopy.mockReset();
   actionMocks.getBooks.mockReset();
-  actionMocks.getBooks.mockResolvedValue({ ok: true, value: { items: [] } });
+  actionMocks.getBooks.mockResolvedValue({
+    ok: true,
+    value: { items: [], total: 0, page: 1, pageSize: 20 },
+  });
   localStorage.clear();
 });
 afterEach(cleanup);
@@ -110,10 +115,12 @@ describe("BookIntakeForm", () => {
             category: { id: categoryId, code: "FG", name: "Física", parent: null },
             copyCount: 1,
             lendableCount: 1,
-            heartsCount: 0,
             isHearted: false,
           },
         ],
+        total: 1,
+        page: 1,
+        pageSize: 20,
       },
     });
     render(<BookIntakeForm facets={facets} />);

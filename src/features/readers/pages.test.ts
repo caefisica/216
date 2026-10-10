@@ -161,6 +161,56 @@ describe("book page for a reader", () => {
     expect(markup).toContain("Solicitud enviada");
   });
 
+  it("says a loan is overdue instead of promising a return on a date that has passed", async () => {
+    const db = await getDb();
+    const book = await insertBook({ title: "Atrasado", copies: 2 });
+    const late = new Date(Date.now() - 3.5 * 24 * 60 * 60 * 1000);
+    const ahead = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+    await db.insert(schema.borrowRequests).values([
+      {
+        userId: "reader-1",
+        bookId: book.id,
+        copyId: book.copies[0].id,
+        status: "approved",
+        approvedDate: new Date(),
+        dueDate: late,
+      },
+      {
+        userId: "reader-2",
+        bookId: book.id,
+        copyId: book.copies[1].id,
+        status: "approved",
+        approvedDate: new Date(),
+        dueDate: ahead,
+      },
+    ]);
+
+    const markup = await page(book.id);
+
+    expect(markup).toContain("Lo tienes prestado, vencido hace 3 días");
+    expect(markup).toContain("Prestado, vencido hace 3 días");
+    expect(markup).toContain(`Vuelve hacia el ${formatDay(ahead)}`);
+    expect(markup).not.toContain(`hasta el ${formatDay(late)}`);
+  });
+
+  it("gives no return date when every due date has passed", async () => {
+    const db = await getDb();
+    const book = await insertBook({ title: "Olvidado", copies: 1 });
+    await db.insert(schema.borrowRequests).values({
+      userId: "reader-2",
+      bookId: book.id,
+      copyId: book.copies[0].id,
+      status: "approved",
+      approvedDate: new Date(),
+      dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    });
+
+    const markup = await page(book.id);
+
+    expect(markup).toContain("Prestado, sin fecha de vuelta");
+    expect(markup).not.toContain("Vuelve hacia");
+  });
+
   it("offers the request on a title with a copy on the shelf", async () => {
     const book = await insertBook({ title: "En estante", copies: 1 });
 
