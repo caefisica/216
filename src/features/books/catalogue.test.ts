@@ -100,40 +100,13 @@ describe("filtering the seeded catalogue", () => {
     expect(await found({ category: "FG.1" })).toEqual(expected((book) => book.category === "FG.1"));
   });
 
-  it("filters by the cabinet and shelf a copy stands on", async () => {
-    const onShelf = (cabinet: string, shelf?: number) => (book: RegisterBook) =>
-      copiesOf(book).some((copy) => {
-        const [c, s] = copy.location?.split("/") ?? [];
-        return c === cabinet && (shelf === undefined || Number(s) === shelf);
-      });
-
-    expect(await found({ cabinet: "Mueble marron", shelf: 0 })).toEqual(
-      expected(onShelf("Mueble marron", 0)),
-    );
-    expect(await found({ cabinet: "Mueble Principal" })).toEqual(
-      expected(onShelf("Mueble Principal")),
-    );
-  });
-
-  it("filters by donor", async () => {
-    const [donor] = await testDb.query<{ id: string }>(
-      "SELECT id FROM donors WHERE name = 'Robert Guzman'",
-    );
-    expect(await found({ donor: donor.id })).toEqual(
-      expected((book) => copiesOf(book).some((copy) => copy.donor === "Robert Guzman")),
-    );
-  });
-
-  it("splits the catalogue into titles with a copy to lend and titles without", async () => {
+  it("keeps only the titles with a copy to lend", async () => {
     const lendable = (book: RegisterBook) => copiesOf(book).some((c) => c.status === "present");
 
     const available = await found({ availability: "available" });
-    const unavailable = await found({ availability: "unavailable" });
 
     expect(available).toEqual(expected(lendable));
-    expect(unavailable).toEqual(expected((book) => !lendable(book)));
-    expect(unavailable.length).toBeGreaterThan(0);
-    expect(available.length + unavailable.length).toBe(register.books.length);
+    expect(available.length).toBeLessThan(register.books.length);
   });
 
   it("lists the titles with a copy that has no code on the spine or no place", async () => {
@@ -179,7 +152,7 @@ describe("filtering the seeded catalogue", () => {
     );
   });
 
-  it("sorts by title or by code", async () => {
+  it("sorts by title, ignoring accents, case and leading punctuation", async () => {
     const byTitle = (await allBooks({})).map((book) => normalizeSearch(book.title));
     const keys = byTitle.map((title) => titleKey(title));
     expect(keys).toEqual([...keys].sort());
@@ -195,9 +168,6 @@ describe("filtering the seeded catalogue", () => {
     );
     expect(mecanica).toBeGreaterThanOrEqual(0);
     expect(mecanica).toBeLessThan(aplicada);
-
-    const byCode = (await allBooks({ sort: "code" })).map((book) => book.code);
-    expect(byCode).toEqual([...byCode].sort());
   });
 
   it("counts a title's copies and the ones that can be lent", async () => {
@@ -208,7 +178,7 @@ describe("filtering the seeded catalogue", () => {
 
 describe("the facets", () => {
   it("lists the category tree with the titles under each node", async () => {
-    const { categories, cabinets, donors } = await listFacets();
+    const { categories, donors } = await listFacets();
 
     const physics = categories.find((node) => node.code === "FG")!;
     expect(physics.children.map((child) => child.code)).toEqual([
@@ -221,7 +191,6 @@ describe("the facets", () => {
     ]);
     expect(physics.bookCount).toBe(expected((b) => b.category.startsWith("FG")).length);
     expect(categories.reduce((sum, node) => sum + node.bookCount, 0)).toBe(register.books.length);
-    expect(cabinets.find((cabinet) => cabinet.cabinet === "Mueble marron")?.shelves).toContain(0);
     expect(donors).toHaveLength(register.donors.length);
   });
 });

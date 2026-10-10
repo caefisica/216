@@ -6,19 +6,8 @@ import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
 import { getLibraryCounts } from "./repository";
 import { listDonorGifts } from "@/features/donors/repository";
-import AboutPage from "@/app/about/page";
-import DonorsPage from "@/app/donors/page";
 
 let testDb: TestDatabase;
-
-function renderedText(value: unknown, seen = new Set<object>()): string {
-  if (typeof value === "string" || typeof value === "number") return String(value);
-  if (!value || typeof value !== "object" || seen.has(value)) return "";
-  seen.add(value);
-  return Object.values(value)
-    .map((child) => renderedText(child, seen))
-    .join(" ");
-}
 
 beforeAll(async () => {
   testDb = await createTestDatabase();
@@ -69,7 +58,6 @@ describe("reader catalogue reads", () => {
   it("groups donated copies by donor and keeps the donated titles", async () => {
     await expect(listDonorGifts()).resolves.toEqual({
       totalCopies: 3,
-      totalDonors: 1,
       donors: [
         expect.objectContaining({
           id: "donor-1",
@@ -82,15 +70,5 @@ describe("reader catalogue reads", () => {
         }),
       ],
     });
-  });
-
-  it("renders the about and donors routes from the same database reads", async () => {
-    const about = await AboutPage();
-    const donors = await DonorsPage();
-
-    expect(JSON.stringify(about)).toContain("Disponibles ahora");
-    expect(JSON.stringify(about)).toContain('"children":2');
-    expect(renderedText(donors)).toContain("Mecánica");
-    expect(renderedText(donors)).toContain("Ana Donante");
   });
 });

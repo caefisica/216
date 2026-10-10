@@ -5,7 +5,16 @@ vi.mock("@/features/books/service", async () => {
   const actual = await vi.importActual<typeof import("@/features/books/service")>(
     "@/features/books/service",
   );
-  return { ...actual, getFavoriteBooksService: async () => [] };
+  return {
+    ...actual,
+    getFavoriteBooksService: async () => [],
+    getFacetsService: async () => ({
+      categories: [],
+      donors: [],
+      locations: [],
+      copyHealth: { present: 0, maintenance: 0, missing: 0, unlabelled: 0, unplaced: 0 },
+    }),
+  };
 });
 vi.mock("@/features/loans/service", async () => {
   const actual = await vi.importActual<typeof import("@/features/loans/service")>(
@@ -30,7 +39,7 @@ vi.mock("@/features/users/repository", async () => {
   const actual = await vi.importActual<typeof import("@/features/users/repository")>(
     "@/features/users/repository",
   );
-  return { ...actual, listUserActivity: async () => [] };
+  return { ...actual, listUserActivity: async () => [], listUsers: async () => [] };
 });
 
 // Session cookies need a Next.js request, so the session lookup is the only fake.
@@ -61,8 +70,6 @@ vi.mock("@/features/auth/core/session", () => ({
 type ActionPolicy = "public" | "own-session" | "authenticated" | "staff" | "admin";
 
 const actionPolicies: Record<string, ActionPolicy> = {
-  "features/admin/actions.ts#getDetailedAdminStats": "staff",
-  "features/admin/actions.ts#getBorrowingHistory": "staff",
   "features/auth/actions/reset-password-request.ts#requestPasswordResetAction": "public",
   "features/auth/actions/reset-password.ts#resetPasswordAction": "public",
   "features/auth/actions/session.ts#signOutAction": "own-session",
@@ -81,7 +88,6 @@ const actionPolicies: Record<string, ActionPolicy> = {
   "features/books/actions.ts#deleteCopy": "staff",
   "features/books/actions.ts#getBookById": "public",
   "features/books/actions.ts#getBooks": "public",
-  "features/books/actions.ts#getFacets": "public",
   "features/books/actions.ts#setCoverImage": "staff",
   "features/books/actions.ts#setHeart": "authenticated",
   "features/books/actions.ts#updateBook": "staff",
@@ -91,9 +97,8 @@ const actionPolicies: Record<string, ActionPolicy> = {
   "features/books/actions.ts#uploadBookImage": "staff",
   "features/loans/actions.ts#approveRequest": "staff",
   "features/loans/actions.ts#rejectRequest": "staff",
+  "features/loans/actions.ts#reopenLoan": "staff",
   "features/loans/actions.ts#returnLoan": "staff",
-  "features/users/actions.ts#getAllUsers": "staff",
-  "features/users/actions.ts#suspendUser": "admin",
   "features/users/actions.ts#updateUserProfile": "authenticated",
   "features/users/actions.ts#updateUserRole": "admin",
 };
@@ -201,19 +206,16 @@ type PagePolicy = "public" | "signed-in" | "staff";
 
 const pagePolicies: Record<string, PagePolicy> = {
   "/about": "public",
-  "/about/location": "public",
-  "/about/rules": "public",
-  "/about/team": "public",
   "/admin/books/[id]": "staff",
   "/admin/books/create": "staff",
   "/admin/loans": "staff",
+  "/admin/settings": "staff",
   "/auth/reset-password": "public",
   "/auth/signin": "public",
   "/auth/signup": "public",
   "/auth/verify-email": "public",
   "/books/[id]": "public",
   "/donors": "public",
-  "/favorites": "signed-in",
   "/": "public",
   "/media/[...key]": "public",
   "/privacy": "public",

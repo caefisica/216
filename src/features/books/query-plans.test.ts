@@ -28,7 +28,6 @@ async function plansOf(filters: BookFilters) {
   const list = bookListQuery(db, {
     where,
     userId: "user",
-    sort: filters.sort,
     limit: 50,
     offset: 0,
   });
@@ -43,14 +42,11 @@ describe("catalogue query plans", () => {
   // Only `books` is walked in order for an unfiltered, text or availability query.
   const indexed: Record<string, BookFilters> = {
     title: {},
-    code: { sort: "code" },
     text: { search: "fisica estadistica" },
     codeSearch: { search: "CAFG.1.0" },
     category: { category: "FG" },
     subcategory: { category: "FG.1" },
-    place: { cabinet: "Mueble Principal", shelf: 5 },
     available: { availability: "available" },
-    unavailable: { availability: "unavailable" },
     unplaced: { unplaced: "1" },
   };
 
@@ -61,13 +57,12 @@ describe("catalogue query plans", () => {
     });
   }
 
-  it("orders an unfiltered page by the title index with no sort", async () => {
+  it("orders an unfiltered page by the title index", async () => {
     const db = await getDb();
     const plan = await planOf(
       bookListQuery(db, {
         where: undefined,
         userId: "user",
-        sort: undefined,
         limit: 50,
         offset: 0,
       }),
@@ -85,14 +80,6 @@ describe("catalogue query plans", () => {
   it("derives availability from the active-loan index", async () => {
     const plan = (await plansOf({ availability: "available" })).join("\n");
     expect(plan).toContain("borrow_requests USING COVERING INDEX borrow_requests_active_copy_idx");
-  });
-
-  it("filters by place and donor through the copy indexes", async () => {
-    expect((await plansOf({ cabinet: "Mueble Principal" })).join("\n")).toContain(
-      "copies_location_idx",
-    );
-    const [donor] = await testDb.query<{ id: string }>("SELECT id FROM donors LIMIT 1");
-    expect((await plansOf({ donor: donor.id })).join("\n")).toContain("copies_donor_idx");
   });
 
   it("scans copies only for the staff-only unlabelled filter", async () => {

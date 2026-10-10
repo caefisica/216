@@ -1,17 +1,22 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { getDb } from "@/lib/db";
 import { createTestDatabase, type TestDatabase } from "@/lib/db/test-database";
 import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
 import { getBookById, getBooks, setHeart } from "./actions";
 import HomePage from "@/app/page";
-import FavoritesPage from "@/app/favorites/page";
+import ProfilePage from "@/app/profile/page";
 
-// Session cookies and revalidation need a Next.js request, so these are the only fakes.
+// Session cookies, the app router and revalidation need a Next.js request, so these are the only fakes.
 const current = vi.hoisted(() => ({ signedIn: true, verified: true }));
 
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ refresh: () => {} }),
+}));
 vi.mock("@/features/auth/core/session", () => ({
   getCurrentSession: async () =>
     current.signedIn
@@ -41,7 +46,7 @@ beforeAll(async () => {
     passwordHash: "h",
     createdAt: new Date(),
   });
-  ({ id: bookId } = await insertBook());
+  ({ id: bookId } = await insertBook({ title: "Libro guardado" }));
   await db.insert(schema.userBookHearts).values({ userId: "ana", bookId });
 }, 120_000);
 
@@ -61,17 +66,16 @@ const asUnverified = () => {
   current.verified = false;
 };
 
-/** The catalogue the home page hands to its client component. */
 async function homeBooks() {
   const page = (await HomePage({ searchParams: Promise.resolve({}) })) as ReactElement<{
-    children: ReactElement<{ initialPage: { items: unknown[] } }>;
+    children: [unknown, ReactElement<{ children: ReactElement<{ result: { items: unknown[] } }> }>];
   }>;
-  return page.props.children.props.initialPage.items as { isHearted: boolean }[];
+  return page.props.children[1].props.children.props.result.items as { isHearted: boolean }[];
 }
 
-async function favoriteBooks() {
-  const page = (await FavoritesPage()) as ReactElement<{ initialBooks: { id: string }[] }>;
-  return page.props.initialBooks;
+async function savedSection() {
+  const markup = renderToStaticMarkup((await ProfilePage()) as ReactElement);
+  return markup.split('aria-labelledby="guardados"')[1]?.split("</section>")[0] ?? "";
 }
 
 const redirectError = { digest: expect.stringContaining("NEXT_REDIRECT") };
@@ -93,8 +97,8 @@ describe("what a verified session sees", () => {
     expect((await homeBooks()).map((b) => b.isHearted)).toEqual([true]);
   });
 
-  it("lists its favorites on the favorites page", async () => {
-    expect((await favoriteBooks()).map((b) => b.id)).toEqual([bookId]);
+  it("lists its favorites under Guardados on its page", async () => {
+    expect(await savedSection()).toContain("Libro guardado");
   });
 });
 
@@ -115,21 +119,21 @@ describe.each([
     expect(book.ok && book.value.isHearted).toBe(false);
   });
 
-  it("is sent away from the favorites page", async () => {
-    await expect(FavoritesPage()).rejects.toMatchObject(redirectError);
+  it("is sent away from its books page", async () => {
+    await expect(ProfilePage()).rejects.toMatchObject(redirectError);
   });
 });
 
-describe("the favorites page refusal", () => {
+describe("the books page refusal", () => {
   it("sends an anonymous visitor to sign in and an unverified account to verify", async () => {
     asAnonymous();
-    await expect(FavoritesPage()).rejects.toMatchObject({
+    await expect(ProfilePage()).rejects.toMatchObject({
       digest: expect.stringContaining("/auth/signin"),
     });
 
     current.signedIn = true;
     asUnverified();
-    await expect(FavoritesPage()).rejects.toMatchObject({
+    await expect(ProfilePage()).rejects.toMatchObject({
       digest: expect.stringContaining("/auth/verify-email"),
     });
   });

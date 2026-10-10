@@ -168,23 +168,29 @@ describe("BorrowRequestSchema", () => {
 });
 
 describe("SearchSchema", () => {
-  it("accepts the filter values the catalogue sends, shelf numbers arriving as text", () => {
+  it("accepts the filter values the catalogue sends", () => {
     expect(
       SearchSchema.parse({
         search: " cálculo ",
         category: "FG.1",
-        cabinet: "A",
-        shelf: "2",
         availability: "available",
         unlabelled: "1",
-        sort: "code",
       }),
-    ).toMatchObject({ search: "cálculo", shelf: 2, availability: "available" });
+    ).toMatchObject({
+      search: "cálculo",
+      category: "FG.1",
+      availability: "available",
+      unlabelled: "1",
+    });
   });
 
-  it("rejects an unknown availability, sort or flag", () => {
+  it("drops filters the catalogue no longer has", () => {
+    const parsed = SearchSchema.parse({ cabinet: "A", shelf: "2", sort: "code", donor: "x" });
+    expect(parsed).toEqual({});
+  });
+
+  it("rejects an unknown availability or flag", () => {
     expect(SearchSchema.safeParse({ availability: "reserved" }).success).toBe(false);
-    expect(SearchSchema.safeParse({ sort: "random" }).success).toBe(false);
     expect(SearchSchema.safeParse({ unplaced: "yes" }).success).toBe(false);
   });
 });

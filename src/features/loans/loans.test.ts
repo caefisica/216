@@ -6,8 +6,7 @@ import * as schema from "@/lib/db/schema";
 import type { Role } from "@/lib/db/schema";
 import { createBorrowRequestService } from "@/features/books/service";
 import { listUserActivity } from "@/features/users/repository";
-import { getBookActivity, getMonthlyActivity } from "@/features/admin/repository";
-import { approveRequest, rejectRequest, returnLoan } from "./actions";
+import { approveRequest, rejectRequest, reopenLoan, returnLoan } from "./actions";
 import { RejectionReasonSchema } from "./schemas";
 
 // Revalidation needs a Next.js request.
@@ -522,6 +521,77 @@ describe("returning a loan", () => {
     expect(await giveBack(crypto.randomUUID())).toEqual(failure("no existe"));
   });
 
+  describe("undoing the return", () => {
+    const undo = (requestId: string, by = "lib") => as(by, () => reopenLoan({ requestId }));
+
+    it("puts the loan back on the same reader and copy, with its due date", async () => {
+      const { copyIds, requestId } = await approvedLoan();
+      const [before] = await testDb.query<{ due_date: number }>(
+        "SELECT due_date FROM borrow_requests WHERE id = ?",
+        requestId,
+      );
+      await giveBack(requestId);
+
+      expect(await undo(requestId)).toEqual(succeeded);
+
+      const [row] = await testDb.query<{
+        status: string;
+        return_date: number | null;
+        copy_id: string;
+        due_date: number;
+      }>(
+        "SELECT status, return_date, copy_id, due_date FROM borrow_requests WHERE id = ?",
+        requestId,
+      );
+      expect(row).toEqual({
+        status: "approved",
+        return_date: null,
+        copy_id: copyIds[0],
+        due_date: before.due_date,
+      });
+      expect(await activeLoansOn(copyIds[0])).toHaveLength(1);
+    });
+
+    it("is refused once the copy has gone to another reader", async () => {
+      const { bookId, copyIds, requestId } = await approvedLoan();
+      await giveBack(requestId);
+      const next = await pendingRequest(bookId, "ben");
+      await approve(next, copyIds[0]);
+
+      expect(await undo(requestId)).toEqual(failure("el ejemplar ya salió con otro lector"));
+
+      expect((await requestsFor(bookId)).find((r) => r.id === requestId)?.status).toBe("returned");
+      expect(await activeLoansOn(copyIds[0])).toHaveLength(1);
+    });
+
+    it("is refused for a loan that was never returned", async () => {
+      const { requestId } = await approvedLoan();
+
+      expect(await undo(requestId)).toEqual(failure("no estaba devuelto"));
+    });
+
+    it("says so when Undo is pressed twice", async () => {
+      const { requestId } = await approvedLoan();
+      await giveBack(requestId);
+      expect(await undo(requestId)).toEqual(succeeded);
+
+      expect(await undo(requestId)).toEqual(failure("no estaba devuelto"));
+    });
+
+    it("refuses a loan that does not exist", async () => {
+      expect(await undo(crypto.randomUUID())).toEqual(failure("no existe"));
+    });
+
+    it("is refused for a reader", async () => {
+      const { requestId } = await approvedLoan();
+      await giveBack(requestId);
+
+      expect(await as("ana", () => reopenLoan({ requestId }), "user")).toMatchObject({
+        ok: false,
+      });
+    });
+  });
+
   it("leaves a copy in maintenance in maintenance", async () => {
     const { bookId, copyIds, requestId } = await approvedLoan();
     await testDb.db
@@ -533,16 +603,5 @@ describe("returning a loan", () => {
 
     expect(await copyStatus(copyIds[0])).toBe("maintenance");
     expect((await requestsFor(bookId))[0].status).toBe("returned");
-  });
-
-  it("still counts a returned loan as a borrow, and counts the return", async () => {
-    const { bookId, requestId } = await approvedLoan();
-    await giveBack(requestId);
-
-    const activity = (await getBookActivity()).find((book) => book.id === bookId);
-    expect(activity?.borrowCount).toBe(1);
-
-    const month = await getMonthlyActivity(new Date(Date.now() - 24 * 60 * 60 * 1000));
-    expect(month.reduce((sum, m) => sum + Number(m.returns), 0)).toBeGreaterThanOrEqual(1);
   });
 });

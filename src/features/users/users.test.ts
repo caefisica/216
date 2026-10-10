@@ -5,7 +5,7 @@ import { insertBook } from "@/lib/db/test-fixtures";
 import * as schema from "@/lib/db/schema";
 import { listPendingRequests } from "@/features/loans/repository";
 import { listUsers } from "./repository";
-import { suspendUserService, updateUserRoleService, updateUserProfileService } from "./service";
+import { updateUserRoleService, updateUserProfileService } from "./service";
 
 // Revalidation needs a Next.js request.
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
@@ -49,20 +49,18 @@ describe("changing roles", () => {
     expect(await roleOf("admin")).toBe("admin");
   });
 
-  it("refuses to suspend the caller", async () => {
-    await expect(suspendUserService("admin", "admin")).rejects.toThrow();
-    expect(await roleOf("admin")).toBe("admin");
-  });
-
   it("reports a user that does not exist instead of succeeding", async () => {
     await expect(updateUserRoleService("admin", "nobody", "user")).rejects.toThrow(
       "Usuario no encontrado.",
     );
   });
 
-  it("suspends another user", async () => {
-    await suspendUserService("admin", "reader");
+  it("suspends another user and lets them back in with the same change", async () => {
+    await updateUserRoleService("admin", "reader", "suspended");
     expect(await roleOf("reader")).toBe("suspended");
+
+    await updateUserRoleService("admin", "reader", "user");
+    expect(await roleOf("reader")).toBe("user");
   });
 });
 

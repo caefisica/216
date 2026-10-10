@@ -17,7 +17,9 @@ import { getDeskService } from "./service";
 import { LoanDesk } from "./components/loan-desk";
 
 // Client components read the router, which needs a mounted Next.js app.
-vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: () => {}, replace: () => {} }),
+}));
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
 // Session cookies need a Next.js request, so the session lookup is the only fake.
@@ -250,6 +252,50 @@ describe("the loan list", () => {
     expect(byTitle.items.map((item) => item.book.title)).toEqual(["Óptica aplicada"]);
     expect(byReader.items.map((item) => item.reader.name)).toEqual(["Lector ben"]);
   });
+
+  it("finds a loan from the code on the spine, as a scanner or a librarian types it", async () => {
+    const target = await insertBook({ title: "Electromagnetismo" });
+    const other = await insertBook({ title: "Termodinámica" });
+    await lend(target, 0, daysFromNow(3), "ana");
+    await lend(other, 0, daysFromNow(3), "ben");
+
+    const desk = await getDeskService("loans", 1, now, target.copies[0].code.toLowerCase());
+
+    expect(desk.items.map((item) => item.book.title)).toEqual(["Electromagnetismo"]);
+    expect(desk.total).toBe(1);
+  });
+
+  it("finds a request by the title or the reader", async () => {
+    const wanted = await insertBook({ title: "Relatividad" });
+    const other = await insertBook({ title: "Cuántica" });
+    await request(wanted.id, { userId: "ana" });
+    await request(other.id, { userId: "ben" });
+
+    const byTitle = await getDeskService("requests", 1, now, "relativ");
+    const byReader = await getDeskService("requests", 1, now, "Lector ben");
+
+    expect(byTitle.items.map((item) => item.book.title)).toEqual(["Relatividad"]);
+    expect(byReader.items.map((item) => item.book.title)).toEqual(["Cuántica"]);
+  });
+});
+
+describe("which list the desk opens on", () => {
+  it("opens on the requests when someone is waiting, and on the loans when nobody is", async () => {
+    const book = await insertBook();
+    await lend(book, 0, daysFromNow(3));
+    expect((await getDeskService(undefined, 1, now)).view).toBe("loans");
+
+    const waiting = await insertBook();
+    await request(waiting.id, { userId: "ben" });
+    expect((await getDeskService(undefined, 1, now)).view).toBe("requests");
+  });
+
+  it("keeps the list that was asked for", async () => {
+    const waiting = await insertBook();
+    await request(waiting.id);
+
+    expect((await getDeskService("loans", 1, now)).view).toBe("loans");
+  });
 });
 
 describe("paging", () => {
@@ -368,11 +414,9 @@ describe("the desk page", () => {
 
     expect(page).toContain("<h1");
     expect(page).toContain('aria-current="page"');
-    expect(page).toContain("<caption");
-    expect(page).toContain("Ejemplar para Física General");
-    expect(page).toContain("Ejemplar para Física General a nombre de Lector ana");
-    expect(page).toContain('aria-label="Aprobar Física General a nombre de Lector ana"');
-    expect(page).toContain('aria-label="Rechazar Física General a nombre de Lector ana"');
+    expect(page).toContain('aria-label="Ejemplar para Lector ana"');
+    expect(page).toContain('aria-label="Aprobar Física General para Lector ana"');
+    expect(page).toContain('aria-label="Rechazar Física General de Lector ana"');
     const options = [...page.matchAll(/<option value="[^"]+"( selected="")?>([^<]+)</g)];
     expect(options.map((option) => option[2])).toEqual([
       expect.stringContaining(book.copies[0].code),
@@ -393,7 +437,7 @@ describe("the desk page", () => {
     expect(page).toMatch(/Vencido hace 4 días/);
     expect(page).toContain("1 vencido<");
     expect(page).not.toContain("1 vencidos");
-    expect(page).toContain('aria-label="Devolver Atrasado a nombre de Lector ana"');
+    expect(page).toContain('aria-label="Devolver Atrasado de Lector ana"');
   });
 
   it("counts overdue loans in the plural", async () => {
@@ -403,10 +447,28 @@ describe("the desk page", () => {
 
     expect(await html({ view: "loans" })).toContain("2 vencidos<");
   });
-  it("says so when the queue is empty and falls back to the default view for a bad parameter", async () => {
+
+  it("says so when nothing is lent, and falls back to the default view for a bad parameter", async () => {
     const page = await html({ view: "nope", page: "-3" });
 
-    expect(page).toContain("No hay solicitudes pendientes.");
+    expect(page).toContain("No hay libros prestados");
+  });
+
+  it("opens on the requests when a reader is waiting", async () => {
+    const book = await insertBook({ title: "Esperando" });
+    await request(book.id);
+
+    const page = await html();
+
+    expect(page).toContain("Esperando");
+    expect(page).toContain('aria-label="Aprobar Esperando para Lector ana"');
+  });
+
+  it("offers a way out of a search that finds nothing", async () => {
+    const page = await html({ view: "loans", q: "zzz" });
+
+    expect(page).toContain("Nada coincide");
+    expect(page).toContain('href="/admin/loans?view=loans"');
   });
 
   it(
@@ -421,6 +483,7 @@ describe("the desk page", () => {
 
       expect(page).toContain("26–26 de 26");
       expect(page).toContain('href="/admin/loans?view=requests"');
+      expect(page).not.toContain("Siguientes");
     },
     SEED_TIMEOUT,
   );
@@ -436,31 +499,108 @@ describe("the real loan desk", () => {
     const desk = await getDeskService("loans", 1, now);
     render(createElement(LoanDesk, { desk }));
 
-    const rows = screen.getAllByRole("row").slice(1);
+    const rows = screen.getAllByRole("listitem");
     expect(within(rows[0]).getByText("Mostrador atrasado")).toBeTruthy();
     expect(within(rows[0]).getByText("Vencido hace 2 días")).toBeTruthy();
     expect(within(rows[1]).getByText("Mostrador vigente")).toBeTruthy();
   });
 
-  it("returns a loan through the row's return button", async () => {
+  async function statusOf(requestId: string) {
+    const [row] = await testDb.query<{ status: string; copy_id: string | null }>(
+      "SELECT status, copy_id FROM borrow_requests WHERE id = ?",
+      requestId,
+    );
+    return row;
+  }
+
+  it("returns a loan with one press of its button and no confirmation", async () => {
     const book = await insertBook({ title: "Devolución en mostrador" });
     const loan = await lend(book, 0, daysFromNow(2));
-    const desk = await getDeskService("loans", 1, now);
-    render(createElement(LoanDesk, { desk }));
+    render(createElement(LoanDesk, { desk: await getDeskService("loans", 1, now) }));
 
     fireEvent.click(
-      screen.getByRole("button", {
-        name: "Devolver Devolución en mostrador a nombre de Lector ana",
+      screen.getByRole("button", { name: "Devolver Devolución en mostrador de Lector ana" }),
+    );
+
+    await waitFor(async () => expect((await statusOf(loan.id)).status).toBe("returned"));
+  });
+
+  it("returns the only match when Enter is pressed in the search", async () => {
+    const target = await insertBook({ title: "Escaneado" });
+    const loan = await lend(target, 0, daysFromNow(2));
+    const other = await lend(await insertBook({ title: "Otro libro" }), 0, daysFromNow(2), "ben");
+    const desk = await getDeskService("loans", 1, now, target.copies[0].code);
+    render(createElement(LoanDesk, { desk }));
+
+    fireEvent.submit(screen.getByRole("search"));
+
+    await waitFor(async () => expect((await statusOf(loan.id)).status).toBe("returned"));
+    expect((await statusOf(other.id)).status).toBe("approved");
+  });
+
+  it("does nothing on Enter while several rows match", async () => {
+    const first = await lend(await insertBook({ title: "Física uno" }), 0, daysFromNow(2));
+    const second = await lend(await insertBook({ title: "Física dos" }), 0, daysFromNow(2), "ben");
+    render(createElement(LoanDesk, { desk: await getDeskService("loans", 1, now, "Física") }));
+
+    fireEvent.submit(screen.getByRole("search"));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect((await statusOf(first.id)).status).toBe("approved");
+    expect((await statusOf(second.id)).status).toBe("approved");
+  });
+
+  it("walks the return buttons with the arrow keys and focuses the search with a slash", async () => {
+    await lend(await insertBook({ title: "Primero" }), 0, daysFromNow(-5));
+    await lend(await insertBook({ title: "Segundo" }), 0, daysFromNow(2), "ben");
+    render(createElement(LoanDesk, { desk: await getDeskService("loans", 1, now) }));
+    const [first, second] = screen.getAllByRole("button", { name: /^Devolver / });
+
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowDown" });
+    expect(document.activeElement).toBe(second);
+    fireEvent.keyDown(second, { key: "ArrowUp" });
+    expect(document.activeElement).toBe(first);
+
+    fireEvent.keyDown(document.body, { key: "/" });
+    expect(document.activeElement).toBe(screen.getByRole("searchbox"));
+  });
+
+  it("approves a request with the copy the librarian picked", async () => {
+    const book = await insertBook({ title: "Pedido en mostrador", copies: 2 });
+    const pending = await request(book.id);
+    render(createElement(LoanDesk, { desk: await getDeskService("requests", 1, now) }));
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Ejemplar para Lector ana" }), {
+      target: { value: book.copies[1].id },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Aprobar Pedido en mostrador para Lector ana" }),
+    );
+
+    await waitFor(async () =>
+      expect(await statusOf(pending.id)).toEqual({
+        status: "approved",
+        copy_id: book.copies[1].id,
       }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Registrar devolución" }));
+  });
 
-    await waitFor(async () => {
-      const [row] = await testDb.query<{ status: string }>(
-        "SELECT status FROM borrow_requests WHERE id = ?",
-        loan.id,
-      );
-      expect(row.status).toBe("returned");
-    });
+  it("asks for a reason before rejecting, then rejects with it", async () => {
+    const book = await insertBook({ title: "Rechazado en mostrador" });
+    const pending = await request(book.id);
+    render(createElement(LoanDesk, { desk: await getDeskService("requests", 1, now) }));
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Rechazar Rechazado en mostrador de Lector ana" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Rechazar" }));
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect((await statusOf(pending.id)).status).toBe("pending");
+
+    fireEvent.change(screen.getByLabelText(/Motivo/), { target: { value: "Solo en sala" } });
+    fireEvent.click(screen.getByRole("button", { name: "Rechazar" }));
+
+    await waitFor(async () => expect((await statusOf(pending.id)).status).toBe("rejected"));
   });
 });

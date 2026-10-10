@@ -28,7 +28,6 @@ const facets = {
       children: [],
     },
   ],
-  cabinets: [],
   donors: [],
   copyHealth: { present: 0, maintenance: 0, missing: 0, unlabelled: 0, unplaced: 0 },
   locations: [],
@@ -39,10 +38,22 @@ beforeEach(() => {
   actionMocks.addCopy.mockReset();
   actionMocks.getBooks.mockReset();
   actionMocks.getBooks.mockResolvedValue({ ok: true, value: { items: [] } });
+  localStorage.clear();
 });
 afterEach(cleanup);
 
 describe("BookIntakeForm", () => {
+  it("opens on the category used for the last book", async () => {
+    localStorage.setItem("216:intake-category", categoryId);
+    render(<BookIntakeForm facets={facets} />);
+
+    await waitFor(() =>
+      expect((screen.getByLabelText("Categoría") as unknown as HTMLSelectElement).value).toBe(
+        categoryId,
+      ),
+    );
+  });
+
   it("shows inline validation and does not submit incomplete intake", () => {
     render(<BookIntakeForm facets={facets} />);
 
@@ -53,7 +64,7 @@ describe("BookIntakeForm", () => {
     expect(actionMocks.createIntakeBook).not.toHaveBeenCalled();
   });
 
-  it("shows the issued cover and code after a successful intake", async () => {
+  it("shows the code to write on the spine and starts the next book on the same category", async () => {
     actionMocks.createIntakeBook.mockResolvedValue({
       ok: true,
       value: { id: "book-id", code: "CAFG01", copyCode: "CAFG01.1", copies: 2 },
@@ -66,18 +77,18 @@ describe("BookIntakeForm", () => {
     fireEvent.change(screen.getByLabelText("Ejemplares"), { target: { value: "2" } });
     fireEvent.click(screen.getByRole("button", { name: "Registrar libro" }));
 
-    await waitFor(() => expect(screen.getByText("Libro registrado")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Escribe en el lomo")).toBeTruthy());
     expect(screen.getByText("CAFG01.1")).toBeTruthy();
-    expect(screen.getByRole("img", { name: /Portada generada de Mecánica/ })).toBeTruthy();
     expect(actionMocks.createIntakeBook).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Mecánica", copies: 2, categoryId }),
     );
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Registrar otro" }));
 
-    fireEvent.click(screen.getByRole("button", { name: "Agregar otro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Registrar otro" }));
 
     expect((screen.getByLabelText("Título") as HTMLInputElement).value).toBe("");
     expect((screen.getByLabelText("Autor") as HTMLInputElement).value).toBe("");
-    expect((screen.getByLabelText("ISBN") as HTMLInputElement).value).toBe("");
+    expect((screen.getByLabelText(/ISBN/) as HTMLInputElement).value).toBe("");
     expect((screen.getByLabelText("Categoría") as unknown as HTMLSelectElement).value).toBe(
       categoryId,
     );
@@ -109,10 +120,10 @@ describe("BookIntakeForm", () => {
 
     fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Mecánica" } });
 
-    const button = await screen.findByRole("button", { name: "Agregar un ejemplar" });
+    const button = await screen.findByRole("button", { name: "Agregar ejemplar" });
     fireEvent.click(button);
 
-    await waitFor(() => expect(screen.getByText("Ejemplar CAFG01.2 agregado")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Ejemplar CAFG01.2")).toBeTruthy());
     expect(actionMocks.addCopy).toHaveBeenCalledWith(
       expect.objectContaining({ bookId: "existing-book", origin: "copy", pieces: 1 }),
     );
