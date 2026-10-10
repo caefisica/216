@@ -44,7 +44,9 @@ desk opens on the requests when any are pending and on the loans otherwise. When
 a loan is overdue, the tabs say how many.
 
 The search field has focus when the desk opens. It narrows the current list by
-reader name or email, title, or copy code, and the text is kept in `?q=`.
+reader name or email, title or author, and the text is kept in `?q=`. On
+**Prestados** it also matches the code of the lent copy; a request has no copy
+yet.
 
 - **Solicitudes** lists `pending` requests oldest first: title and code, reader,
   note, the date requested and the decision. The decision names the copy to
@@ -72,12 +74,12 @@ in [Architecture](architecture.md#shared-state); the desk does not repeat it.
 Dates are shown in the `America/Lima` time zone. The queries and their plans are
 in [database](database.md#loan-desk-queries).
 
-Below the `md` breakpoint each row stacks its decision under the text. Every
-text colour is at least 4.5:1 against its background, the borders of controls at
-least 3:1, every control has a visible or screen-reader label, state is never
-carried by colour alone, and the motion rules in `globals.css` apply. The
-buttons in a row name the title and the reader, so rows can be told apart by a
-screen reader.
+Below the `sm` breakpoint each row stacks its decision under the text. The
+approve and reject buttons name the title and the reader, and the copy select
+names the reader, so a screen reader can tell rows apart. The search field and
+the lists have labels. An overdue loan pairs a warning icon with its text, and
+the current tab is underlined, so state is never carried by colour alone. The
+colour, contrast and motion rules are in [design](design.md).
 
 ## Favorites
 

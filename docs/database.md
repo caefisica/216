@@ -35,10 +35,7 @@ each file once, in order. A migration that fails is rolled back.
 
 Migrations change structure. The categories and the rest of the catalogue come
 from the seed below; production gets them as
-[a SQL file](deployment.md#load-the-catalogue). Migration `0003_catalogue`
-replaces the catalogue tables instead of altering them: it deletes the books,
-loans, favorites and images that existed, because the old rows have no copy to
-bind to. Run it on a database whose catalogue you can load again from the seed.
+[a SQL file](deployment.md#load-the-catalogue).
 
 ## Seeds
 
@@ -213,8 +210,8 @@ the page size, in
 
 A search (`?q=`) adds a third statement, `countLoanView`, because the count of a
 filtered view is not one of the three scalar counts. The search is a `LIKE` over
-the normalised title, the reader's name and email, and the copy code; the desk
-holds only the loans in progress, so it scans a small set.
+the normalised title and author, the reader's name and email, and the copy code;
+the desk holds only the loans in progress, so it scans a small set.
 
 `EXPLAIN QUERY PLAN` on a migrated database reports:
 

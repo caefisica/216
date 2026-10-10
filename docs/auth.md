@@ -11,7 +11,7 @@ provider.
 2. The account is created, a six-digit code valid for 10 minutes is stored, and
    the code is emailed.
 3. The user is signed in and sent to `/auth/verify-email` to enter the code. The
-   **Reenviar código** button on that page sends a new code. See
+   **Enviar otro código** button on that page sends a new code. See
    [Rate limits](#rate-limits) for how many codes are issued.
 
 If the email cannot be sent, the account is deleted, the user is not signed in
@@ -87,10 +87,9 @@ lifetime, on every GET or HEAD that carries one. For other methods it answers
 
 Limits are rows in the `rate_limit` table, shared by every Worker instance and
 kept across restarts. Each decision is one SQL statement, and D1 runs statements
-one at a time, so two simultaneous attempts cannot both take the last token. A
-Durable Object would not make this stricter. Expired rows are deleted on the
-next attempt. Instances compare their own clocks with the stored times, so the
-clocks need to agree to within about a second.
+one at a time, so two simultaneous attempts cannot both take the last token.
+Expired rows are deleted on the next attempt. Instances compare their own clocks
+with the stored times, so the clocks need to agree to within about a second.
 
 | Action                  | Limit                                                      |
 | ----------------------- | ---------------------------------------------------------- |
@@ -106,8 +105,9 @@ The IP is the `cf-connecting-ip` header that Cloudflare sets, else `unknown`.
 `x-forwarded-for` is not used, because the client can send any value. Sign-up
 attempts count even when the form is then rejected. The per-user wait applies
 only to emails that have an account, grows by one step on each try, stays at 300
-seconds after the ninth, and clears on a successful sign-in. A try inside the
-wait is refused even with the right password.
+seconds after the ninth, and clears on a successful sign-in or after 24 hours
+without an attempt. A try inside the wait is refused even with the right
+password.
 
 The verification-code window opens at the first code issued for an account. When
 it ends, the next request starts a new window of 3 codes.
@@ -130,17 +130,18 @@ admits a librarian or admin, and every action that creates, edits or deletes a
 book, an image, a location, a donor or a loan decision uses it. An `admin`
 passes every role check. A wrapper checks the session and role before it
 validates the input. The `/admin/loans`, `/admin/books/create`,
-`/admin/books/[id]` and `/admin/settings` pages call `requireStaffPage` and
-redirect users who are not a librarian or admin. The roles list on
-`/admin/settings` is read and rendered only for an admin.
+`/admin/books/[id]` and `/admin/settings` pages call `requireStaffPage` and send
+anyone who is not a verified librarian or admin to the home page. The roles list
+on `/admin/settings` is read and rendered only for an admin.
 
 No role acts before its email is verified, because anyone can sign up with any
 address. The wrapper refuses an unverified caller with the `unverified` code.
-The pages that need a session send an unverified user to `/auth/verify-email`.
-Reads that anyone may call (`getBooks`, `getBookById` and the home page) show an
-unverified account the same view as a visitor, without its favorites, and the
-book page hides staff controls from it. The profile page ("Mis libros") sends an
-unverified account to `/auth/verify-email`.
+The profile page ("Mis libros") sends an anonymous visitor to `/auth/signin` and
+an unverified account to `/auth/verify-email`; the book page links an unverified
+account there from the loan request panel. Reads that anyone may call
+(`getBooks`, `getBookById` and the home page) show an unverified account the
+same view as a visitor, without its favorites, and the book page hides staff
+controls from it.
 
 A wrapped action never throws to the browser. Production Next.js replaces the
 message of a thrown error, so the wrapper returns a result: `Ok(value)`, or

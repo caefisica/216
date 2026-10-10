@@ -51,10 +51,7 @@ bunx wrangler d1 execute DB --remote --file catalogue.sql
 `catalogue.sql` is ignored by git. It holds the categories, locations, donors,
 titles and copies of the register, and no accounts. Every insert skips rows that
 exist, so the file is safe to apply again and keeps edits the librarians made
-since. Run it after any migration that empties the catalogue, such as
-`0003_catalogue`, which deletes the books, loans, favorites and images, so
-export a copy first (see [Production database](#production-database)). What the
-seed holds is in [database](database.md#seeds).
+since. What the seed holds is in [database](database.md#seeds).
 
 ## Load the covers
 
@@ -95,19 +92,18 @@ To send to other users:
 2. Set `MAIL_FROM` in `wrangler.jsonc` to an address on it, such as
    `216 <no-reply@mail.example.com>`, and deploy again.
 
-Create the first admin with the command below. It needs no email.
-
 ## First admin
 
 ```bash
 bun run admin:create -- --email you@example.com --name "Your Name" --remote
 ```
 
-It asks for the password twice, or reads it from stdin when piped. The account
-is verified and has the admin role, so it signs in at `/auth/signin` without
-email. If the email already belongs to an account, that account is promoted and
-keeps its name; give a password to change it too. Leave out `--remote` to do the
-same in the local database.
+It writes through Wrangler, so it uses the `bunx wrangler login` from
+[Deploy](#deploy). It asks for the password twice, or reads it from stdin when
+piped. The account is verified and has the admin role, so it signs in at
+`/auth/signin` without email. If the email already belongs to an account, that
+account is promoted and keeps its name; give a password to change it too. Leave
+out `--remote` to do the same in the local database.
 
 ## Production database
 

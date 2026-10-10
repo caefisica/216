@@ -1,19 +1,20 @@
 # Configuration
 
-The app reads no environment variables at runtime. Everything it needs is a
-Cloudflare binding, a variable in [`wrangler.jsonc`](../wrangler.jsonc) or a
-Worker secret. Local-only settings go in `.env.local`, copied from
-[`.env.example`](../.env.example), and local secrets in `.dev.vars`, copied from
+The deployed app gets its settings from Cloudflare bindings, variables in
+[`wrangler.jsonc`](../wrangler.jsonc) and Worker secrets. Settings for the
+scripts go in `.env.local`, copied from [`.env.example`](../.env.example), and
+local secrets in `.dev.vars`, copied from
 [`.dev.vars.example`](../.dev.vars.example).
 
 ## Variables and secrets
 
-| Name             | Where                      | Read by                            | Purpose                                                                                                                 |
-| ---------------- | -------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `MAIL_FROM`      | `vars` in `wrangler.jsonc` | `src/features/auth/core/mailer.ts` | Sender of verification and password reset emails. `onboarding@resend.dev`, which reaches only the Resend account owner. |
-| `RESEND_API_KEY` | Worker secret, `.dev.vars` | `src/features/auth/core/mailer.ts` | Resend API key. Optional in development, where codes are logged.                                                        |
-| `SEED_PASSWORD`  | environment of `db:seed`   | `src/lib/db/seeds/demo.ts`         | Password of the demo accounts. Default `password123`. Optional.                                                         |
-| `NODE_ENV`       | set by Next.js             | cookies, mailer                    | `production` marks cookies `Secure` and makes a missing mail setting an error.                                          |
+| Name                      | Where                         | Read by                            | Purpose                                                                                                                 |
+| ------------------------- | ----------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `MAIL_FROM`               | `vars` in `wrangler.jsonc`    | `src/features/auth/core/mailer.ts` | Sender of verification and password reset emails. `onboarding@resend.dev`, which reaches only the Resend account owner. |
+| `RESEND_API_KEY`          | Worker secret, `.dev.vars`    | `src/features/auth/core/mailer.ts` | Resend API key. Optional in development, where codes are logged.                                                        |
+| `SEED_PASSWORD`           | environment of `db:seed`      | `src/lib/db/seed.ts`               | Password of the demo accounts. Default `password123`. Optional.                                                         |
+| `OPEN_LIBRARY_SEARCH_URL` | environment of `covers:fetch` | `scripts/fetch-covers.ts`          | Open Library search endpoint. Optional; the default is the public one.                                                  |
+| `NODE_ENV`                | set by Next.js                | cookies, mailer                    | `production` marks cookies `Secure` and makes a missing mail setting an error.                                          |
 
 See [Email](auth.md#email).
 

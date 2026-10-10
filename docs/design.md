@@ -26,9 +26,14 @@ sizes and radii, so a class that is not defined there does not exist.
   toasts) and three container widths: `prose` (40rem), `page` (56rem) and `wide`
   (72rem).
 - Control height: `h-control` is 36px, and 44px on touch screens
-  (`pointer: coarse`). Every button, field, tab and row link uses it, so a touch
-  target is never smaller than 44px. The `pointer-fine:` variant shows hints
-  that only make sense with a keyboard.
+  (`pointer: coarse`). Buttons, fields, tabs, checkbox labels, `<summary>`
+  toggles and the header, footer, form and back links use it, as do links inside
+  a line of text that add `pointer-coarse:min-h-control`. Those targets are at
+  least 44px on a touch screen. Links inside a sentence keep the height of their
+  line: the about page, the borrow panel's sign-in, verify and "Ver mis libros"
+  links, the MDX pages (privacy and terms), and the reader's email in the loan
+  desk. The `pointer-fine:` variant shows hints that only make sense with a
+  keyboard.
 - Motion: transitions are short, and `prefers-reduced-motion` turns them off.
   Focus is a two-pixel outline in the `ring` colour on every focusable element.
 

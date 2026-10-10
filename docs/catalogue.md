@@ -23,7 +23,8 @@ state. A title with an original and two photocopies is one `books` row and three
 this?" is about a copy, "who likes this?" is about a title.
 
 `books`: `code` (unique, such as `CAFG.1.05`), `category_id`, `title`, `author`,
-`isbn`, `description`, `image_url`, `search` (normalised title and author, see
+`isbn`, `description`, `image_url`, `search` (normalised title and author),
+`title_key` (the normalised title the list is ordered by, see
 [Search and filters](#search-and-filters)) and `next_copy`.
 
 `copies`:
@@ -80,25 +81,14 @@ the label on the spine and the category stays the shelf logic.
 
 `categories` has `parent_id` (null for top level), `code` (`FG`, or `FG.1` for a
 subcategory), `name` and `next_number`. A book belongs to exactly one category,
-and only a category with no subcategories can hold books. The depth is two and
-the app enforces it.
+and the app refuses to put a book in a category that has subcategories. The
+depth is two: the catalogue load writes two levels and no screen adds a
+category.
 
 The register numbers subcategories but does not name them. The converter
 proposes names from the titles under each number; they are the `proposal` rows
-of the review file and the librarians confirm or rename them. The proposals are:
-
-| Code | Name                                 |
-| ---- | ------------------------------------ |
-| FG.0 | Introducción y física recreativa     |
-| FG.1 | Mecánica (Física 1)                  |
-| FG.2 | Ondas, fluidos y calor (Física 2)    |
-| FG.3 | Electricidad y magnetismo (Física 3) |
-| FG.4 | Óptica                               |
-| FG.5 | Textos completos y problemas         |
-| CL.1 | Cálculo diferencial                  |
-| CL.2 | Cálculo integral                     |
-| CL.3 | Cálculo vectorial                    |
-| CL.4 | Análisis matemático y tratados       |
+of [`catalogue.review.csv`](../src/lib/db/seeds/catalogue.review.csv), and the
+librarians confirm or rename them.
 
 ## Locations
 
@@ -152,9 +142,8 @@ request is `pending` or `rejected` and set when it is approved. See
 - A check constraint rejects `approved` or `returned` rows without a `copy_id`.
 - A composite foreign key `(book_id, copy_id)` to `copies (book_id, id)` stops a
   loan from naming a copy of another title.
-- A unique index on `copy_id` where `status = 'approved'` allows one active loan
-  per copy. Two approvals of the same copy cannot both succeed.
-- A unique index allows one pending request per user and title.
+- Unique indexes allow one active loan per copy and one pending request per user
+  and title; see [database](database.md#tables).
 
 A copy is **lendable** when `status = 'present'` and no approved loan has its
 `copy_id`. A title is **available** when it has at least one lendable copy, and
@@ -191,19 +180,17 @@ favorite mark are computed inside the page query, never per row from the client.
   (`code >= 'CAFG.1.05' AND code < 'CAFG.1.06'`), which the unique code indexes
   serve; a `LIKE` would not use them.
 - Filters are URL search parameters, so a filtered list can be shared.
-- Full-text search is not used. The catalogue holds hundreds of titles, and an
-  FTS table adds a virtual table and sync triggers for no gain at that size.
 - The unlabelled and unplaced filters are for staff. For any other caller the
   service ignores them ([`getBooksService`](../src/features/books/service.ts)).
 - The availability and unplaced filters are semi-joins on `copies`
   (`book_id IN (SELECT book_id FROM copies WHERE …)`) that use
   `copies_location_idx` and `copies_book_number_unique`. A lendable copy is
   found through the partial index `borrow_requests_active_copy_idx`.
-- Two scans remain, both on purpose. A text search scans `books.search`, because
-  `LIKE '%word%'` has a leading wildcard that no B-tree serves; at a few hundred
-  titles that is a read of one narrow column. The staff-only _Sin etiqueta_
-  filter scans `copies` for `labelled = 0`, a small share of the rows, which an
-  index would not make cheaper. The tests in
+- Two scans remain. A text search scans `books.search`, because `LIKE '%word%'`
+  has a leading wildcard that no B-tree serves; at a few hundred titles that is
+  a read of one narrow column. The staff-only _Sin etiqueta_ filter scans
+  `copies` for `labelled = 0`, a small share of the rows, which an index would
+  not make cheaper. The tests in
   [`query-plans.test.ts`](../src/features/books/query-plans.test.ts) fail if any
   other filter starts scanning `copies`, `borrow_requests`, `user_book_hearts`
   or `categories`.
@@ -235,7 +222,7 @@ the file holds no contact data.
 `/` is one search field and the list under it
 ([`catalogue-search.tsx`](../src/features/books/components/catalogue-search.tsx),
 [`book-list.tsx`](../src/features/books/components/book-list.tsx)). The field is
-the largest control on the page and has focus on `/`.
+the largest control on the page.
 
 - One row per title: cover, title, author, category and availability
   (_Disponible_, _2 de 3 disponibles_, _No disponible_ or _Sin ejemplares_).
@@ -250,7 +237,7 @@ the largest control on the page and has focus on `/`.
 - When nothing matches, the empty state suggests fewer words and offers _Quitar
   filtros_. An empty catalogue says so.
 - The list stays on screen, dimmed, while a new search loads.
-- `/` focuses the search from anywhere on the page.
+- `/` focuses the search from anywhere on the page outside a field.
 
 ### Detail
 

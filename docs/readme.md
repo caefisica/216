@@ -15,4 +15,4 @@
 7. [Design](design.md): the interface tokens, primitives, patterns and covers.
 
 The code map is in [architecture](architecture.md). Setup and checks for
-contributors are in [contributing](../contributing.md).
+contributors are in [contributing](../.github/contributing.md).

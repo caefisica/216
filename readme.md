@@ -50,34 +50,10 @@ password `password123`. Demo accounts are listed in
 - Sign up and confirm the account with a six-digit code, and reset a password
   with an emailed code. If the email cannot be sent, the signup is not created.
 
-## Configuration
-
-| Name             | Description                                            |
-| ---------------- | ------------------------------------------------------ |
-| `SEED_PASSWORD`  | Password for demo accounts (default: `password123`)    |
-| `MAIL_FROM`      | Sender address for outgoing email, in `wrangler.jsonc` |
-| `RESEND_API_KEY` | Resend API key, a Worker secret (`.dev.vars` locally)  |
-
-On Cloudflare the database is the `DB` D1 binding, images are in the
-`_216_storage` R2 binding and email goes through the Resend API. The sender is
-`onboarding@resend.dev`, which delivers only to the Resend account owner.
-Without a key, codes are printed to the server log in development. In
-production, sending either email fails until `RESEND_API_KEY` is set. See
-[configuration](docs/configuration.md) and [deployment](docs/deployment.md).
-
 ## Documentation
 
 - [Manual](docs/readme.md): database, catalogue, configuration, deployment,
   accounts and roles, borrowing.
 - [Architecture](docs/architecture.md): the code map.
 - [Design](docs/design.md): the public interface system and cover pipeline.
-- [Contributing](contributing.md): setup, checks and conventions.
-
-## Tests
-
-```bash
-mise run check   # format, lint, type check and tests
-```
-
-The database tests run against a real local D1 database in a temporary
-directory. They need no Docker and no server.
+- [Contributing](.github/contributing.md): setup, checks and conventions.
