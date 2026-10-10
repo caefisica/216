@@ -1,8 +1,21 @@
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
+import { Empty } from "@/components/ui/empty";
+import { Page } from "@/components/ui/page";
+
 export function NotFoundState() {
   return (
-    <div className="container mx-auto px-6 py-8 text-center">
-      <h1 className="text-2xl font-bold">Título no encontrado</h1>
-      <p className="mt-2 text-muted-foreground">El título no existe o fue retirado del catálogo.</p>
-    </div>
+    <Page width="prose">
+      <Empty
+        title="No encontramos este libro"
+        action={
+          <Link href="/" className={buttonVariants({ variant: "secondary" })}>
+            Buscar en el catálogo
+          </Link>
+        }
+      >
+        Puede que el enlace esté incompleto o que el libro ya no esté en el catálogo.
+      </Empty>
+    </Page>
   );
 }

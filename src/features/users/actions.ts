@@ -1,14 +1,9 @@
 "use server";
 
 import { z } from "zod";
-import {
-  protectedAction,
-  authenticatedAction,
-  staffAction,
-} from "@/features/auth/protected-action";
+import { protectedAction, authenticatedAction } from "@/features/auth/protected-action";
 import { Role } from "@/lib/db/schema";
-import { listUsers } from "./repository";
-import { updateUserProfileService, updateUserRoleService, suspendUserService } from "./service";
+import { updateUserProfileService, updateUserRoleService } from "./service";
 
 const UserIdSchema = z.string().min(1);
 
@@ -21,10 +16,6 @@ const ProfileUpdateSchema = z.object({
   name: z.string().trim().min(1).max(100).optional(),
 });
 
-export const getAllUsers = staffAction(z.void(), async () => {
-  return listUsers();
-});
-
 export const updateUserProfile = authenticatedAction(ProfileUpdateSchema, async (data, session) => {
   return updateUserProfileService(session.user.id, data.name);
 });
@@ -34,13 +25,5 @@ export const updateUserRole = protectedAction(
   ["admin"],
   async ({ userId, newRole }, session) => {
     return updateUserRoleService(session.user.id, userId, newRole);
-  },
-);
-
-export const suspendUser = protectedAction(
-  z.object({ userId: UserIdSchema }),
-  ["admin"],
-  async ({ userId }, session) => {
-    return suspendUserService(session.user.id, userId);
   },
 );

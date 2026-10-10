@@ -29,7 +29,6 @@ import {
 import { setHeartRecord } from "./repository";
 import {
   getBooksService,
-  getFacetsService,
   getBookByIdService,
   uploadBookImageService,
   deleteBookImageService,
@@ -81,10 +80,6 @@ export const createBorrowRequest = authenticatedAction(
   BorrowRequestSchema,
   async ({ bookId, note }, session) => createBorrowRequestService(bookId, session.user.id, note),
 );
-
-export async function getFacets() {
-  return getFacetsService();
-}
 
 export const uploadBookImage = staffAction(ImageUploadSchema, async (file) =>
   uploadBookImageService(file),

@@ -1,8 +1,18 @@
 "use server";
 
 import { staffAction } from "@/features/auth/protected-action";
-import { ApproveRequestSchema, RejectRequestSchema, ReturnLoanSchema } from "./schemas";
-import { approveRequestService, rejectRequestService, returnLoanService } from "./service";
+import {
+  ApproveRequestSchema,
+  ReopenLoanSchema,
+  RejectRequestSchema,
+  ReturnLoanSchema,
+} from "./schemas";
+import {
+  approveRequestService,
+  reopenLoanService,
+  rejectRequestService,
+  returnLoanService,
+} from "./service";
 
 export const approveRequest = staffAction(
   ApproveRequestSchema,
@@ -18,4 +28,8 @@ export const rejectRequest = staffAction(
 
 export const returnLoan = staffAction(ReturnLoanSchema, async ({ requestId }) =>
   returnLoanService(requestId),
+);
+
+export const reopenLoan = staffAction(ReopenLoanSchema, async ({ requestId }) =>
+  reopenLoanService(requestId),
 );

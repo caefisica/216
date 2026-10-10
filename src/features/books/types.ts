@@ -35,7 +35,6 @@ export interface BookListItem extends BookSummary {
   category: CategoryRef;
   copyCount: number;
   lendableCount: number;
-  heartsCount: number;
   isHearted: boolean;
 }
 
@@ -52,6 +51,14 @@ export interface CopyView extends Copy {
   donor: Pick<Donor, "id" | "name"> | null;
   /** The approved loan that holds this copy, if any. */
   loanId: string | null;
+  /** When that loan is due back. */
+  dueDate: Date | null;
+}
+
+/** The reader's own open request for a title: waiting for a librarian, or on loan. */
+export interface ReaderRequest {
+  status: "pending" | "approved";
+  dueDate: Date | null;
 }
 
 export interface BookDetailed extends Book {
@@ -61,7 +68,8 @@ export interface BookDetailed extends Book {
   copies: CopyView[];
   lendableCount: number;
   isHearted: boolean;
-  heartsCount: number;
+  /** Null for a visitor and for a reader with no open request. */
+  request: ReaderRequest | null;
 }
 
 /** A node of the category tree with the number of titles under it. */
@@ -76,7 +84,6 @@ export interface LocationOption extends Location {
 
 export interface CatalogueFacets {
   categories: CategoryNode[];
-  cabinets: { cabinet: string; shelves: number[] }[];
   donors: { id: string; name: string; motivation: string | null; copyCount: number }[];
   copyHealth: {
     present: number;

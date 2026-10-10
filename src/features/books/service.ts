@@ -13,6 +13,7 @@ import {
   listBooks,
   listFavoriteBooks,
   getBookById,
+  getReaderRequest,
   listBookImagesByBookId,
   listCopies,
   getBookImageById,
@@ -58,13 +59,18 @@ export async function getBookByIdService(id: string, userId?: string | null) {
   const book = await getBookById(id, userId);
   if (!book) return Err("not_found");
 
-  const [images, copies] = await Promise.all([listBookImagesByBookId(id), listCopies(id)]);
+  const [images, copies, request] = await Promise.all([
+    listBookImagesByBookId(id),
+    listCopies(id),
+    userId ? getReaderRequest(id, userId) : null,
+  ]);
 
   const detailed: BookDetailed = {
     ...book,
     images,
     coverImage: images.find((img) => img.isCover) || images[0],
     copies,
+    request,
   };
   return Ok(detailed);
 }

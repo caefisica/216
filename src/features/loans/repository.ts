@@ -16,6 +16,7 @@ function searchCondition(query: string) {
     sql`${books.search} LIKE ${normalized} ESCAPE '\\'`,
     sql`lower(${user.name}) LIKE ${value} ESCAPE '\\'`,
     sql`lower(${user.email}) LIKE ${value} ESCAPE '\\'`,
+    sql`lower(${copies.code}) LIKE ${value} ESCAPE '\\'`,
   );
 }
 
@@ -71,6 +72,7 @@ export function pendingRequestsQuery(
     .from(borrowRequests)
     .innerJoin(books, eq(borrowRequests.bookId, books.id))
     .innerJoin(user, eq(borrowRequests.userId, user.id))
+    .leftJoin(copies, eq(borrowRequests.copyId, copies.id))
     .where(query ? and(isPending, searchCondition(query)) : isPending)
     .orderBy(asc(borrowRequests.requestDate), asc(borrowRequests.id))
     .limit(page.limit)
@@ -133,6 +135,7 @@ export async function countLoanView(view: "requests" | "loans", query: string) {
     .from(borrowRequests)
     .innerJoin(books, eq(borrowRequests.bookId, books.id))
     .innerJoin(user, eq(borrowRequests.userId, user.id))
+    .leftJoin(copies, eq(borrowRequests.copyId, copies.id))
     .where(and(viewCondition(view), searchCondition(query)));
   return row?.count ?? 0;
 }
@@ -202,6 +205,20 @@ export async function rejectPendingRequest(
     })
     .where(and(eq(borrowRequests.id, requestId), isPending))
     .returning({ id: borrowRequests.id });
+  return rows.length > 0;
+}
+
+/**
+ * Reopens a returned loan only while its copy remains free. The unique active-loan index makes a
+ * concurrent loan a no-op, so the caller can report that the undo was refused.
+ */
+export async function reopenReturnedLoan(requestId: string) {
+  const db = await getDb();
+  const rows = await db.all(sql`
+    UPDATE OR IGNORE ${borrowRequests}
+    SET "status" = 'approved', "return_date" = NULL, "updated_at" = ${Date.now()}
+    WHERE "id" = ${requestId} AND "status" = 'returned'
+    RETURNING "id"`);
   return rows.length > 0;
 }
 

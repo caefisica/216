@@ -67,6 +67,5 @@ export async function listDonorGifts() {
   return {
     donors: donorGroups,
     totalCopies: donorGroups.reduce((total, donor) => total + donor.copyCount, 0),
-    totalDonors: donorGroups.length,
   };
 }

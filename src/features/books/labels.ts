@@ -24,9 +24,3 @@ export function locationLabel(
   const place = `${location.cabinet} · estante ${location.shelf} · tramo ${location.bay}`;
   return categoryCode ? `${place} (${categoryCode})` : place;
 }
-
-export function availabilityLabel(lendable: number, total: number) {
-  if (total === 0) return "Sin ejemplares";
-  if (lendable === 0) return "No disponible";
-  return total === 1 ? "Disponible" : `Disponible ${lendable}/${total}`;
-}

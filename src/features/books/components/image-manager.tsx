@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Loader2, Star, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImageDropzone } from "@/components/ui/image-dropzone";
 import { toast, toastActionError } from "@/hooks/use-toast";
@@ -42,7 +41,7 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
           return;
         }
       }
-      toast({ title: "Imágenes agregadas" });
+      toast({ title: "Fotos agregadas" });
     } finally {
       setUploading(false);
       router.refresh();
@@ -65,61 +64,52 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
       toastActionError(result.error);
       return;
     }
-    toast({ title: "Imagen eliminada" });
+    toast({ title: "Foto eliminada" });
     router.refresh();
   };
 
   return (
-    <div className="surface space-y-3 p-5 sm:p-8">
-      <h2 className="text-lg font-semibold">Imágenes ({images.length})</h2>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {images.map((image) => (
-          <div key={image.id} className="space-y-2">
-            <div className="relative aspect-3/4 overflow-hidden rounded border border-border bg-surface-muted">
-              <Image src={image.imageUrl} alt="" fill className="object-cover" />
-            </div>
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant={image.isCover ? "secondary" : "outline"}
-                className="flex-1"
-                disabled={image.isCover}
-                onClick={() => makeCover(image.id)}
-              >
-                <Star className="mr-1 h-3 w-3" />
-                {image.isCover ? "Portada" : "Usar de portada"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                aria-label="Eliminar imagen"
-                onClick={() => remove(image.id)}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        ))}
-        <div className="relative">
-          <ImageDropzone
-            onDrop={upload}
-            onRejection={() =>
-              toast({
-                title: "Archivo rechazado",
-                description: "Sube solo imágenes JPEG, PNG o WebP.",
-                variant: "destructive",
-              })
-            }
-            label="Subir imágenes"
-            className="aspect-3/4 p-4"
-          />
-          {uploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-surface/70">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
-          )}
-        </div>
+    <section aria-labelledby="fotos" className="grid gap-3">
+      <h2 id="fotos" className="text-lg font-semibold">
+        Fotos ({images.length})
+      </h2>
+      {images.length > 0 && (
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {images.map((image) => (
+            <li key={image.id} className="grid gap-2">
+              <div className="relative aspect-3/4 overflow-hidden rounded-sm border bg-sunken">
+                <Image src={image.imageUrl} alt="" fill sizes="160px" className="object-cover" />
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  variant="secondary"
+                  className="flex-1 px-2"
+                  disabled={image.isCover}
+                  onClick={() => makeCover(image.id)}
+                >
+                  {image.isCover ? "Portada" : "Usar de portada"}
+                </Button>
+                <Button variant="quiet" className="px-2" onClick={() => remove(image.id)}>
+                  Quitar<span className="sr-only"> foto</span>
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="relative">
+        <ImageDropzone
+          onDrop={upload}
+          onRejection={() =>
+            toast({
+              title: "Archivo rechazado",
+              description: "Sube solo imágenes JPEG, PNG o WebP.",
+              variant: "destructive",
+            })
+          }
+          label={uploading ? "Subiendo…" : "Añadir fotos"}
+        />
       </div>
-    </div>
+    </section>
   );
 }

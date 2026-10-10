@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NotFoundState } from "@/app/books/[id]/components/not-found-state";
+import { Page } from "@/components/ui/page";
 import { isErr } from "@/lib/result";
 import { getBookByIdService, getFacetsService } from "../service";
 import { BookEditor } from "./book-editor";
@@ -14,19 +15,27 @@ export async function BookEditorLoader({ bookId }: { bookId?: string }) {
 
   if (!book) {
     return (
-      <div className="container mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
+      <Page width="prose">
+        <h1 className="mb-6 text-xl font-semibold">Registrar libro</h1>
         <BookIntakeForm facets={facets} />
-      </div>
+      </Page>
     );
   }
   if (isErr(book)) return <NotFoundState />;
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-4 px-3 py-5 sm:px-6 sm:py-8">
-      <Link href={`/books/${book.value.id}`} className="text-sm text-primary hover:underline">
-        ← {book.value.code} · {book.value.title}
+    <Page width="prose">
+      <Link
+        href={`/books/${book.value.id}`}
+        className="inline-flex min-h-control items-center text-muted-foreground underline-offset-2 hover:underline"
+      >
+        ← {book.value.title}
       </Link>
+      <h1 className="mb-6 text-xl font-semibold">
+        Editar libro{" "}
+        <span className="ml-2 font-mono text-sm text-muted-foreground">{book.value.code}</span>
+      </h1>
       <BookEditor key={book.value.id} facets={facets} book={book.value} />
-    </div>
+    </Page>
   );
 }

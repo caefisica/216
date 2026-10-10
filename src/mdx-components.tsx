@@ -1,95 +1,32 @@
-import { ComponentPropsWithoutRef } from "react";
+import type { ComponentPropsWithoutRef } from "react";
 import Link from "next/link";
 
-type HeadingProps = ComponentPropsWithoutRef<"h1">;
-type ParagraphProps = ComponentPropsWithoutRef<"p">;
-type ListProps = ComponentPropsWithoutRef<"ul">;
-type ListItemProps = ComponentPropsWithoutRef<"li">;
-type AnchorProps = ComponentPropsWithoutRef<"a">;
-type BlockquoteProps = ComponentPropsWithoutRef<"blockquote">;
+const linkClass = "text-link underline underline-offset-2";
 
 const components = {
-  h1: ({ children, ...props }: HeadingProps) => (
-    <h1 className="font-medium pt-12 mb-0" {...props}>
-      {children}
-    </h1>
+  h1: (props: ComponentPropsWithoutRef<"h1">) => (
+    <h1 className="font-serif text-2xl font-semibold" {...props} />
   ),
-  h2: ({ children, ...props }: HeadingProps) => (
-    <h2 className="mt-8 mb-3 font-medium text-muted-foreground" {...props}>
-      {children}
-    </h2>
+  h2: (props: ComponentPropsWithoutRef<"h2">) => (
+    <h2 className="mt-4 text-lg font-semibold" {...props} />
   ),
-  h3: ({ children, ...props }: HeadingProps) => (
-    <h3 className="mt-8 mb-3 font-medium text-muted-foreground" {...props}>
-      {children}
-    </h3>
+  p: (props: ComponentPropsWithoutRef<"p">) => <p {...props} />,
+  ul: (props: ComponentPropsWithoutRef<"ul">) => (
+    <ul className="grid list-disc gap-1 pl-5" {...props} />
   ),
-  h4: ({ children, ...props }: HeadingProps) => (
-    <h4 className="font-medium" {...props}>
-      {children}
-    </h4>
+  ol: (props: ComponentPropsWithoutRef<"ol">) => (
+    <ol className="grid list-decimal gap-1 pl-5" {...props} />
   ),
-  p: (props: ParagraphProps) => <p className="leading-snug text-muted-foreground" {...props} />,
-  ol: (props: ListProps) => (
-    <ol className="list-decimal space-y-2 pl-5 text-muted-foreground" {...props} />
-  ),
-  ul: (props: ListProps) => (
-    <ul className="list-disc space-y-1 pl-5 text-muted-foreground" {...props} />
-  ),
-  li: (props: ListItemProps) => <li className="pl-1" {...props} />,
-  em: (props: ComponentPropsWithoutRef<"em">) => <em className="font-medium" {...props} />,
-  strong: (props: ComponentPropsWithoutRef<"strong">) => (
-    <strong className="font-medium" {...props} />
-  ),
-  a: ({ href, children, ...props }: AnchorProps) => {
-    const className =
-      "text-primary underline decoration-border underline-offset-2 hover:text-primary/80";
-    if (href?.startsWith("/")) {
-      return (
-        <Link href={href} className={className} {...props}>
-          {children}
-        </Link>
-      );
-    }
-    if (href?.startsWith("#")) {
-      return (
-        <a href={href} className={className} {...props}>
-          {children}
-        </a>
-      );
-    }
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className} {...props}>
+  a: ({ href = "", children, ...props }: ComponentPropsWithoutRef<"a">) =>
+    href.startsWith("/") ? (
+      <Link href={href} className={linkClass}>
+        {children}
+      </Link>
+    ) : (
+      <a href={href} className={linkClass} {...props}>
         {children}
       </a>
-    );
-  },
-  Table: ({ data }: { data: { headers: string[]; rows: string[][] } }) => (
-    <table>
-      <thead>
-        <tr>
-          {data.headers.map((header, index) => (
-            <th key={index}>{header}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.rows.map((row, index) => (
-          <tr key={index}>
-            {row.map((cell, cellIndex) => (
-              <td key={cellIndex}>{cell}</td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  ),
-  blockquote: (props: BlockquoteProps) => (
-    <blockquote
-      className="ml-[0.075em] border-l-3 border-border pl-4 text-muted-foreground"
-      {...props}
-    />
-  ),
+    ),
 };
 
 declare global {

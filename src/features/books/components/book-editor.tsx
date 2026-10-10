@@ -2,18 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BookCover } from "@/components/catalogue/book-cover";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import { addCopy, createDonor, deleteBook, deleteCopy, updateBook, updateCopy } from "../actions";
 import { defaultLocation } from "../location";
 import { ORIGIN_LABELS } from "../labels";
 import { draftFromCopy, draftToInput, emptyDraft, findDonor, type CopyDraft } from "../copy-draft";
+import { ConfirmDelete } from "./confirm-delete";
 import { CopyForm } from "./copy-form";
 import { ImageManager } from "./image-manager";
 import type {
@@ -23,9 +20,6 @@ import type {
   CopyView,
   LocationOption,
 } from "../types";
-
-const selectClass =
-  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/25";
 
 interface BookEditorProps {
   facets: CatalogueFacets & { locations: LocationOption[] };
@@ -72,10 +66,6 @@ export function BookEditor({ facets, book }: BookEditorProps) {
 
   const setField = (patch: Partial<BookDraft>) => setFields((prev) => ({ ...prev, ...patch }));
 
-  const changeCategory = (categoryId: string) => {
-    setField({ categoryId });
-  };
-
   async function donorIdFor(name: string) {
     if (name.trim() === "") return { id: null };
     const known = findDonor(name, donors);
@@ -89,96 +79,62 @@ export function BookEditor({ facets, book }: BookEditorProps) {
     return { id: created.value.id };
   }
 
-  const bookInput = () => ({
-    title: fields.title,
-    author: fields.author,
-    isbn: fields.isbn,
-    description: fields.description,
-    categoryId: fields.categoryId,
-  });
-
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving(true);
     try {
-      const result = await updateBook({ id: book.id, ...bookInput() });
+      const result = await updateBook({ id: book.id, ...fields });
       if (isErr(result)) {
         toastActionError(result.error);
         return;
       }
-      toast({ title: "Libro actualizado" });
+      toast({ title: "Libro guardado" });
       router.refresh();
     } finally {
       setSaving(false);
     }
   };
 
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const handleDelete = async () => {
     const result = await deleteBook({ bookId: book.id });
     if (isErr(result)) {
       toastActionError(result.error);
       return;
     }
-    toast({ title: "Libro eliminado" });
+    toast({ title: "Libro eliminado", description: book.title });
     router.push("/");
     router.refresh();
   };
 
-  const form = (
-    <form onSubmit={handleUpdate} className="surface space-y-5 p-5 sm:p-8">
-      <div className="flex items-start gap-4">
-        <BookCover
-          title={fields.title || "Tu libro"}
-          author={fields.author || undefined}
-          category={leaves.get(fields.categoryId)?.name}
-          imageUrl={book.imageUrl}
-          priority
-          className="w-20 shrink-0 sm:w-24"
-        />
-        <div>
-          <p className="eyebrow">Ficha del libro</p>
-          <h2 className="mt-2 text-xl font-semibold">Datos del libro</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {book.imageUrl ? "Portada guardada" : "Portada generada"}
-          </p>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="md:col-span-2">
-          <Label htmlFor="book-title">Título</Label>
+  return (
+    <div className="grid gap-8">
+      <form onSubmit={handleUpdate} className="grid gap-4">
+        <Field label="Título">
           <Input
-            id="book-title"
             required
-            autoFocus
             value={fields.title}
-            onChange={(e) => setField({ title: e.target.value })}
+            onChange={(event) => setField({ title: event.target.value })}
           />
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Autor">
+            <Input
+              value={fields.author}
+              onChange={(event) => setField({ author: event.target.value })}
+            />
+          </Field>
+          <Field label="ISBN">
+            <Input
+              value={fields.isbn}
+              onChange={(event) => setField({ isbn: event.target.value })}
+            />
+          </Field>
         </div>
-        <div>
-          <Label htmlFor="book-author">Autor</Label>
-          <Input
-            id="book-author"
-            value={fields.author}
-            onChange={(e) => setField({ author: e.target.value })}
-          />
-        </div>
-        <div>
-          <Label htmlFor="book-isbn">ISBN</Label>
-          <Input
-            id="book-isbn"
-            value={fields.isbn}
-            onChange={(e) => setField({ isbn: e.target.value })}
-          />
-        </div>
-        <div className="md:col-span-2">
-          <Label htmlFor="book-category">Categoría</Label>
-          <select
-            id="book-category"
+        <Field label="Categoría" hint={`Cambiarla no cambia el código ${book.code}.`}>
+          <Select
             required
-            className={selectClass}
             value={fields.categoryId}
-            onChange={(e) => changeCategory(e.target.value)}
+            onChange={(event) => setField({ categoryId: event.target.value })}
           >
             <option value="">Elige una categoría</option>
             {facets.categories.map((node) =>
@@ -196,35 +152,21 @@ export function BookEditor({ facets, book }: BookEditorProps) {
                 </optgroup>
               ),
             )}
-          </select>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Cambiar la categoría no cambia el código {book.code}.
-          </p>
-        </div>
-        <div className="md:col-span-2">
-          <Label htmlFor="book-description">Descripción</Label>
+          </Select>
+        </Field>
+        <Field label="Descripción">
           <Textarea
-            id="book-description"
             value={fields.description}
-            onChange={(e) => setField({ description: e.target.value })}
+            onChange={(event) => setField({ description: event.target.value })}
           />
+        </Field>
+        <div>
+          <Button type="submit" variant="primary" disabled={saving}>
+            {saving ? "Guardando…" : "Guardar"}
+          </Button>
         </div>
-      </div>
+      </form>
 
-      <Button type="submit" disabled={saving}>
-        {saving ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Save className="mr-2 h-4 w-4" />
-        )}
-        Guardar cambios
-      </Button>
-    </form>
-  );
-
-  return (
-    <div className="space-y-6">
-      {form}
       <CopiesEditor
         book={book}
         locations={facets.locations}
@@ -232,27 +174,23 @@ export function BookEditor({ facets, book }: BookEditorProps) {
         category={leaves.get(book.categoryId)}
         donorIdFor={donorIdFor}
       />
+
       <ImageManager bookId={book.id} images={book.images} />
-      <div className="surface border-destructive/30 p-5 sm:p-8">
-        <h2 className="mb-2 text-lg font-semibold text-destructive">Eliminar libro</h2>
-        <p className="mb-3 text-sm text-muted-foreground">
-          Borra el libro con sus ejemplares, imágenes y préstamos. No se puede deshacer.
+
+      <section aria-labelledby="eliminar" className="grid justify-items-start gap-2 border-t pt-6">
+        <h2 id="eliminar" className="text-lg font-semibold">
+          Eliminar libro
+        </h2>
+        <p className="text-muted-foreground">
+          Borra el libro con sus ejemplares, fotos y préstamos.
         </p>
-        {confirmDelete ? (
-          <div className="flex gap-2">
-            <Button variant="destructive" onClick={handleDelete}>
-              Sí, eliminar {book.code}
-            </Button>
-            <Button variant="outline" onClick={() => setConfirmDelete(false)}>
-              Cancelar
-            </Button>
-          </div>
-        ) : (
-          <Button variant="outline" onClick={() => setConfirmDelete(true)}>
-            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-          </Button>
-        )}
-      </div>
+        <ConfirmDelete
+          label="Eliminar libro"
+          title={`¿Eliminar ${book.code}?`}
+          description={`${book.title} se borra con todos sus ejemplares, fotos y préstamos. No se puede deshacer.`}
+          onConfirm={handleDelete}
+        />
+      </section>
     </div>
   );
 }
@@ -270,7 +208,6 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
   const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState<CopyDraft>(emptyDraft());
   const [adding, setAdding] = useState(false);
-  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const open = (copy: CopyView) => {
@@ -292,6 +229,11 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
     );
   };
 
+  const close = () => {
+    setAdding(false);
+    setOpenId(null);
+  };
+
   const save = async () => {
     setSaving(true);
     try {
@@ -311,111 +253,103 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
           toastActionError(updated.error);
           return;
         }
-        toast({ title: "Ejemplar actualizado" });
+        toast({ title: "Ejemplar guardado" });
       }
-      setAdding(false);
-      setOpenId(null);
+      close();
       router.refresh();
     } finally {
       setSaving(false);
     }
   };
 
-  const remove = async (copyId: string) => {
-    const result = await deleteCopy({ copyId });
-    setConfirmId(null);
+  const remove = async (copy: CopyView) => {
+    const result = await deleteCopy({ copyId: copy.id });
     if (isErr(result)) {
       toastActionError(result.error);
       return;
     }
-    toast({ title: "Ejemplar eliminado" });
+    toast({ title: "Ejemplar eliminado", description: copy.code });
     router.refresh();
   };
 
-  return (
-    <div className="surface space-y-3 p-5 sm:p-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Ejemplares ({book.copies.length})</h2>
-        <Button size="sm" variant="outline" onClick={startAdding}>
-          <Plus className="mr-1 h-4 w-4" /> Agregar ejemplar
+  const form = (
+    <div className="grid gap-4">
+      <CopyForm
+        draft={draft}
+        onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
+        locations={locations}
+        donors={donors}
+      />
+      <div className="flex gap-2">
+        <Button variant="primary" onClick={save} disabled={saving}>
+          {adding ? "Registrar ejemplar" : "Guardar ejemplar"}
         </Button>
+        <Button variant="quiet" onClick={close}>
+          Cancelar
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <section aria-labelledby="ejemplares" className="grid gap-2">
+      <div className="flex items-center justify-between gap-4">
+        <h2 id="ejemplares" className="text-lg font-semibold">
+          Ejemplares ({book.copies.length})
+        </h2>
+        {!adding && (
+          <Button variant="secondary" onClick={startAdding}>
+            Agregar ejemplar
+          </Button>
+        )}
       </div>
 
       {book.copies.length === 0 && !adding && (
-        <p className="text-sm text-muted-foreground">
-          Este libro no tiene ejemplares. Agrega el primero para que se pueda prestar.
+        <p className="text-muted-foreground">
+          Sin ejemplares. Agrega el primero para que se pueda prestar.
         </p>
       )}
 
-      <ul className="divide-y">
-        {book.copies.map((copy) => (
-          <li key={copy.id} className="py-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span>
-                <span className="font-mono">{copy.code}</span>
-                <span className="ml-3 text-muted-foreground">
-                  {ORIGIN_LABELS[copy.origin]}
-                  {copy.volume ? ` · ${copy.volume}` : ""}
-                  {copy.loanId ? " · prestado" : ""}
-                  {!copy.labelled ? " · sin etiqueta" : ""}
-                </span>
-              </span>
-              <span className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => open(copy)}>
-                  Editar
-                </Button>
-                {confirmId === copy.id ? (
-                  <>
-                    <Button size="sm" variant="destructive" onClick={() => remove(copy.id)}>
-                      Confirmar
+      {book.copies.length > 0 && (
+        <ul className="divide-y border-y">
+          {book.copies.map((copy) => (
+            <li key={copy.id} className="py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="font-mono">{copy.code}</span>
+                  <span className="ml-3 text-muted-foreground">
+                    {ORIGIN_LABELS[copy.origin]}
+                    {copy.volume ? ` · tomo ${copy.volume}` : ""}
+                    {copy.loanId ? " · prestado" : ""}
+                    {!copy.labelled ? " · sin etiqueta" : ""}
+                  </span>
+                </div>
+                {openId !== copy.id && (
+                  <div className="flex gap-2">
+                    <Button variant="secondary" onClick={() => open(copy)}>
+                      Editar<span className="sr-only"> {copy.code}</span>
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setConfirmId(null)}>
-                      Cancelar
-                    </Button>
-                  </>
-                ) : (
-                  <Button size="sm" variant="outline" onClick={() => setConfirmId(copy.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <ConfirmDelete
+                      label="Eliminar"
+                      title={`¿Eliminar ${copy.code}?`}
+                      description="Se borra el ejemplar y su historial de préstamos. No se puede deshacer."
+                      onConfirm={() => remove(copy)}
+                    />
+                  </div>
                 )}
-              </span>
-            </div>
-            {openId === copy.id && (
-              <div className="mt-3 space-y-3">
-                <CopyForm
-                  draft={draft}
-                  onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
-                  locations={locations}
-                  donors={donors}
-                />
-                <Button size="sm" onClick={save} disabled={saving}>
-                  Guardar ejemplar
-                </Button>
               </div>
-            )}
-          </li>
-        ))}
-      </ul>
+              {openId === copy.id && <div className="mt-3">{form}</div>}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {adding && (
-        <div className="space-y-3 border-t pt-3">
-          <h3 className="text-base font-semibold">Nuevo ejemplar</h3>
-          <CopyForm
-            draft={draft}
-            onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
-            locations={locations}
-            donors={donors}
-          />
-          <div className="flex gap-2">
-            <Button size="sm" onClick={save} disabled={saving}>
-              Registrar ejemplar
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setAdding(false)}>
-              Cancelar
-            </Button>
-          </div>
+        <div className="grid gap-3 rounded-md bg-sunken p-4">
+          <h3 className="font-semibold">Nuevo ejemplar</h3>
+          {form}
         </div>
       )}
-    </div>
+    </section>
   );
 }

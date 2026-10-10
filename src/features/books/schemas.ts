@@ -10,14 +10,10 @@ export const SearchSchema = z.object({
   search: z.string().trim().max(100).optional(),
   /** A category code. A top-level code includes its subcategories. */
   category: z.string().max(20).optional(),
-  cabinet: z.string().max(60).optional(),
-  shelf: z.coerce.number().int().min(0).max(99).optional(),
-  donor: z.uuid().optional(),
-  availability: z.enum(["available", "unavailable"]).optional(),
+  availability: z.literal("available").optional(),
   /** Staff filters: a copy whose code is not on the spine yet, a copy with no place. */
   unlabelled: z.literal("1").optional(),
   unplaced: z.literal("1").optional(),
-  sort: z.enum(["title", "code"]).optional(),
   page: z.coerce.number().int().min(1).max(10_000).optional(),
 });
 

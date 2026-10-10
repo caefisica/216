@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/field";
 import { toast } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import { locationLabel } from "@/features/books/labels";
 import { approveRequest, rejectRequest } from "../actions";
-import { DESK_LIST_ID } from "../constants";
 import { RejectionReasonSchema } from "../schemas";
 import type { LendableCopy } from "../types";
+import { resumeDesk } from "./resume-desk";
 
 const copyOption = (copy: LendableCopy) =>
   [
@@ -22,7 +21,7 @@ const copyOption = (copy: LendableCopy) =>
     .filter(Boolean)
     .join(" · ");
 
-/** The copy field starts on the lowest-numbered lendable copy, so Enter approves without touching it. */
+/** The librarian is shown which copy to fetch. The lowest-numbered one is already chosen. */
 export function RequestActions({
   requestId,
   title,
@@ -35,14 +34,14 @@ export function RequestActions({
   copies: LendableCopy[];
 }) {
   const router = useRouter();
-  const copyId = useId();
-  const reasonId = useId();
-  const errorId = useId();
-  const rejectButton = useRef<HTMLButtonElement>(null);
   const reasonInput = useRef<HTMLInputElement>(null);
+  const rejectButton = useRef<HTMLButtonElement>(null);
+  const [copyId, setCopyId] = useState(copies[0]?.id ?? "");
   const [rejecting, setRejecting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const chosen = copies.find((copy) => copy.id === copyId) ?? copies[0];
 
   useEffect(() => {
     if (rejecting) reasonInput.current?.focus();
@@ -58,20 +57,18 @@ export function RequestActions({
     if (isErr(result)) {
       setError(result.error.message);
     } else {
-      toast({ title: done });
-      document.getElementById(DESK_LIST_ID)?.focus();
+      toast({ title: done, description: title });
+      resumeDesk();
     }
     router.refresh();
     setBusy(false);
   };
 
-  const approve = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const chosen = new FormData(event.currentTarget).get("copy");
-    if (busy || typeof chosen !== "string") return;
+  const approve = async () => {
+    if (busy || !chosen) return;
     setBusy(true);
     setError(null);
-    finish(await approveRequest({ requestId, copyId: chosen }), "Solicitud aprobada");
+    finish(await approveRequest({ requestId, copyId: chosen.id }), `Aprobado: ${chosen.code}`);
   };
 
   const reject = async (event: FormEvent<HTMLFormElement>) => {
@@ -88,47 +85,33 @@ export function RequestActions({
     finish(await rejectRequest({ requestId, reason: reason.data }), "Solicitud rechazada");
   };
 
-  const confirmOnEnter = (event: KeyboardEvent<HTMLSelectElement>) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      event.currentTarget.form?.requestSubmit();
-    }
-  };
-
   const message = error && (
-    <p id={errorId} role="alert" className="text-sm font-medium text-destructive">
+    <p role="alert" className="text-xs text-destructive">
       {error}
     </p>
   );
 
   if (rejecting) {
     return (
-      <form onSubmit={reject} className="flex flex-col gap-2">
-        <label htmlFor={reasonId} className="text-sm font-medium text-foreground">
-          Motivo del rechazo{" "}
-          <span className="font-normal text-muted-foreground">(lo ve el lector)</span>
+      <form onSubmit={reject} className="grid gap-2 sm:w-72">
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">
+            Motivo <span className="font-normal text-muted-foreground">(lo ve el lector)</span>
+          </span>
+          <Input
+            ref={reasonInput}
+            name="reason"
+            maxLength={300}
+            autoComplete="off"
+            onKeyDown={(event) => event.key === "Escape" && closeReject()}
+          />
         </label>
-        <Input
-          id={reasonId}
-          ref={reasonInput}
-          name="reason"
-          maxLength={300}
-          autoComplete="off"
-          className="border-input"
-          aria-describedby={error ? errorId : undefined}
-          onKeyDown={(event) => event.key === "Escape" && closeReject()}
-        />
         {message}
         <div className="flex gap-2">
-          <Button
-            type="submit"
-            variant="destructive"
-            className="h-11 flex-1 sm:flex-none"
-            disabled={busy}
-          >
-            <X /> Confirmar rechazo
+          <Button type="submit" variant="danger" disabled={busy}>
+            Rechazar
           </Button>
-          <Button type="button" variant="outline" className="h-11" onClick={closeReject}>
+          <Button type="button" variant="quiet" onClick={closeReject}>
             Cancelar
           </Button>
         </div>
@@ -137,60 +120,49 @@ export function RequestActions({
   }
 
   return (
-    <form
-      key={copies.map((copy) => copy.id).join()}
-      onSubmit={approve}
-      className="flex flex-col gap-2"
-    >
-      {copies.length === 0 ? (
-        <p className="text-sm text-foreground">
-          Ningún ejemplar disponible. Rechaza la solicitud o espera una devolución.
-        </p>
+    <div className="grid gap-2 sm:w-72">
+      {!chosen ? (
+        <p className="text-sm text-warning">Sin ejemplares libres. Espera una devolución.</p>
+      ) : copies.length > 1 ? (
+        <Select
+          aria-label={`Ejemplar para ${reader}`}
+          value={copyId}
+          onChange={(event) => setCopyId(event.target.value)}
+        >
+          {copies.map((copy) => (
+            <option key={copy.id} value={copy.id}>
+              {copyOption(copy)}
+            </option>
+          ))}
+        </Select>
       ) : (
-        <>
-          <label htmlFor={copyId} className="sr-only">
-            Ejemplar para {title} a nombre de {reader}
-          </label>
-          <select
-            id={copyId}
-            name="copy"
-            defaultValue={copies[0].id}
-            onKeyDown={confirmOnEnter}
-            aria-describedby={error ? errorId : undefined}
-            className="h-11 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            {copies.map((copy) => (
-              <option key={copy.id} value={copy.id}>
-                {copyOption(copy)}
-              </option>
-            ))}
-          </select>
-        </>
+        <p className="text-sm text-muted-foreground">{copyOption(chosen)}</p>
       )}
       {message}
       <div className="flex gap-2">
-        {copies.length > 0 && (
+        {chosen && (
           <Button
-            type="submit"
-            className="h-11 flex-1 sm:flex-none"
+            type="button"
+            variant="primary"
+            data-primary
             disabled={busy}
-            aria-label={`Aprobar ${title} a nombre de ${reader}`}
+            aria-label={`Aprobar ${title} para ${reader}`}
+            onClick={approve}
           >
-            <Check /> Aprobar
+            Aprobar
           </Button>
         )}
         <Button
           ref={rejectButton}
           type="button"
-          variant="outline"
-          className="h-11 flex-1 border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive sm:flex-none"
+          variant="quiet"
           disabled={busy}
-          aria-label={`Rechazar ${title} a nombre de ${reader}`}
+          aria-label={`Rechazar ${title} de ${reader}`}
           onClick={() => setRejecting(true)}
         >
-          <X /> Rechazar
+          Rechazar
         </Button>
       </div>
-    </form>
+    </div>
   );
 }

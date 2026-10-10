@@ -1,74 +1,55 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { requestPasswordResetAction } from "@/features/auth/actions/reset-password-request";
+import { Field, Input } from "@/components/ui/field";
 import { resetPasswordAction } from "@/features/auth/actions/reset-password";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-function SubmitButton({ idle, busy }: { idle: string; busy: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? busy : idle}
-    </Button>
-  );
-}
+import { requestPasswordResetAction } from "@/features/auth/actions/reset-password-request";
+import { AuthShell, FormError, SubmitButton, authLink } from "../auth-shell";
 
 function NewPasswordForm() {
   const [state, formAction] = useActionState(resetPasswordAction, null);
 
   return (
-    <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center">Nueva contraseña</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Si ese correo está registrado, te enviamos un código de 6 dígitos. Escríbelo junto con
-            tu nueva contraseña.
-          </p>
-          <form action={formAction} className="space-y-4">
-            {state?.error && (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {state.error}
-              </p>
-            )}
-            <div>
-              <Label htmlFor="code">Código</Label>
-              <Input
-                id="code"
-                name="code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                required
-                pattern="\d{6}"
-                maxLength={6}
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Nueva contraseña</Label>
-              <Input id="password" name="password" type="password" required minLength={8} />
-            </div>
-            <div>
-              <Label htmlFor="confirm">Confirmar contraseña</Label>
-              <Input id="confirm" name="confirm" type="password" required minLength={8} />
-            </div>
-            <SubmitButton idle="Actualizar contraseña" busy="Actualizando..." />
-          </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link href="/auth/signin" className="text-primary hover:underline">
-              Volver al inicio de sesión
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthShell
+      title="Nueva contraseña"
+      intro="Si ese correo está registrado, te enviamos un código de 6 dígitos."
+    >
+      <form action={formAction} className="grid gap-4">
+        <FormError message={state?.error} />
+        <Field label="Código">
+          <Input
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            required
+            autoFocus
+            pattern="\d{6}"
+            maxLength={6}
+            className="font-mono tracking-widest"
+          />
+        </Field>
+        <Field label="Nueva contraseña" hint="Mínimo 8 caracteres.">
+          <Input
+            name="password"
+            type="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+        </Field>
+        <Field label="Repite la contraseña">
+          <Input
+            name="confirm"
+            type="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+        </Field>
+        <SubmitButton idle="Cambiar contraseña" busy="Guardando…" />
+      </form>
+    </AuthShell>
   );
 }
 
@@ -78,31 +59,17 @@ export default function ResetPasswordPage() {
   if (state && "sent" in state) return <NewPasswordForm />;
 
   return (
-    <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center">Restablecer contraseña</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={formAction} className="space-y-4">
-            {state?.error && (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {state.error}
-              </p>
-            )}
-            <div>
-              <Label htmlFor="email">Correo electrónico</Label>
-              <Input id="email" name="email" type="email" required placeholder="tu@email.com" />
-            </div>
-            <SubmitButton idle="Enviar código" busy="Enviando..." />
-          </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link href="/auth/signin" className="text-primary hover:underline">
-              Volver al inicio de sesión
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthShell title="Restablecer contraseña">
+      <form action={formAction} className="grid gap-4">
+        <FormError message={state?.error} />
+        <Field label="Correo">
+          <Input name="email" type="email" required autoFocus autoComplete="email" />
+        </Field>
+        <SubmitButton idle="Enviar código" busy="Enviando…" />
+      </form>
+      <Link href="/auth/signin" className={authLink}>
+        Volver a iniciar sesión
+      </Link>
+    </AuthShell>
   );
 }

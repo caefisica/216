@@ -2,11 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Check, Loader2 } from "lucide-react";
-import { BookCover } from "@/components/catalogue/book-cover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Field, Input, Select } from "@/components/ui/field";
 import { toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import { addCopy, createIntakeBook, getBooks } from "../actions";
@@ -32,6 +29,8 @@ interface IssuedBook {
   copies: number;
 }
 
+const CATEGORY_KEY = "216:intake-category";
+
 const initialFields: IntakeFields = {
   title: "",
   author: "",
@@ -40,6 +39,7 @@ const initialFields: IntakeFields = {
   copies: "1",
 };
 
+/** Keeps the category between books and visits when staff register a shelf. */
 export function BookIntakeForm({ facets }: BookIntakeFormProps) {
   const [fields, setFields] = useState(initialFields);
   const [errors, setErrors] = useState<Partial<Record<keyof IntakeFields, string>>>({});
@@ -49,16 +49,22 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
   const [addingCopyId, setAddingCopyId] = useState<string | null>(null);
   const [addedCopy, setAddedCopy] = useState<{ id: string; code: string } | null>(null);
 
-  const categories = useMemo(
+  const categoryIds = useMemo(
     () =>
-      facets.categories.flatMap((node) =>
-        node.children.length === 0
-          ? [{ id: node.id, label: node.name }]
-          : node.children.map((child) => ({ id: child.id, label: `${node.name} · ${child.name}` })),
+      new Set(
+        facets.categories.flatMap((node) =>
+          node.children.length === 0 ? [node.id] : node.children.map((child) => child.id),
+        ),
       ),
     [facets.categories],
   );
-  const categoryName = categories.find((category) => category.id === fields.categoryId)?.label;
+
+  useEffect(() => {
+    const remembered = localStorage.getItem(CATEGORY_KEY);
+    if (remembered && categoryIds.has(remembered)) {
+      setFields((current) => ({ ...current, categoryId: remembered }));
+    }
+  }, [categoryIds]);
 
   useEffect(() => {
     const title = fields.title.trim();
@@ -137,6 +143,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
         toastActionError(result.error);
         return;
       }
+      localStorage.setItem(CATEGORY_KEY, fields.categoryId);
       setIssued(result.value);
     } finally {
       setSaving(false);
@@ -145,172 +152,137 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
 
   const addAnother = () => {
     setIssued(null);
+    setMatches([]);
+    setAddedCopy(null);
     setFields((current) => ({ ...initialFields, categoryId: current.categoryId }));
     setErrors({});
   };
 
   if (issued) {
     return (
-      <section className="surface mx-auto grid max-w-3xl gap-6 p-5 sm:grid-cols-[10rem_1fr] sm:p-8">
-        <BookCover
-          title={fields.title}
-          author={fields.author}
-          category={categoryName}
-          className="mx-auto w-40 sm:w-full"
-          priority
-        />
-        <div className="flex flex-col justify-center">
-          <p className="eyebrow text-status-available">Libro registrado</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight">Listo para la estantería</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Escribe el código del primer ejemplar en el lomo. Se registraron {issued.copies}{" "}
-            {issued.copies === 1 ? "ejemplar" : "ejemplares"}.
-          </p>
-          <p className="mt-5 font-mono text-3xl font-semibold text-foreground">{issued.copyCode}</p>
-          <p className="mt-1 text-sm text-muted-foreground">Libro {issued.code}</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button onClick={addAnother}>
-              <BookOpen /> Agregar otro
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href={`/admin/books/${issued.id}`}>Ver ficha</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/">Volver al catálogo</Link>
-            </Button>
-          </div>
+      <section aria-labelledby="registrado" className="grid gap-4" role="status">
+        <p id="registrado" className="text-muted-foreground">
+          {fields.title}
+          {issued.copies > 1 && ` · ${issued.copies} ejemplares`}
+        </p>
+        <div>
+          <p className="text-muted-foreground">Escribe en el lomo</p>
+          <p className="font-mono text-2xl font-semibold">{issued.copyCode}</p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="primary" autoFocus onClick={addAnother}>
+            Registrar otro
+          </Button>
+          <Link href={`/admin/books/${issued.id}`} className={buttonVariants()}>
+            Ubicación y fotos
+          </Link>
         </div>
       </section>
     );
   }
 
-  const fieldClass = (field: keyof IntakeFields) =>
-    errors[field] ? "border-destructive focus-visible:ring-destructive" : "";
-
   return (
-    <form onSubmit={submit} noValidate className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_13rem]">
-      <div className="surface space-y-6 p-5 sm:p-8">
-        <div>
-          <p className="eyebrow">Entrada rápida</p>
-          <h1 className="mt-2 text-[1.875rem] font-semibold tracking-tight">Registrar libro</h1>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            Anota los datos básicos. El sistema genera los códigos de libro y ejemplar.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="intake-title">Título</Label>
+    <form onSubmit={submit} noValidate className="grid gap-4">
+      <div className="grid gap-2">
+        <Field label="Título" error={errors.title}>
           <Input
-            id="intake-title"
             autoFocus
             value={fields.title}
-            onChange={(event) => update({ title: event.target.value })}
             aria-invalid={Boolean(errors.title)}
-            className={fieldClass("title")}
+            onChange={(event) => update({ title: event.target.value })}
           />
-          {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
-          {matches.length > 0 && (
-            <ul className="mt-2 divide-y rounded-md border border-border text-sm">
-              <li className="bg-accent px-3 py-2 text-xs text-accent-foreground">
-                Ya existe un título parecido. Si es el mismo, agrega un ejemplar.
-              </li>
+        </Field>
+        {matches.length > 0 && (
+          <div className="rounded-md bg-sunken p-3">
+            <p className="font-medium">¿Ya está en el catálogo?</p>
+            <ul className="mt-1 divide-y">
               {matches.map((match) => (
-                <li key={match.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                  <span className="min-w-0 truncate">
+                <li key={match.id} className="flex items-center justify-between gap-3 py-1">
+                  <span className="min-w-0">
                     <span className="mr-2 font-mono text-xs text-muted-foreground">
                       {match.code}
                     </span>
                     {match.title}
                   </span>
-                  <button
-                    type="button"
-                    className="shrink-0 font-medium text-primary underline-offset-2 hover:underline disabled:cursor-wait disabled:opacity-60"
-                    disabled={addingCopyId === match.id || addedCopy?.id === match.id}
-                    onClick={() => void addExistingCopy(match)}
-                  >
-                    {addedCopy?.id === match.id
-                      ? `Ejemplar ${addedCopy.code} agregado`
-                      : "Agregar un ejemplar"}
-                  </button>
+                  {addedCopy?.id === match.id ? (
+                    <span role="status" className="shrink-0 text-success">
+                      Ejemplar {addedCopy.code}
+                    </span>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={addingCopyId === match.id}
+                      onClick={() => void addExistingCopy(match)}
+                    >
+                      Agregar ejemplar
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>
-          )}
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="intake-author">Autor</Label>
-            <Input
-              id="intake-author"
-              value={fields.author}
-              onChange={(event) => update({ author: event.target.value })}
-            />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="intake-isbn">ISBN</Label>
-            <Input
-              id="intake-isbn"
-              inputMode="numeric"
-              value={fields.isbn}
-              onChange={(event) => update({ isbn: event.target.value })}
-            />
-          </div>
-        </div>
+        )}
+      </div>
 
-        <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_8rem]">
-          <div className="space-y-2">
-            <Label htmlFor="intake-category">Categoría</Label>
-            <select
-              id="intake-category"
-              value={fields.categoryId}
-              onChange={(event) => update({ categoryId: event.target.value })}
-              aria-invalid={Boolean(errors.categoryId)}
-              className={`h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/25 ${fieldClass("categoryId")}`}
-            >
-              <option value="">Elige una categoría</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.label}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Autor">
+          <Input
+            value={fields.author}
+            onChange={(event) => update({ author: event.target.value })}
+          />
+        </Field>
+        <Field label="ISBN" hint="Opcional">
+          <Input
+            inputMode="numeric"
+            value={fields.isbn}
+            onChange={(event) => update({ isbn: event.target.value })}
+          />
+        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-[1fr_8rem]">
+        <Field label="Categoría" error={errors.categoryId}>
+          <Select
+            value={fields.categoryId}
+            aria-invalid={Boolean(errors.categoryId)}
+            onChange={(event) => update({ categoryId: event.target.value })}
+          >
+            <option value="">Elige una categoría</option>
+            {facets.categories.map((node) =>
+              node.children.length === 0 ? (
+                <option key={node.id} value={node.id}>
+                  {node.name}
                 </option>
-              ))}
-            </select>
-            {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="intake-copies">Ejemplares</Label>
-            <Input
-              id="intake-copies"
-              type="number"
-              min={1}
-              max={100}
-              value={fields.copies}
-              onChange={(event) => update({ copies: event.target.value })}
-              aria-invalid={Boolean(errors.copies)}
-              className={fieldClass("copies")}
-            />
-            {errors.copies && <p className="text-sm text-destructive">{errors.copies}</p>}
-          </div>
-        </div>
+              ) : (
+                <optgroup key={node.id} label={node.name}>
+                  {node.children.map((child) => (
+                    <option key={child.id} value={child.id}>
+                      {child.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ),
+            )}
+          </Select>
+        </Field>
+        <Field label="Ejemplares" error={errors.copies}>
+          <Input
+            type="number"
+            min={1}
+            max={100}
+            value={fields.copies}
+            aria-invalid={Boolean(errors.copies)}
+            onChange={(event) => update({ copies: event.target.value })}
+          />
+        </Field>
+      </div>
 
-        <Button type="submit" disabled={saving} className="w-full sm:w-auto">
-          {saving ? <Loader2 className="animate-spin" /> : <Check />}
+      <div>
+        <Button type="submit" variant="primary" disabled={saving}>
           {saving ? "Registrando…" : "Registrar libro"}
         </Button>
       </div>
-
-      <aside className="surface self-start p-3 sm:p-4">
-        <p className="eyebrow mb-3">Portada</p>
-        <BookCover
-          title={fields.title || "Tu libro"}
-          author={fields.author || undefined}
-          category={categoryName}
-          priority
-        />
-        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          Portada generada hasta que haya una imagen guardada.
-        </p>
-      </aside>
     </form>
   );
 }

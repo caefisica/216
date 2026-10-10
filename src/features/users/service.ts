@@ -15,7 +15,3 @@ export async function updateUserRoleService(actorId: string, userId: string, new
   if (!(await setUserRole(userId, newRole))) throw new UserError("Usuario no encontrado.");
   revalidatePath("/");
 }
-
-export async function suspendUserService(actorId: string, userId: string) {
-  await updateUserRoleService(actorId, userId, "suspended");
-}

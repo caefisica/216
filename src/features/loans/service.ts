@@ -8,6 +8,7 @@ import {
   countLoanView,
   listPendingRequests,
   rejectPendingRequest,
+  reopenReturnedLoan,
   returnApprovedLoan,
 } from "./repository";
 import { DESK_PAGE_SIZE, type DeskView } from "./schemas";
@@ -21,17 +22,21 @@ function revalidateLoanViews() {
   revalidatePath("/admin/loans");
 }
 
+export const getDeskCounts = (now = new Date()) => getLoanCounts(now);
+
 /**
  * Returns one page of a view plus the counts of every view. A page past the end clamps to the
- * last page, so a decision that empties a page does not leave a blank screen.
+ * last page, so a decision that empties a page does not leave a blank screen. Without a view it
+ * opens the requests when any are waiting and the loans otherwise.
  */
 export async function getDeskService(
-  view: DeskView,
+  requestedView: DeskView | undefined,
   requestedPage: number,
   now = new Date(),
   query = "",
 ) {
   const counts = await getLoanCounts(now);
+  const view = requestedView ?? (counts.pending > 0 ? "requests" : "loans");
   const normalizedQuery = query.trim();
   let total: number;
   if (normalizedQuery) {
@@ -113,6 +118,18 @@ export async function returnLoanService(requestId: string) {
         ? "El préstamo no existe."
         : "El préstamo ya fue devuelto o no estaba vigente.",
     );
+  }
+
+  revalidateLoanViews();
+}
+
+/** Undoes a return. It is refused when the copy has since gone to another reader. */
+export async function reopenLoanService(requestId: string) {
+  if (!(await reopenReturnedLoan(requestId))) {
+    const status = await getBorrowRequestStatus(requestId);
+    if (status === undefined) throw new UserError("El préstamo no existe.");
+    if (status !== "returned") throw new UserError("El préstamo no estaba devuelto.");
+    throw new UserError("No se pudo deshacer: el ejemplar ya salió con otro lector.");
   }
 
   revalidateLoanViews();

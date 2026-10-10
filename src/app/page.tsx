@@ -1,56 +1,36 @@
 import { getSession, getVerifiedUserId, isVerifiedStaff } from "@/features/auth/protected-action";
 import { SearchSchema } from "@/features/books/schemas";
-import { getBookByIdService, getBooksService, getFacetsService } from "@/features/books/service";
-import { getLoanCounts } from "@/features/loans/repository";
-import { BookCatalog } from "@/features/books/components/book-catalog";
-import { AdminDashboard } from "@/features/admin/components/admin-dashboard";
-import { getLibraryCounts } from "@/features/readers/repository";
-import { isErr } from "@/lib/result";
+import { getBooksService, getFacetsService } from "@/features/books/service";
+import { BookList } from "@/features/books/components/book-list";
+import { CatalogueSearch } from "@/features/books/components/catalogue-search";
+import { Page } from "@/components/ui/page";
 
-export default async function HomePage({
+export default async function CataloguePage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { user } = await getSession();
-  const params = await searchParams;
-  const parsed = SearchSchema.safeParse(params);
-  const filters = parsed.success ? parsed.data : {};
+  const parsed = SearchSchema.safeParse(await searchParams);
   const staff = isVerifiedStaff(user);
-  const selectedBookId = typeof params.book === "string" ? params.book : undefined;
+  const requested = parsed.success ? parsed.data : {};
+  const filters = staff ? requested : { ...requested, unlabelled: undefined, unplaced: undefined };
 
-  const [initialPage, facets, counts, selectedBookResult] = await Promise.all([
+  const [result, facets] = await Promise.all([
     getBooksService(filters, await getVerifiedUserId(), staff),
     getFacetsService(),
-    staff ? null : getLibraryCounts(),
-    selectedBookId ? getBookByIdService(selectedBookId, await getVerifiedUserId()) : null,
   ]);
 
-  const catalogue = (
-    <BookCatalog
-      initialPage={initialPage}
-      initialFilters={filters}
-      facets={facets}
-      staff={staff}
-      counts={counts}
-      user={user?.emailVerified ? user : null}
-      initialSelectedBook={
-        selectedBookResult && !isErr(selectedBookResult) ? selectedBookResult.value : null
-      }
-    />
+  return (
+    <Page>
+      <h1 className="sr-only">Catálogo</h1>
+      <CatalogueSearch
+        filters={filters}
+        categories={facets.categories}
+        review={staff ? facets.copyHealth : undefined}
+      >
+        <BookList result={result} filters={filters} staff={staff} />
+      </CatalogueSearch>
+    </Page>
   );
-
-  if (staff) {
-    return (
-      <main className="container mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8">
-        <AdminDashboard
-          catalogue={catalogue}
-          facets={facets}
-          loanCounts={await getLoanCounts(new Date())}
-        />
-      </main>
-    );
-  }
-
-  return <main className="container mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8">{catalogue}</main>;
 }

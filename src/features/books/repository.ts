@@ -25,7 +25,7 @@ import {
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { codeRange, derivedTitleColumns, looksLikeCode, normalizeSearch } from "./search";
-import { activeLoanId, copyCount, hasLendableCopy, lendableCopyCount } from "./sql";
+import { activeLoanDue, activeLoanId, copyCount, hasLendableCopy, lendableCopyCount } from "./sql";
 import {
   PAGE_SIZE,
   type BookFields,
@@ -41,6 +41,7 @@ import type {
   CategoryRef,
   CopyView,
   LocationOption,
+  ReaderRequest,
 } from "./types";
 
 export const bookSummaryColumns = {
@@ -51,8 +52,6 @@ export const bookSummaryColumns = {
   imageUrl: books.imageUrl,
 };
 const bookIdRef = outer("books", "id");
-
-const heartsOf = sql<number>`(SELECT count(*) FROM ${userBookHearts} WHERE ${userBookHearts.bookId} = ${bookIdRef})`;
 
 const isHeartedBy = (userId: string | null | undefined) =>
   userId
@@ -104,20 +103,7 @@ function listConditions(filters: BookFilters) {
     );
   }
 
-  if (filters.cabinet || filters.shelf !== undefined) {
-    const place: SQL[] = [];
-    if (filters.cabinet) place.push(sql`"cabinet" = ${filters.cabinet}`);
-    if (filters.shelf !== undefined) place.push(sql`"shelf" = ${filters.shelf}`);
-    conditions.push(
-      hasCopy(sql`"copies"."location_id" IN (SELECT "id" FROM "locations" WHERE ${and(...place)})`),
-    );
-  }
-
-  if (filters.donor) conditions.push(hasCopy(sql`"copies"."donor_id" = ${filters.donor}`));
-
   if (filters.availability === "available") conditions.push(hasLendableCopy(bookIdRef));
-  if (filters.availability === "unavailable")
-    conditions.push(sql`NOT ${hasLendableCopy(bookIdRef)}`);
 
   if (filters.unlabelled) conditions.push(hasCopy(sql`"copies"."labelled" = 0`));
   if (filters.unplaced) conditions.push(hasCopy(sql`"copies"."location_id" IS NULL`));
@@ -140,7 +126,6 @@ export function bookListQuery(
   options: {
     where?: SQL;
     userId?: string | null;
-    sort?: BookFilters["sort"];
     limit: number;
     offset: number;
   },
@@ -157,14 +142,13 @@ export function bookListQuery(
       parent: { id: parent.id, code: parent.code, name: parent.name },
       copyCount: copyCount(bookIdRef),
       lendableCount: lendableCopyCount(bookIdRef),
-      heartsCount: heartsOf.mapWith(Number),
       isHearted: isHeartedBy(options.userId),
     })
     .from(books)
     .innerJoin(categories, eq(books.categoryId, categories.id))
     .leftJoin(parent, eq(categories.parentId, parent.id))
     .where(options.where)
-    .orderBy(...(options.sort === "code" ? [books.code] : [books.titleKey, books.code]))
+    .orderBy(books.titleKey, books.code)
     .limit(options.limit)
     .offset(options.offset);
 }
@@ -192,7 +176,6 @@ export async function listBooks(filters: BookFilters, userId?: string | null): P
     bookListQuery(db, {
       where,
       userId,
-      sort: filters.sort,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     });
@@ -238,7 +221,6 @@ export async function getBookById(id: string, userId?: string | null) {
       category: { id: categories.id, code: categories.code, name: categories.name },
       parent: { id: parent.id, code: parent.code, name: parent.name },
       lendableCount: lendableCopyCount(bookIdRef),
-      heartsCount: heartsOf.mapWith(Number),
       isHearted: isHeartedBy(userId),
     })
     .from(books)
@@ -251,7 +233,6 @@ export async function getBookById(id: string, userId?: string | null) {
     ...row.book,
     category: categoryRef(row.category, row.parent),
     lendableCount: row.lendableCount,
-    heartsCount: row.heartsCount,
     isHearted: row.isHearted,
   };
 }
@@ -266,6 +247,7 @@ const copyViewSelect = () => ({
   },
   donor: { id: donors.id, name: donors.name },
   loanId: activeLoanId(sql`"copies"."id"`),
+  dueDate: activeLoanDue(sql`"copies"."id"`),
 });
 
 type CopyRow = Omit<CopyView, "location" | "donor"> & {
@@ -310,6 +292,26 @@ export async function setHeartRecord(bookId: string, userId: string, hearted: bo
       .delete(userBookHearts)
       .where(and(eq(userBookHearts.bookId, bookId), eq(userBookHearts.userId, userId)));
   }
+}
+
+export async function getReaderRequest(
+  bookId: string,
+  userId: string,
+): Promise<ReaderRequest | null> {
+  const db = await getDb();
+  const [row] = await db
+    .select({ status: borrowRequests.status, dueDate: borrowRequests.dueDate })
+    .from(borrowRequests)
+    .where(
+      and(
+        eq(borrowRequests.bookId, bookId),
+        eq(borrowRequests.userId, userId),
+        or(eq(borrowRequests.status, "pending"), eq(borrowRequests.status, "approved")),
+      ),
+    )
+    .orderBy(asc(borrowRequests.requestDate))
+    .limit(1);
+  return row ? { status: row.status as ReaderRequest["status"], dueDate: row.dueDate } : null;
 }
 
 /**
@@ -385,7 +387,7 @@ export async function listLocations(): Promise<LocationOption[]> {
 
 export async function listFacets(): Promise<CatalogueFacets> {
   const db = await getDb();
-  const [rows, places, donorRows, healthRows] = await Promise.all([
+  const [rows, donorRows, healthRows] = await Promise.all([
     db
       .select({
         ...getTableColumns(categories),
@@ -396,10 +398,6 @@ export async function listFacets(): Promise<CatalogueFacets> {
       })
       .from(categories)
       .orderBy(categories.code),
-    db
-      .selectDistinct({ cabinet: locations.cabinet, shelf: locations.shelf })
-      .from(locations)
-      .orderBy(locations.cabinet, locations.shelf),
     db
       .select({
         id: donors.id,
@@ -435,13 +433,6 @@ export async function listFacets(): Promise<CatalogueFacets> {
   }
   roots.sort((a, b) => a.name.localeCompare(b.name, "es"));
 
-  const cabinets: CatalogueFacets["cabinets"] = [];
-  for (const { cabinet, shelf } of places) {
-    const last = cabinets[cabinets.length - 1];
-    if (last?.cabinet === cabinet) last.shelves.push(shelf);
-    else cabinets.push({ cabinet, shelves: [shelf] });
-  }
-
   const copyHealth = {
     present: 0,
     maintenance: 0,
@@ -460,7 +451,7 @@ export async function listFacets(): Promise<CatalogueFacets> {
   copyHealth.unlabelled = Number(unlabelled);
   copyHealth.unplaced = Number(unplaced);
 
-  return { categories: roots, cabinets, donors: donorRows, copyHealth };
+  return { categories: roots, donors: donorRows, copyHealth };
 }
 
 export async function getBookImageById(imageId: string, bookId: string) {

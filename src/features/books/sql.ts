@@ -23,6 +23,12 @@ export const hasLendableCopy = (bookId: SQL) =>
 export const copyCount = (bookId: SQL) =>
   sql<number>`(SELECT count(*) FROM "copies" WHERE "copies"."book_id" = ${bookId})`.mapWith(Number);
 
+/** Returns the due date of the approved loan for `copyId`, or null when the copy is not on loan. */
+export const activeLoanDue = (copyId: SQL) =>
+  sql`(SELECT "borrow_requests"."due_date" FROM "borrow_requests" WHERE "borrow_requests"."copy_id" = ${copyId} AND "borrow_requests"."status" = 'approved')`.mapWith(
+    (value: number | null) => (value === null ? null : new Date(Number(value))),
+  );
+
 /** The id of the approved loan that holds the copy whose id `copyId` evaluates to, or null. */
 export const activeLoanId = (copyId: SQL) =>
   sql<
