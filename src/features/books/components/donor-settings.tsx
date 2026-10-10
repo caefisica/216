@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
-import { toast, toastActionError } from "@/hooks/use-toast";
+import { FormError } from "@/components/ui/form-error";
+import { SectionTitle } from "@/components/ui/page";
+import { toast } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import { createDonor, updateDonor } from "../actions";
 import type { CatalogueFacets } from "../types";
@@ -18,8 +20,10 @@ export function DonorSettings({ donors }: { donors: Donor[] }) {
   const [name, setName] = useState("");
   const [motivation, setMotivation] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function open(donor: Donor | null) {
+    setError(null);
     setEditing(donor?.id ?? "new");
     setName(donor?.name ?? "");
     setMotivation(donor?.motivation ?? "");
@@ -29,13 +33,14 @@ export function DonorSettings({ donors }: { donors: Donor[] }) {
     event.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
+    setError(null);
     const result =
       editing && editing !== "new"
         ? await updateDonor({ id: editing, name, motivation })
         : await createDonor({ name, motivation });
     setSaving(false);
     if (isErr(result)) {
-      toastActionError(result.error);
+      setError(result.error.message);
       return;
     }
     toast({ title: editing === "new" ? "Donante agregado" : "Donante guardado" });
@@ -46,9 +51,7 @@ export function DonorSettings({ donors }: { donors: Donor[] }) {
   return (
     <section aria-labelledby="donantes" className="grid gap-3">
       <div className="flex items-center justify-between gap-4">
-        <h2 id="donantes" className="text-lg font-semibold">
-          Donantes ({donors.length})
-        </h2>
+        <SectionTitle id="donantes">Donantes ({donors.length})</SectionTitle>
         {editing === null && (
           <Button variant="secondary" onClick={() => open(null)}>
             Agregar donante
@@ -69,6 +72,7 @@ export function DonorSettings({ donors }: { donors: Donor[] }) {
           <Field label="Mensaje" hint="Opcional.">
             <Input value={motivation} onChange={(event) => setMotivation(event.target.value)} />
           </Field>
+          <FormError message={error} />
           <div className="flex gap-2">
             <Button type="submit" variant="primary" disabled={saving || !name.trim()}>
               Guardar

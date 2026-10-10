@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
-import { toast, toastActionError } from "@/hooks/use-toast";
+import { FormError } from "@/components/ui/form-error";
+import { SectionTitle } from "@/components/ui/page";
+import { toast } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import { addCopy, createDonor, deleteBook, deleteCopy, updateBook, updateCopy } from "../actions";
 import { defaultLocation } from "../location";
@@ -44,6 +46,8 @@ export function BookEditor({ facets, book }: BookEditorProps) {
     categoryId: book.categoryId,
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [donors, setDonors] = useState(facets.donors);
 
   const leaves = useMemo(() => {
@@ -66,15 +70,12 @@ export function BookEditor({ facets, book }: BookEditorProps) {
 
   const setField = (patch: Partial<BookDraft>) => setFields((prev) => ({ ...prev, ...patch }));
 
-  async function donorIdFor(name: string) {
+  async function donorIdFor(name: string): Promise<{ id: string | null } | { error: string }> {
     if (name.trim() === "") return { id: null };
     const known = findDonor(name, donors);
     if (known) return { id: known.id };
     const created = await createDonor({ name });
-    if (isErr(created)) {
-      toastActionError(created.error);
-      return null;
-    }
+    if (isErr(created)) return { error: created.error.message };
     setDonors((prev) => [...prev, { ...created.value, copyCount: 0 }]);
     return { id: created.value.id };
   }
@@ -82,10 +83,11 @@ export function BookEditor({ facets, book }: BookEditorProps) {
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving(true);
+    setError(null);
     try {
       const result = await updateBook({ id: book.id, ...fields });
       if (isErr(result)) {
-        toastActionError(result.error);
+        setError(result.error.message);
         return;
       }
       toast({ title: "Libro guardado" });
@@ -96,9 +98,10 @@ export function BookEditor({ facets, book }: BookEditorProps) {
   };
 
   const handleDelete = async () => {
+    setDeleteError(null);
     const result = await deleteBook({ bookId: book.id });
     if (isErr(result)) {
-      toastActionError(result.error);
+      setDeleteError(result.error.message);
       return;
     }
     toast({ title: "Libro eliminado", description: book.title });
@@ -160,6 +163,7 @@ export function BookEditor({ facets, book }: BookEditorProps) {
             onChange={(event) => setField({ description: event.target.value })}
           />
         </Field>
+        <FormError message={error} />
         <div>
           <Button type="submit" variant="primary" disabled={saving}>
             {saving ? "Guardando…" : "Guardar"}
@@ -178,12 +182,11 @@ export function BookEditor({ facets, book }: BookEditorProps) {
       <ImageManager bookId={book.id} images={book.images} />
 
       <section aria-labelledby="eliminar" className="grid justify-items-start gap-2 border-t pt-6">
-        <h2 id="eliminar" className="text-lg font-semibold">
-          Eliminar libro
-        </h2>
+        <SectionTitle id="eliminar">Eliminar libro</SectionTitle>
         <p className="text-muted-foreground">
           Borra el libro con sus ejemplares, fotos y préstamos.
         </p>
+        <FormError message={deleteError} />
         <ConfirmDelete
           label="Eliminar libro"
           title={`¿Eliminar ${book.code}?`}
@@ -200,7 +203,7 @@ interface CopiesEditorProps {
   locations: LocationOption[];
   donors: { id: string; name: string }[];
   category: CategoryRef | undefined;
-  donorIdFor: (name: string) => Promise<{ id: string | null } | null>;
+  donorIdFor: (name: string) => Promise<{ id: string | null } | { error: string }>;
 }
 
 function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesEditorProps) {
@@ -209,15 +212,19 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
   const [draft, setDraft] = useState<CopyDraft>(emptyDraft());
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<{ id: string; message: string } | null>(null);
 
   const open = (copy: CopyView) => {
     setAdding(false);
+    setError(null);
     setOpenId(copy.id);
     setDraft(draftFromCopy(copy));
   };
 
   const startAdding = () => {
     setOpenId(null);
+    setError(null);
     setAdding(true);
     const last = book.copies[book.copies.length - 1];
     setDraft(
@@ -236,21 +243,25 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
 
   const save = async () => {
     setSaving(true);
+    setError(null);
     try {
       const donor = await donorIdFor(draft.donorName);
-      if (!donor) return;
+      if ("error" in donor) {
+        setError(donor.error);
+        return;
+      }
       const input = draftToInput(draft, donor.id);
       if (adding) {
         const added = await addCopy({ bookId: book.id, ...input });
         if (isErr(added)) {
-          toastActionError(added.error);
+          setError(added.error.message);
           return;
         }
         toast({ title: `Ejemplar ${added.value.code} registrado` });
       } else {
         const updated = await updateCopy({ copyId: openId!, ...input });
         if (isErr(updated)) {
-          toastActionError(updated.error);
+          setError(updated.error.message);
           return;
         }
         toast({ title: "Ejemplar guardado" });
@@ -263,9 +274,10 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
   };
 
   const remove = async (copy: CopyView) => {
+    setRemoveError(null);
     const result = await deleteCopy({ copyId: copy.id });
     if (isErr(result)) {
-      toastActionError(result.error);
+      setRemoveError({ id: copy.id, message: result.error.message });
       return;
     }
     toast({ title: "Ejemplar eliminado", description: copy.code });
@@ -280,6 +292,7 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
         locations={locations}
         donors={donors}
       />
+      <FormError message={error} />
       <div className="flex gap-2">
         <Button variant="primary" onClick={save} disabled={saving}>
           {adding ? "Registrar ejemplar" : "Guardar ejemplar"}
@@ -294,9 +307,7 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
   return (
     <section aria-labelledby="ejemplares" className="grid gap-2">
       <div className="flex items-center justify-between gap-4">
-        <h2 id="ejemplares" className="text-lg font-semibold">
-          Ejemplares ({book.copies.length})
-        </h2>
+        <SectionTitle id="ejemplares">Ejemplares ({book.copies.length})</SectionTitle>
         {!adding && (
           <Button variant="secondary" onClick={startAdding}>
             Agregar ejemplar
@@ -338,6 +349,9 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
                   </div>
                 )}
               </div>
+              {removeError?.id === copy.id && (
+                <FormError message={removeError.message} className="mt-3" />
+              )}
               {openId === copy.id && <div className="mt-3">{form}</div>}
             </li>
           ))}
@@ -346,7 +360,7 @@ function CopiesEditor({ book, locations, donors, category, donorIdFor }: CopiesE
 
       {adding && (
         <div className="grid gap-3 rounded-md bg-sunken p-4">
-          <h3 className="font-semibold">Nuevo ejemplar</h3>
+          <SectionTitle as="h3">Nuevo ejemplar</SectionTitle>
           {form}
         </div>
       )}

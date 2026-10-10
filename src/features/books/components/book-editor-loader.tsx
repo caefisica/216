@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { NotFoundState } from "@/app/books/[id]/components/not-found-state";
-import { Page } from "@/components/ui/page";
+import { Page, PageTitle } from "@/components/ui/page";
 import { isErr } from "@/lib/result";
 import { getBookByIdService, getFacetsService } from "../service";
 import { BookEditor } from "./book-editor";
@@ -16,7 +17,7 @@ export async function BookEditorLoader({ bookId }: { bookId?: string }) {
   if (!book) {
     return (
       <Page width="prose">
-        <h1 className="mb-6 text-xl font-semibold">Registrar libro</h1>
+        <PageTitle className="mb-6">Registrar libro</PageTitle>
         <BookIntakeForm facets={facets} />
       </Page>
     );
@@ -27,14 +28,17 @@ export async function BookEditorLoader({ bookId }: { bookId?: string }) {
     <Page width="prose">
       <Link
         href={`/books/${book.value.id}`}
-        className="inline-flex min-h-control items-center text-muted-foreground underline-offset-2 hover:underline"
+        className="-ml-2 inline-flex min-h-control items-center gap-1.5 rounded-sm px-2 text-sm font-medium text-muted-foreground transition-colors duration-100 hover:bg-sunken hover:text-foreground"
       >
-        ← {book.value.title}
+        <ArrowLeft aria-hidden className="size-4" />
+        {book.value.title}
       </Link>
-      <h1 className="mb-6 text-xl font-semibold">
+      <PageTitle className="mt-2 mb-6">
         Editar libro{" "}
-        <span className="ml-2 font-mono text-sm text-muted-foreground">{book.value.code}</span>
-      </h1>
+        <span className="ml-2 font-mono text-sm font-normal text-muted-foreground">
+          {book.value.code}
+        </span>
+      </PageTitle>
       <BookEditor key={book.value.id} facets={facets} book={book.value} />
     </Page>
   );

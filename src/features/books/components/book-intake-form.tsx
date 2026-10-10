@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/field";
-import { toastActionError } from "@/hooks/use-toast";
+import { FormError } from "@/components/ui/form-error";
 import { isErr } from "@/lib/result";
 import { addCopy, createIntakeBook, getBooks } from "../actions";
 import { defaultLocation } from "../location";
@@ -48,6 +51,8 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
   const [matches, setMatches] = useState<BookListItem[]>([]);
   const [addingCopyId, setAddingCopyId] = useState<string | null>(null);
   const [addedCopy, setAddedCopy] = useState<{ id: string; code: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [matchError, setMatchError] = useState<string | null>(null);
 
   const categoryIds = useMemo(
     () =>
@@ -90,6 +95,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
 
   const addExistingCopy = async (match: BookListItem) => {
     setAddingCopyId(match.id);
+    setMatchError(null);
     const result = await addCopy({
       bookId: match.id,
       origin: "copy",
@@ -108,7 +114,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
     });
     setAddingCopyId(null);
     if (isErr(result)) {
-      toastActionError(result.error);
+      setMatchError(result.error.message);
       return;
     }
     setAddedCopy({ id: match.id, code: result.value.code });
@@ -130,6 +136,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
     event.preventDefault();
     if (!validate()) return;
     setSaving(true);
+    setFormError(null);
     try {
       const result = await createIntakeBook({
         title: fields.title,
@@ -140,7 +147,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
         copies: Number(fields.copies),
       });
       if (isErr(result)) {
-        toastActionError(result.error);
+        setFormError(result.error.message);
         return;
       }
       localStorage.setItem(CATEGORY_KEY, fields.categoryId);
@@ -156,18 +163,26 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
     setAddedCopy(null);
     setFields((current) => ({ ...initialFields, categoryId: current.categoryId }));
     setErrors({});
+    setFormError(null);
+    setMatchError(null);
   };
 
   if (issued) {
     return (
-      <section aria-labelledby="registrado" className="grid gap-4" role="status">
-        <p id="registrado" className="text-muted-foreground">
-          {fields.title}
-          {issued.copies > 1 && ` · ${issued.copies} ejemplares`}
-        </p>
-        <div>
-          <p className="text-muted-foreground">Escribe en el lomo</p>
-          <p className="font-mono text-2xl font-semibold">{issued.copyCode}</p>
+      <Card role="status" aria-labelledby="registrado" className="grid gap-5 p-4 sm:p-6">
+        <div className="grid justify-items-start gap-2">
+          <Badge tone="success">
+            <Check aria-hidden />
+            Libro registrado
+          </Badge>
+          <p id="registrado" className="font-serif text-lg font-medium text-pretty">
+            {fields.title}
+            {issued.copies > 1 && ` · ${issued.copies} ejemplares`}
+          </p>
+        </div>
+        <div className="grid gap-1 rounded-sm bg-sunken px-4 py-3">
+          <p className="text-sm text-muted-foreground">Escribe en el lomo</p>
+          <p className="font-mono text-2xl font-medium">{issued.copyCode}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button variant="primary" autoFocus onClick={addAnother}>
@@ -177,7 +192,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
             Ubicación y fotos
           </Link>
         </div>
-      </section>
+      </Card>
     );
   }
 
@@ -193,25 +208,30 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
           />
         </Field>
         {matches.length > 0 && (
-          <div className="rounded-md bg-sunken p-3">
-            <p className="font-medium">¿Ya está en el catálogo?</p>
+          <Card>
+            <p className="px-4 pt-3 text-sm font-medium">¿Ya está en el catálogo?</p>
             <ul className="mt-1 divide-y">
               {matches.map((match) => (
-                <li key={match.id} className="flex items-center justify-between gap-3 py-1">
-                  <span className="min-w-0">
+                <li
+                  key={match.id}
+                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3"
+                >
+                  <span id={`match-${match.id}`} className="min-w-48 flex-1">
                     <span className="mr-2 font-mono text-xs text-muted-foreground">
                       {match.code}
                     </span>
                     {match.title}
                   </span>
                   {addedCopy?.id === match.id ? (
-                    <span role="status" className="shrink-0 text-success">
+                    <Badge tone="success" role="status">
+                      <Check aria-hidden />
                       Ejemplar {addedCopy.code}
-                    </span>
+                    </Badge>
                   ) : (
                     <Button
                       type="button"
                       variant="secondary"
+                      aria-describedby={`match-${match.id}`}
                       disabled={addingCopyId === match.id}
                       onClick={() => void addExistingCopy(match)}
                     >
@@ -221,7 +241,8 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
                 </li>
               ))}
             </ul>
-          </div>
+            <FormError message={matchError} className="mx-4 mb-3" />
+          </Card>
         )}
       </div>
 
@@ -277,6 +298,8 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
           />
         </Field>
       </div>
+
+      <FormError message={formError} />
 
       <div>
         <Button type="submit" variant="primary" disabled={saving}>

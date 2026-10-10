@@ -4,8 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { ImageDropzone } from "@/components/ui/image-dropzone";
-import { toast, toastActionError } from "@/hooks/use-toast";
+import { SectionTitle } from "@/components/ui/page";
+import { toast } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import { addBookImage, deleteBookImage, setCoverImage, uploadBookImage } from "../actions";
 import type { BookImage } from "../types";
@@ -18,8 +20,11 @@ interface ImageManagerProps {
 export function ImageManager({ bookId, images }: ImageManagerProps) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const upload = async (files: File[]) => {
+    setError(null);
+    if (files.length === 0) return;
     setUploading(true);
     try {
       for (const [index, file] of files.entries()) {
@@ -27,7 +32,7 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
         form.append("file", file);
         const uploaded = await uploadBookImage(form);
         if (isErr(uploaded)) {
-          toastActionError(uploaded.error);
+          setError(uploaded.error.message);
           return;
         }
         const added = await addBookImage({
@@ -37,7 +42,7 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
           displayOrder: images.length + index,
         });
         if (isErr(added)) {
-          toastActionError(added.error);
+          setError(added.error.message);
           return;
         }
       }
@@ -49,9 +54,10 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
   };
 
   const makeCover = async (imageId: string) => {
+    setError(null);
     const result = await setCoverImage({ imageId, bookId });
     if (isErr(result)) {
-      toastActionError(result.error);
+      setError(result.error.message);
       return;
     }
     toast({ title: "Portada actualizada" });
@@ -59,9 +65,10 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
   };
 
   const remove = async (imageId: string) => {
+    setError(null);
     const result = await deleteBookImage({ imageId, bookId });
     if (isErr(result)) {
-      toastActionError(result.error);
+      setError(result.error.message);
       return;
     }
     toast({ title: "Foto eliminada" });
@@ -70,9 +77,7 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
 
   return (
     <section aria-labelledby="fotos" className="grid gap-3">
-      <h2 id="fotos" className="text-lg font-semibold">
-        Fotos ({images.length})
-      </h2>
+      <SectionTitle id="fotos">Fotos ({images.length})</SectionTitle>
       {images.length > 0 && (
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {images.map((image) => (
@@ -97,16 +102,11 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
           ))}
         </ul>
       )}
+      <FormError message={error} />
       <div className="relative">
         <ImageDropzone
           onDrop={upload}
-          onRejection={() =>
-            toast({
-              title: "Archivo rechazado",
-              description: "Sube solo imágenes JPEG, PNG o WebP.",
-              variant: "destructive",
-            })
-          }
+          onRejection={() => setError("Archivo rechazado. Sube solo imágenes JPEG, PNG o WebP.")}
           label={uploading ? "Subiendo…" : "Añadir fotos"}
         />
       </div>

@@ -1,4 +1,4 @@
-import { Page } from "@/components/ui/page";
+import { Page, PageTitle, SectionTitle } from "@/components/ui/page";
 import { requireStaffPage } from "@/features/auth/protected-action";
 import { DonorSettings } from "@/features/books/components/donor-settings";
 import { LocationSettings } from "@/features/books/components/location-settings";
@@ -15,15 +15,13 @@ export default async function SettingsPage() {
 
   return (
     <Page width="prose">
-      <h1 className="mb-6 text-xl font-semibold">Ajustes</h1>
+      <PageTitle className="mb-6">Ajustes</PageTitle>
       <div className="grid gap-10">
         <LocationSettings locations={facets.locations} categories={facets.categories} />
         <DonorSettings donors={facets.donors} />
         {users && (
           <section aria-labelledby="personas" className="grid gap-3">
-            <h2 id="personas" className="text-lg font-semibold">
-              Personas ({users.length})
-            </h2>
+            <SectionTitle id="personas">Personas ({users.length})</SectionTitle>
             <UserRoles users={users} selfId={user.id} />
           </section>
         )}

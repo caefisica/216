@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
-import { toast, toastActionError } from "@/hooks/use-toast";
+import { FormError } from "@/components/ui/form-error";
+import { SectionTitle } from "@/components/ui/page";
+import { toast } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import { createLocation, updateLocation } from "../actions";
 import { locationLabel } from "../labels";
@@ -32,6 +34,7 @@ export function LocationSettings({
   const [editing, setEditing] = useState<"new" | string | null>(null);
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const categoryOptions = useMemo(
     () =>
@@ -53,6 +56,7 @@ export function LocationSettings({
     setForm((current) => ({ ...current, ...change }));
 
   function edit(location: LocationOption) {
+    setError(null);
     setEditing(location.id);
     setForm({
       cabinet: location.cabinet,
@@ -66,6 +70,7 @@ export function LocationSettings({
   async function save(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true);
+    setError(null);
     const input = {
       cabinet: form.cabinet,
       shelf: Number(form.shelf),
@@ -79,7 +84,7 @@ export function LocationSettings({
         : await createLocation(input);
     setSaving(false);
     if (isErr(result)) {
-      toastActionError(result.error);
+      setError(result.error.message);
       return;
     }
     toast({ title: editing === "new" ? "Ubicación agregada" : "Ubicación guardada" });
@@ -90,13 +95,12 @@ export function LocationSettings({
   return (
     <section aria-labelledby="ubicaciones" className="grid gap-3">
       <div className="flex items-center justify-between gap-4">
-        <h2 id="ubicaciones" className="text-lg font-semibold">
-          Ubicaciones ({locations.length})
-        </h2>
+        <SectionTitle id="ubicaciones">Ubicaciones ({locations.length})</SectionTitle>
         {editing === null && (
           <Button
             variant="secondary"
             onClick={() => {
+              setError(null);
               setForm(blank);
               setEditing("new");
             }}
@@ -156,6 +160,7 @@ export function LocationSettings({
               ))}
             </Select>
           </Field>
+          <FormError message={error} className="sm:col-span-2" />
           <div className="flex gap-2 sm:col-span-2">
             <Button type="submit" variant="primary" disabled={saving}>
               Guardar

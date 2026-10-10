@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input, Select } from "@/components/ui/field";
-import { toast, toastActionError } from "@/hooks/use-toast";
+import { FormError } from "@/components/ui/form-error";
+import { toast } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import type { Role } from "@/lib/db/schema";
 import { updateUserRole } from "../actions";
@@ -22,6 +23,7 @@ export function UserRoles({ users, selfId }: { users: User[]; selfId: string }) 
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
+  const [failure, setFailure] = useState<{ userId: string; message: string } | null>(null);
 
   const needle = query.trim().toLowerCase();
   const shown = needle
@@ -33,10 +35,11 @@ export function UserRoles({ users, selfId }: { users: User[]; selfId: string }) 
 
   async function change(user: User, newRole: Role) {
     setSaving(user.id);
+    setFailure(null);
     const result = await updateUserRole({ userId: user.id, newRole });
     setSaving(null);
     if (isErr(result)) {
-      toastActionError(result.error);
+      setFailure({ userId: user.id, message: result.error.message });
       return;
     }
     toast({ title: `${user.name}: ${ROLE_LABELS[newRole].toLowerCase()}` });
@@ -79,6 +82,9 @@ export function UserRoles({ users, selfId }: { users: User[]; selfId: string }) 
                   </option>
                 ))}
               </Select>
+              {failure?.userId === user.id && (
+                <FormError message={failure.message} className="sm:col-span-2" />
+              )}
             </li>
           ))}
         </ul>
