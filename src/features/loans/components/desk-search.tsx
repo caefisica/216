@@ -6,20 +6,17 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/field";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
-import { DESK_LIST_ID, DESK_SEARCH_ID } from "../constants";
+import { DESK_LIST_ID, DESK_SEARCH_DELAY_MS, DESK_SEARCH_ID } from "../constants";
 import type { DeskView } from "../schemas";
 
-const SEARCH_DELAY_MS = 250;
-
-/** Presses the one decision left in the list, if there is exactly one. */
+/** Clicks the decision when the list has one enabled decision. */
 function actOnOnlyRow() {
   const actions = document.querySelectorAll<HTMLButtonElement>(`#${DESK_LIST_ID} [data-primary]`);
   if (actions.length === 1 && !actions[0].disabled) actions[0].click();
 }
 
 /**
- * The librarian types a reader, a title or a copy code and the list narrows. Enter on a single
- * match does what the row's main button does, so a return is: scan or type, Enter.
+ * Enter activates the row's main button when the search leaves one match.
  */
 export function DeskSearch({
   view,
@@ -35,22 +32,40 @@ export function DeskSearch({
   const [value, setValue] = useState(query);
   const sent = useRef(query);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const armed = useRef(false);
+  // The text Enter was pressed on, kept until the list of that text arrives or the chance is lost.
+  const armed = useRef<string | null>(null);
+  const frame = useRef<number>(undefined);
 
-  useEffect(() => () => clearTimeout(timer.current), []);
+  function disarm() {
+    armed.current = null;
+    if (frame.current !== undefined) cancelAnimationFrame(frame.current);
+  }
 
-  // Other links on the page change the URL under the field. The field follows once it is idle.
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current);
+      disarm();
+    },
+    [],
+  );
+
+  // Another list is not the one Enter was pressed on.
+  useEffect(disarm, [view]);
+
+  // Follow URL changes from other links after the field's own navigation settles.
   useEffect(() => {
     if (pending || query === sent.current) return;
     sent.current = query;
     setValue(query);
   }, [pending, query]);
 
-  // A search started by Enter acts as soon as its list has arrived.
+  // Apply an Enter search after its filtered list arrives. A navigation that ended on another
+  // list, whether it failed or a link replaced it, forfeits the Enter.
   useEffect(() => {
-    if (!armed.current || pending || query !== sent.current) return;
-    armed.current = false;
-    requestAnimationFrame(actOnOnlyRow);
+    if (armed.current === null || pending) return;
+    const text = armed.current;
+    armed.current = null;
+    if (text === query) frame.current = requestAnimationFrame(actOnOnlyRow);
   }, [pending, query]);
 
   useEffect(() => {
@@ -65,6 +80,7 @@ export function DeskSearch({
     return () => document.removeEventListener("keydown", focusOnSlash);
   }, []);
 
+  /** Starts the navigation to `next`; false when the URL already is, or is on its way to, that text. */
   function go(next: string) {
     const text = next.trim();
     if (text === sent.current) return false;
@@ -85,8 +101,11 @@ export function DeskSearch({
         onSubmit={(event) => {
           event.preventDefault();
           clearTimeout(timer.current);
-          if (go(value)) armed.current = true;
-          else actOnOnlyRow();
+          const text = value.trim();
+          disarm();
+          // The list on screen answers the text only once its navigation has landed.
+          if (go(text) || pending) armed.current = text;
+          else if (text === query) actOnOnlyRow();
         }}
       >
         <div className="relative">
@@ -108,8 +127,9 @@ export function DeskSearch({
             onChange={(event) => {
               const next = event.target.value;
               setValue(next);
+              disarm();
               clearTimeout(timer.current);
-              timer.current = setTimeout(() => go(next), SEARCH_DELAY_MS);
+              timer.current = setTimeout(() => go(next), DESK_SEARCH_DELAY_MS);
             }}
           />
           {!value && <Kbd className="absolute right-3 top-1/2 -translate-y-1/2">/</Kbd>}
@@ -118,6 +138,7 @@ export function DeskSearch({
 
       <div
         aria-busy={pending}
+        inert={pending}
         className={cn("mt-4 transition-opacity duration-150", pending && "opacity-50")}
       >
         {children}
