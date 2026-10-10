@@ -8,7 +8,7 @@ export default defineConfig({
   env: {
     builtin: true,
   },
-  ignorePatterns: ["components/ui/", ".next/**", "out/**", "build/**", "next-env.d.ts"],
+  ignorePatterns: [".next/**", "out/**", "build/**", "next-env.d.ts"],
   rules: {
     "no-array-constructor": "error",
     "no-unused-expressions": "warn",

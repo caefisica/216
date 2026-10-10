@@ -2,114 +2,207 @@
 
 @source '../../*.{js,ts,jsx,tsx,mdx}';
 
+/*
+  Design tokens. Tailwind's default palette, type sizes and radii are cleared, so a class that is
+  not on this page does not exist: colour comes from the semantic names, size from the six steps.
+  Spacing is Tailwind's 0.25rem unit. The steps in use are 1, 2, 3, 4, 6, 8 and 12 (4 to 48px).
+*/
 @theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentcolor;
 
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-link: var(--link);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-cover-1: var(--cover-1-bg);
+  --color-cover-1-foreground: var(--cover-1-fg);
+  --color-cover-2: var(--cover-2-bg);
+  --color-cover-2-foreground: var(--cover-2-fg);
+  --color-cover-3: var(--cover-3-bg);
+  --color-cover-3-foreground: var(--cover-3-fg);
+  --color-cover-4: var(--cover-4-bg);
+  --color-cover-4-foreground: var(--cover-4-fg);
 
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
+  /* Six steps. xs is metadata, sm is the working size of dense lists, base is reading text and
+     touch inputs, lg a row title, xl a page title, 2xl a book title. */
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 2rem;
+  --text-2xl: 2rem;
+  --text-2xl--line-height: 2.25rem;
 
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
 
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
+  --radius-*: initial;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-full: 9999px;
 
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
+  --shadow-*: initial;
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.14), 0 0 0 1px var(--border);
 
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
 
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-surface: hsl(var(--surface));
-  --color-surface-muted: hsl(var(--surface-muted));
-  --color-status-available: hsl(var(--status-available));
-  --color-status-favorite: hsl(var(--status-favorite));
-  --color-status-borrowed: hsl(var(--status-borrowed));
-  --color-status-borrowed-muted: hsl(var(--status-borrowed-muted));
-  --color-status-borrowed-foreground: hsl(var(--status-borrowed-foreground));
-  --color-status-borrowed-border: hsl(var(--status-borrowed-border));
-  --color-status-pending: hsl(var(--status-pending));
-  --color-status-goal: hsl(var(--status-goal));
-  --color-status-returned: hsl(var(--status-returned));
-  --color-status-returned-muted: hsl(var(--status-returned-muted));
-  --color-status-returned-foreground: hsl(var(--status-returned-foreground));
-  --color-status-returned-border: hsl(var(--status-returned-border));
-  --color-cover-1: hsl(var(--cover-1-bg));
-  --color-cover-1-foreground: hsl(var(--cover-1-fg));
-  --color-cover-2: hsl(var(--cover-2-bg));
-  --color-cover-2-foreground: hsl(var(--cover-2-fg));
-  --color-cover-3: hsl(var(--cover-3-bg));
-  --color-cover-3-foreground: hsl(var(--cover-3-fg));
-  --color-cover-4: hsl(var(--cover-4-bg));
-  --color-cover-4-foreground: hsl(var(--cover-4-fg));
-  --color-cover-5: hsl(var(--cover-5-bg));
-  --color-cover-5-foreground: hsl(var(--cover-5-fg));
+  --container-*: initial;
+  --container-prose: 40rem;
+  --container-page: 56rem;
+  --container-wide: 72rem;
+}
 
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
-  --color-chart-5: hsl(var(--chart-5));
+:root {
+  --background: #f7f5f0;
+  --surface: #fffefb;
+  --sunken: #efece4;
+  --foreground: #1b1a17;
+  --muted-foreground: #5f5a50;
+  --border: #e2ddd2;
+  --input: #8b8579;
+  --ring: #2b52b5;
+  --primary: #1b1a17;
+  --primary-foreground: #fffefb;
+  --link: #2b52b5;
+  --success: #1c6b43;
+  --success-soft: #e1efe5;
+  --warning: #85560a;
+  --warning-soft: #f8ecd0;
+  --destructive: #a3262a;
+  --destructive-soft: #f8e1de;
+  --cover-1-bg: #dfe9e2;
+  --cover-1-fg: #1f3b30;
+  --cover-2-bg: #ece2d2;
+  --cover-2-fg: #45301d;
+  --cover-3-bg: #dde4f0;
+  --cover-3-fg: #263555;
+  --cover-4-bg: #efe6c9;
+  --cover-4-fg: #473b17;
 
-  --color-sidebar: hsl(var(--sidebar-background));
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  /* Height of a button or field. Touch screens get the 44px minimum. */
+  --control: 2.25rem;
+}
 
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
-
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
-
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-accordion-content-height);
-    }
-  }
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-    to {
-      height: 0;
-    }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #151512;
+    --surface: #1c1c18;
+    --sunken: #25251f;
+    --foreground: #efece4;
+    --muted-foreground: #a8a296;
+    --border: #2f2e27;
+    --input: #7a7568;
+    --ring: #8fb0ff;
+    --primary: #efece4;
+    --primary-foreground: #151512;
+    --link: #8fb0ff;
+    --success: #6fcf97;
+    --success-soft: #1c2f24;
+    --warning: #e6b450;
+    --warning-soft: #33290f;
+    --destructive: #f08a80;
+    --destructive-soft: #3a1f1d;
+    --cover-1-bg: #27382f;
+    --cover-1-fg: #d7e8dc;
+    --cover-2-bg: #3a2f25;
+    --cover-2-fg: #ecdcc6;
+    --cover-3-bg: #28324a;
+    --cover-3-fg: #d6e0f5;
+    --cover-4-bg: #3a3320;
+    --cover-4-fg: #ede2bf;
   }
 }
 
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
+@media (pointer: coarse) {
+  :root {
+    --control: 2.75rem;
+  }
+}
 
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
+@utility h-control {
+  height: var(--control);
+}
+
+@utility min-h-control {
+  min-height: var(--control);
+}
+
+@utility min-w-control {
+  min-width: var(--control);
+}
+
+@utility size-control {
+  width: var(--control);
+  height: var(--control);
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 4rem;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--ring) 28%, transparent);
+  }
+
+  button,
+  [role="button"],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
   }
 }
 
@@ -121,161 +214,5 @@
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
-  }
-}
-
-@utility text-balance {
-  text-wrap: balance;
-}
-
-@layer utilities {
-  body {
-    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  }
-
-  .surface {
-    border: 1px solid hsl(var(--border));
-    border-radius: var(--radius);
-    background: hsl(var(--surface));
-  }
-
-  .eyebrow {
-    color: hsl(var(--muted-foreground));
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-}
-
-@layer base {
-  :root {
-    --background: 40 20% 97%;
-    --foreground: 220 20% 14%;
-    --surface: 0 0% 100%;
-    --surface-muted: 40 16% 94%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 14%;
-    --primary: 191 52% 30%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 40 16% 93%;
-    --secondary-foreground: 220 20% 14%;
-    --muted: 40 16% 93%;
-    --muted-foreground: 220 10% 43%;
-    --accent: 191 38% 91%;
-    --accent-foreground: 191 52% 23%;
-    --destructive: 0 62% 42%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 40 12% 83%;
-    --input: 40 12% 83%;
-    --ring: 191 52% 30%;
-    --status-available: 155 48% 30%;
-    --status-favorite: 350 55% 42%;
-    --status-borrowed: 155 48% 30%;
-    --status-borrowed-muted: 155 40% 91%;
-    --status-borrowed-foreground: 155 48% 22%;
-    --status-borrowed-border: 155 35% 75%;
-    --status-pending: 28 72% 40%;
-    --status-goal: 276 42% 42%;
-    --status-returned: 276 42% 42%;
-    --status-returned-muted: 276 32% 92%;
-    --status-returned-foreground: 276 42% 25%;
-    --status-returned-border: 276 28% 78%;
-    --cover-1-bg: 162 30% 89%;
-    --cover-1-fg: 170 43% 17%;
-    --cover-2-bg: 32 31% 87%;
-    --cover-2-fg: 19 35% 22%;
-    --cover-3-bg: 219 39% 90%;
-    --cover-3-fg: 222 43% 27%;
-    --cover-4-bg: 42 52% 86%;
-    --cover-4-fg: 44 43% 21%;
-    --cover-5-bg: 300 24% 88%;
-    --cover-5-fg: 300 25% 24%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.45rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: 220 18% 11%;
-      --foreground: 40 20% 95%;
-      --surface: 220 17% 15%;
-      --surface-muted: 220 15% 19%;
-      --card: 220 17% 15%;
-      --card-foreground: 40 20% 95%;
-      --popover: 220 17% 15%;
-      --popover-foreground: 40 20% 95%;
-      --primary: 182 45% 62%;
-      --primary-foreground: 220 20% 10%;
-      --secondary: 220 15% 19%;
-      --secondary-foreground: 40 20% 95%;
-      --muted: 220 15% 19%;
-      --muted-foreground: 40 10% 68%;
-      --accent: 190 30% 24%;
-      --accent-foreground: 182 45% 82%;
-      --destructive: 0 50% 52%;
-      --destructive-foreground: 0 0% 100%;
-      --border: 220 12% 27%;
-      --input: 220 12% 27%;
-      --ring: 182 45% 62%;
-      --status-available: 153 48% 60%;
-      --status-favorite: 350 65% 66%;
-      --status-borrowed: 153 48% 60%;
-      --status-borrowed-muted: 153 30% 22%;
-      --status-borrowed-foreground: 153 48% 82%;
-      --status-borrowed-border: 153 28% 38%;
-      --status-pending: 28 82% 68%;
-      --status-goal: 276 55% 74%;
-      --status-returned: 276 55% 74%;
-      --status-returned-muted: 276 24% 24%;
-      --status-returned-foreground: 276 55% 86%;
-      --status-returned-border: 276 24% 42%;
-      --cover-1-bg: 169 25% 27%;
-      --cover-1-fg: 162 45% 90%;
-      --cover-2-bg: 25 24% 28%;
-      --cover-2-fg: 32 45% 90%;
-      --cover-3-bg: 220 31% 29%;
-      --cover-3-fg: 219 55% 91%;
-      --cover-4-bg: 42 32% 28%;
-      --cover-4-fg: 42 62% 90%;
-      --cover-5-bg: 300 22% 28%;
-      --cover-5-fg: 300 38% 91%;
-      --chart-1: 220 70% 50%;
-      --chart-2: 160 60% 45%;
-      --chart-3: 30 80% 55%;
-      --chart-4: 280 65% 60%;
-      --chart-5: 340 75% 55%;
-      --sidebar-background: 240 5.9% 10%;
-      --sidebar-foreground: 240 4.8% 95.9%;
-      --sidebar-primary: 224.3 76.3% 48%;
-      --sidebar-primary-foreground: 0 0% 100%;
-      --sidebar-accent: 240 3.7% 15.9%;
-      --sidebar-accent-foreground: 240 4.8% 95.9%;
-      --sidebar-border: 240 3.7% 15.9%;
-      --sidebar-ring: 217.2 91.2% 59.8%;
-    }
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }
