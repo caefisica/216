@@ -62,9 +62,12 @@ the title and first author, requires a close title match, stores the response in
 `book-images/` R2 prefix, records `/media/book-images/...` in `books` and
 `book_images`, and never stores an Open Library URL.
 
-The database and bucket are Wrangler's local bindings. The command needs no
-credentials; `--dry-run` matches and caches results without writing to R2 or the
-database.
+By default the database and bucket are Wrangler's local bindings and the command
+needs no credentials. `--remote` targets production; see
+[deployment](deployment.md#load-the-covers). `--dry-run` matches, prints each
+cover it would store, and writes nothing: not to R2, the database or the cache
+files. It reads the cache files if they exist. After the first remote upload the
+script lists the key it wrote and fails the upload if R2 does not show it.
 
 ## Review screenshots
 

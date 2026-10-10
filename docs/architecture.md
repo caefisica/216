@@ -70,6 +70,7 @@ See [accounts and roles](auth.md).
 | `src/lib/db/qualified.ts`           | `outer()`: column references for correlated subqueries.                                                              |
 | `src/lib/storage.ts`                | R2 helpers over the `_216_storage` binding, and the `/media/` URL of an object.                                      |
 | `scripts/fetch-covers.ts`           | Open Library matching, disk cache, R2 upload and `books.image_url` updates for titles without a cover.               |
+| `scripts/cloudflare-remote.ts`      | A Drizzle database and an R2 bucket over the `cf` CLI, for scripts that target production.                           |
 | `src/app/media/`                    | Route that serves R2 objects at `/media/<key>`.                                                                      |
 | `src/features/auth/core/mailer.ts`  | Verification and reset emails through the Resend HTTP API.                                                           |
 | `src/lib/result.ts`                 | `Ok`/`Err` result type for fallible service calls.                                                                   |
@@ -86,7 +87,9 @@ See [accounts and roles](auth.md).
   [`src/lib/storage.ts`](../src/lib/storage.ts), whose objects are served at
   `/media`. `src/lib/db/seed.ts` and `scripts/fetch-covers.ts` run outside the
   Worker and read `env.DB` through `getPlatformProxy`; `scripts/fetch-covers.ts`
-  also reads the R2 bucket binding that way.
+  also reads the R2 bucket binding that way. With `--remote` it reaches
+  production through the `cf` CLI instead, in
+  [`scripts/cloudflare-remote.ts`](../scripts/cloudflare-remote.ts).
 - Stored image URLs are `/media/<key>` paths, never absolute URLs, so the bucket
   needs no public address.
 - Password and session code uses Web Crypto and `@oslojs`, not Node-only APIs,

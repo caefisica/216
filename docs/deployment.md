@@ -56,6 +56,27 @@ since. Run it after any migration that empties the catalogue, such as
 export a copy first (see [Production database](#production-database)). What the
 seed holds is in [database](database.md#seeds).
 
+## Load the covers
+
+`bun run covers:fetch` fills the local database and bucket. To fill production,
+after the catalogue is loaded:
+
+```bash
+bun run covers:fetch -- --remote
+```
+
+It reads the database and bucket named in `wrangler.jsonc` and writes through
+the [`cf`](https://www.npmjs.com/package/cf) CLI, so the machine needs
+`npm install --global cf` and a login with `cf auth login`. It does not use the
+Wrangler login. The login must be allowed to write D1 and R2 in the account that
+owns the Worker.
+
+Add `--dry-run` first to see which covers it would store. A dry run reads the
+production database and writes nothing to it or to the bucket. The command only
+touches titles that have no cover, so running it again stores nothing for titles
+it already covered. How the matching works is in
+[design](design.md#imported-covers).
+
 ## Email
 
 Verification and password reset emails go through the
