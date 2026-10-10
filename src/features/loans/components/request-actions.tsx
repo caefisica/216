@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/field";
+import { Field, Input, Select } from "@/components/ui/field";
 import { toast } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 import { locationLabel } from "@/features/books/labels";
@@ -86,27 +88,24 @@ export function RequestActions({
   };
 
   const message = error && (
-    <p role="alert" className="text-xs text-destructive">
+    <p role="alert" className="text-sm text-destructive">
       {error}
     </p>
   );
 
   if (rejecting) {
     return (
-      <form onSubmit={reject} className="grid gap-2 sm:w-72">
-        <label className="grid gap-1">
-          <span className="text-sm font-medium">
-            Motivo <span className="font-normal text-muted-foreground">(lo ve el lector)</span>
-          </span>
+      <form onSubmit={reject} className="grid gap-3 sm:w-80">
+        <Field label="Motivo" hint="Lo ve el lector." error={error ?? undefined}>
           <Input
             ref={reasonInput}
             name="reason"
             maxLength={300}
             autoComplete="off"
+            aria-invalid={error !== null}
             onKeyDown={(event) => event.key === "Escape" && closeReject()}
           />
-        </label>
-        {message}
+        </Field>
         <div className="flex gap-2">
           <Button type="submit" variant="danger" disabled={busy}>
             Rechazar
@@ -120,9 +119,15 @@ export function RequestActions({
   }
 
   return (
-    <div className="grid gap-2 sm:w-72">
+    <div className="grid gap-2 sm:w-80">
       {!chosen ? (
-        <p className="text-sm text-warning">Sin ejemplares libres. Espera una devolución.</p>
+        <div className="grid justify-items-start gap-1.5">
+          <Badge tone="warning">
+            <Clock aria-hidden />
+            Sin ejemplares libres
+          </Badge>
+          <p className="text-sm text-muted-foreground">Espera una devolución.</p>
+        </div>
       ) : copies.length > 1 ? (
         <Select
           aria-label={`Ejemplar para ${reader}`}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { ToastAction } from "@/components/ui/toast";
 import { toast, toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
@@ -26,6 +27,7 @@ export function ReturnButton({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const undo = async () => {
     const result = await reopenLoan({ requestId });
@@ -36,9 +38,10 @@ export function ReturnButton({
 
   const giveBack = async () => {
     setBusy(true);
+    setError(null);
     const result = await returnLoan({ requestId });
     if (isErr(result)) {
-      toastActionError(result.error);
+      setError(result.error.message);
     } else {
       toast({
         title: "Devuelto",
@@ -57,14 +60,17 @@ export function ReturnButton({
   };
 
   return (
-    <Button
-      type="button"
-      data-primary
-      disabled={busy}
-      aria-label={`Devolver ${title} de ${reader}`}
-      onClick={giveBack}
-    >
-      Devolver
-    </Button>
+    <>
+      <Button
+        type="button"
+        data-primary
+        disabled={busy}
+        aria-label={`Devolver ${title} de ${reader}`}
+        onClick={giveBack}
+      >
+        Devolver
+      </Button>
+      <FormError message={error} className="sm:col-span-2" />
+    </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
+import { CardList } from "@/components/ui/card";
 import { DESK_LIST_ID } from "../constants";
 
 /** Up and Down walk the main buttons of the rows, so a whole queue is cleared from the keyboard. */
@@ -18,14 +19,14 @@ export function DeskList({ label, children }: { label: string; children: React.R
   }
 
   return (
-    <ul
+    <CardList
       id={DESK_LIST_ID}
       tabIndex={-1}
       aria-label={label}
       onKeyDown={walk}
-      className="divide-y border-y"
+      className="focus-visible:outline-none"
     >
       {children}
-    </ul>
+    </CardList>
   );
 }

@@ -111,7 +111,7 @@ export function DeskSearch({
         <div className="relative">
           <Search
             aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             id={DESK_SEARCH_ID}
@@ -123,7 +123,7 @@ export function DeskSearch({
             autoFocus
             enterKeyHint="go"
             value={value}
-            className="h-12 pl-9 pr-10 text-base"
+            className="h-11 rounded-md pl-10 pr-11 [&::-webkit-search-cancel-button]:hidden"
             onChange={(event) => {
               const next = event.target.value;
               setValue(next);
@@ -132,14 +132,17 @@ export function DeskSearch({
               timer.current = setTimeout(() => go(next), DESK_SEARCH_DELAY_MS);
             }}
           />
-          {!value && <Kbd className="absolute right-3 top-1/2 -translate-y-1/2">/</Kbd>}
+          {!value && <Kbd className="absolute right-3.5 top-1/2 -translate-y-1/2">/</Kbd>}
         </div>
       </form>
 
       <div
         aria-busy={pending}
         inert={pending}
-        className={cn("mt-4 transition-opacity duration-150", pending && "opacity-50")}
+        className={cn(
+          "mt-2 transition-opacity duration-150 ease-out",
+          pending && "opacity-55 delay-150",
+        )}
       >
         {children}
       </div>

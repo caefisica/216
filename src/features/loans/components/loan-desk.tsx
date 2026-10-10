@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { CardRow } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
 import { Kbd } from "@/components/ui/kbd";
-import { daysOverdue, formatDay, overdueLabel } from "../format";
+import { PageTitle } from "@/components/ui/page";
+import { SegmentedNav } from "@/components/ui/segmented";
+import { daysOverdue, formatDay, overdueCountLabel, overdueLabel } from "../format";
 import type { DeskView } from "../schemas";
 import type { ActiveLoanRow, Desk, PendingRequestRow } from "../types";
 import { DeskList } from "./desk-list";
@@ -18,60 +22,67 @@ const deskHref = (view: DeskView, page = 1, query = "") =>
     ...(page > 1 && { page: String(page) }),
   })}`;
 
-const tab =
-  "inline-flex h-control items-center gap-2 px-1 font-medium whitespace-nowrap text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:underline aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-8";
-
-function Tabs({ desk }: { desk: Desk }) {
+function Views({ desk }: { desk: Desk }) {
   const { counts } = desk;
   return (
-    <nav aria-label="Listas" className="flex flex-wrap items-center gap-x-6">
-      <Link
-        href={deskHref("requests", 1, desk.query)}
-        aria-current={desk.view === "requests" ? "page" : undefined}
-        className={tab}
-      >
-        Solicitudes <span className="tabular-nums">{counts.pending}</span>
-      </Link>
-      <Link
-        href={deskHref("loans", 1, desk.query)}
-        aria-current={desk.view === "loans" ? "page" : undefined}
-        className={tab}
-      >
-        Prestados <span className="tabular-nums">{counts.active}</span>
-      </Link>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <SegmentedNav
+        label="Listas"
+        items={[
+          {
+            href: deskHref("requests", 1, desk.query),
+            current: desk.view === "requests",
+            label: (
+              <>
+                Solicitudes <span className="tabular-nums">{counts.pending}</span>
+              </>
+            ),
+          },
+          {
+            href: deskHref("loans", 1, desk.query),
+            current: desk.view === "loans",
+            label: (
+              <>
+                Prestados <span className="tabular-nums">{counts.active}</span>
+              </>
+            ),
+          },
+        ]}
+      />
       {counts.overdue > 0 && (
-        <span className="inline-flex items-center gap-1 text-destructive">
-          <AlertTriangle aria-hidden className="size-4" />
-          {counts.overdue === 1 ? "1 vencido" : `${counts.overdue} vencidos`}
-        </span>
+        <Badge tone="destructive">
+          <AlertTriangle aria-hidden />
+          {overdueCountLabel(counts.overdue)}
+        </Badge>
       )}
-    </nav>
+    </div>
   );
 }
 
-function Title({ book }: { book: { id: string; code: string; title: string } }) {
+function Title({ book }: { book: { id: string; title: string } }) {
   return (
-    <p>
+    <p className="text-pretty">
       <Link
         href={`/books/${book.id}`}
-        className="inline-flex items-center font-medium underline-offset-2 hover:underline pointer-coarse:min-h-control"
+        className="inline-flex items-center rounded-xs font-serif text-lg font-medium underline-offset-2 hover:underline pointer-coarse:min-h-control"
       >
         {book.title}
       </Link>
-      <span className="ml-2 font-mono text-xs text-muted-foreground">{book.code}</span>
     </p>
   );
 }
 
+const rowLayout = "grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-6";
+
 function RequestRow({ request }: { request: PendingRequestRow }) {
   return (
-    <li className="grid gap-3 py-4 sm:grid-cols-[1fr_auto] sm:gap-6">
+    <CardRow className={rowLayout}>
       <div className="min-w-0">
         <Title book={request.book} />
         <p className="text-muted-foreground">
           {request.reader.name} · pidió el {formatDay(request.requestDate)}
         </p>
-        {request.note && <p className="mt-1 text-muted-foreground">“{request.note}”</p>}
+        {request.note && <p className="mt-1.5 text-muted-foreground">“{request.note}”</p>}
       </div>
       <RequestActions
         requestId={request.id}
@@ -79,14 +90,14 @@ function RequestRow({ request }: { request: PendingRequestRow }) {
         reader={request.reader.name}
         copies={request.lendableCopies}
       />
-    </li>
+    </CardRow>
   );
 }
 
 function LoanRow({ loan, now }: { loan: ActiveLoanRow; now: Date }) {
   const late = daysOverdue(loan.dueDate, now);
   return (
-    <li className="grid gap-3 py-4 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-6">
+    <CardRow className={`${rowLayout} sm:items-center`}>
       <div className="min-w-0">
         <Title book={loan.book} />
         <p className="text-muted-foreground">
@@ -94,13 +105,18 @@ function LoanRow({ loan, now }: { loan: ActiveLoanRow; now: Date }) {
           {loan.copy.volume ? ` · vol. ${loan.copy.volume}` : ""}
         </p>
         {late !== null ? (
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 text-destructive">
-            <AlertTriangle aria-hidden className="size-4" />
-            <span className="font-medium">{overdueLabel(late)}</span>
-            <a href={`mailto:${loan.reader.email}`} className="underline underline-offset-2">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Badge tone="destructive">
+              <AlertTriangle aria-hidden />
+              {overdueLabel(late)}
+            </Badge>
+            <a
+              href={`mailto:${loan.reader.email}`}
+              className="inline-flex items-center rounded-xs text-sm text-accent underline underline-offset-2 pointer-coarse:min-h-control"
+            >
               {loan.reader.email}
             </a>
-          </p>
+          </div>
         ) : (
           loan.dueDate && (
             <p className="text-muted-foreground">Vence el {formatDay(loan.dueDate)}</p>
@@ -108,7 +124,7 @@ function LoanRow({ loan, now }: { loan: ActiveLoanRow; now: Date }) {
         )}
       </div>
       <ReturnButton requestId={loan.id} title={loan.book.title} reader={loan.reader.name} />
-    </li>
+    </CardRow>
   );
 }
 
@@ -117,7 +133,7 @@ function Pager({ desk }: { desk: Desk }) {
   const first = (desk.page - 1) * desk.pageSize + 1;
   const last = Math.min(desk.page * desk.pageSize, desk.total);
   return (
-    <nav aria-label="Páginas" className="mt-4 flex items-center justify-between gap-4">
+    <nav aria-label="Páginas" className="mt-6 flex items-center justify-between gap-4">
       {desk.page > 1 ? (
         <Link
           href={deskHref(desk.view, desk.page - 1, desk.query)}
@@ -129,7 +145,7 @@ function Pager({ desk }: { desk: Desk }) {
       ) : (
         <span />
       )}
-      <span className="text-sm text-muted-foreground">
+      <span className="text-sm text-muted-foreground tabular-nums">
         {first}–{last} de {desk.total}
       </span>
       {desk.page < desk.pageCount ? (
@@ -187,8 +203,8 @@ export function LoanDesk({ desk }: { desk: Desk }) {
   const label = desk.view === "requests" ? "Solicitudes pendientes" : "Préstamos vigentes";
   return (
     <div className="grid gap-4">
-      <h1 className="text-xl font-semibold">Préstamos</h1>
-      <Tabs desk={desk} />
+      <PageTitle>Préstamos</PageTitle>
+      <Views desk={desk} />
       <DeskSearch view={desk.view} query={desk.query}>
         {desk.items.length === 0 ? (
           <Nothing desk={desk} />
@@ -200,7 +216,7 @@ export function LoanDesk({ desk }: { desk: Desk }) {
                 : desk.items.map((loan) => <LoanRow key={loan.id} loan={loan} now={desk.now} />)}
             </DeskList>
             {desk.query && desk.items.length === 1 && (
-              <p className="mt-3 hidden items-center gap-2 text-muted-foreground pointer-fine:flex">
+              <p className="mt-3 hidden items-center gap-2 text-sm text-muted-foreground pointer-fine:flex">
                 <Kbd>Enter</Kbd>
                 {desk.view === "requests" ? "aprueba" : "registra la devolución de"} este resultado
               </p>
