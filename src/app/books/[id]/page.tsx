@@ -5,7 +5,7 @@ import { Page } from "@/components/ui/page";
 import { getSession, isVerifiedStaff } from "@/features/auth/protected-action";
 import { getBookById } from "@/features/books/actions";
 import { locationLabel } from "@/features/books/labels";
-import { formatDay } from "@/features/loans/format";
+import { daysOverdue, formatDay } from "@/features/loans/format";
 import { isErr } from "@/lib/result";
 import { BackLink } from "./components/back-link";
 import { BookGallery } from "./components/book-gallery";
@@ -15,16 +15,18 @@ import { FavoriteButton } from "./components/favorite-button";
 import { NotFoundState } from "./components/not-found-state";
 import type { BookDetailed } from "@/features/books/types";
 
-function whereOrWhen(book: BookDetailed) {
+/** A due date that has passed promises nothing, so only dates still ahead say when it returns. */
+function whereOrWhen(book: BookDetailed, now: Date) {
   const onShelf = book.copies.find((copy) => copy.status === "present" && !copy.loanId);
   if (onShelf)
     return onShelf.location ? locationLabel(onShelf.location) : "Pregunta en el ambiente 216";
 
-  const back = book.copies
-    .flatMap((copy) => (copy.dueDate ? [copy.dueDate] : []))
+  const dates = book.copies.flatMap((copy) => (copy.dueDate ? [copy.dueDate] : []));
+  const back = dates
+    .filter((date) => daysOverdue(date, now) === null)
     .sort((a, b) => a.getTime() - b.getTime())[0];
   if (back) return `Vuelve hacia el ${formatDay(back)}`;
-  return null;
+  return dates.length > 0 ? "Prestado, sin fecha de vuelta" : null;
 }
 
 export default async function BookPage({ params }: { params: Promise<{ id: string }> }) {
@@ -40,7 +42,8 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
   const parent = detail.category.parent;
   // A reader who holds the last copy still needs to see that it is theirs.
   const showBorrow = !staff && (detail.lendableCount > 0 || detail.request !== null);
-  const where = whereOrWhen(detail);
+  const now = new Date();
+  const where = whereOrWhen(detail, now);
 
   return (
     <Page width="prose">
@@ -96,7 +99,7 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
             {where && <p className="mt-0.5 text-muted-foreground">{where}</p>}
           </div>
           {showBorrow && (
-            <BorrowPanel bookId={detail.id} reader={reader} request={detail.request} />
+            <BorrowPanel bookId={detail.id} reader={reader} request={detail.request} now={now} />
           )}
           {reader === "verified" && !staff && (
             <div className="-ml-4">
@@ -125,7 +128,7 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
           </summary>
           <div className="mt-2">
             {detail.copies.length > 0 ? (
-              <CopyList copies={detail.copies} staff={staff} />
+              <CopyList copies={detail.copies} staff={staff} now={now} />
             ) : (
               <p className="text-muted-foreground">Aún no hay ejemplares registrados.</p>
             )}

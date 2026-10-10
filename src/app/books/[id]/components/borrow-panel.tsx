@@ -8,22 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/field";
 import { createBorrowRequest } from "@/features/books/actions";
 import { toastActionError } from "@/hooks/use-toast";
-import { formatDay } from "@/features/loans/format";
+import { dueSuffix } from "@/features/loans/format";
 import { isErr } from "@/lib/result";
 import type { ReaderRequest } from "@/features/books/types";
 
 interface BorrowPanelProps {
   bookId: string;
-  /** "anonymous" has no session; "unverified" has not confirmed the email yet. */
+  /** Anonymous readers have no session. Unverified readers have not confirmed their email. */
   reader: "anonymous" | "unverified" | "verified";
   request: ReaderRequest | null;
+  now: Date;
 }
 
-/**
- * The reader's standing with a title: their request or loan if they have one, otherwise the way
- * to ask for it. Only rendered when there is a copy to ask for or a request to show.
- */
-export function BorrowPanel({ bookId, reader, request }: BorrowPanelProps) {
+export function BorrowPanel({ bookId, reader, request, now }: BorrowPanelProps) {
   const router = useRouter();
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
@@ -52,7 +49,7 @@ export function BorrowPanel({ bookId, reader, request }: BorrowPanelProps) {
     return (
       <p className="inline-flex items-center gap-2 font-medium">
         <Check aria-hidden className="size-4" />
-        Lo tienes prestado{request.dueDate ? ` hasta el ${formatDay(request.dueDate)}` : ""}.
+        Lo tienes prestado{request.dueDate ? dueSuffix(request.dueDate, now) : ""}.
       </p>
     );
   }

@@ -23,3 +23,11 @@ export function overdueLabel(days: number) {
   if (days === 0) return "Vencido hoy";
   return days === 1 ? "Vencido hace 1 día" : `Vencido hace ${days} días`;
 }
+
+/** Adds the due date while the loan is current. It adds the overdue label after the due date. */
+export function dueSuffix(dueDate: Date, now: Date) {
+  const late = daysOverdue(dueDate, now);
+  return late === null
+    ? ` hasta el ${formatDay(dueDate)}`
+    : `, ${overdueLabel(late).toLowerCase()}`;
+}
