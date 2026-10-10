@@ -4,7 +4,6 @@ import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/components/ui/page";
 
-/** One narrow column. The form is the whole screen, so the title and the form are all there is. */
 export function AuthShell({
   title,
   intro,

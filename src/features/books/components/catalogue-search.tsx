@@ -32,8 +32,8 @@ function toQuery(search: string, category: string, available: boolean, review: R
 const SEARCH_DELAY_MS = 250;
 
 /**
- * The URL is the state: every change is a navigation, so the back button, a shared link and a
- * reload all return to the same list. The list itself arrives as `children`, rendered on the server.
+ * The URL is the state. Navigation preserves the list for the back button, shared links, and
+ * reloads. The server renders the list as `children`.
  */
 export function CatalogueSearch({ filters, categories, review, children }: CatalogueSearchProps) {
   const router = useRouter();
@@ -55,8 +55,7 @@ export function CatalogueSearch({ filters, categories, review, children }: Catal
   const [available, setAvailable] = useState(filters.availability === "available");
   const [reviewing, setReviewing] = useState<Review>(urlReview);
 
-  // A link elsewhere on the page (for example "Quitar filtros") changes the URL under us. While
-  // our own navigation is pending the fields are ahead of the URL, so they are left alone.
+  // Keep local fields ahead of the URL while their own navigation is pending.
   useEffect(() => {
     if (pending || urlQuery === sent.current) return;
     sent.current = urlQuery;

@@ -47,7 +47,7 @@ interface FieldProps {
   children: React.ReactNode;
 }
 
-/** The label wraps its control, so the two are tied without ids. */
+/** The wrapping label associates the control without requiring an id. */
 function Field({ label, hint, error, className, children }: FieldProps) {
   return (
     <label className={cn("grid content-start gap-1", className)}>

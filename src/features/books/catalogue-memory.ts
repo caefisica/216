@@ -9,7 +9,6 @@ export function rememberCatalogue(query: string) {
   }
 }
 
-/** Where "Catálogo" should lead so the reader finds the list as they left it. */
 export function recalledCatalogue(): string {
   try {
     const query = sessionStorage.getItem(KEY);

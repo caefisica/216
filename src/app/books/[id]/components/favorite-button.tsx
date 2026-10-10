@@ -7,7 +7,7 @@ import { setHeart } from "@/features/books/actions";
 import { toastActionError } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
 
-/** Flips at once and goes back if the server refuses. */
+/** Update the icon optimistically, then restore it if the server rejects the change. */
 export function FavoriteButton({ bookId, saved }: { bookId: string; saved: boolean }) {
   const [hearted, setHearted] = useState(saved);
 

@@ -2,11 +2,7 @@
 
 @source '../../*.{js,ts,jsx,tsx,mdx}';
 
-/*
-  Design tokens. Tailwind's default palette, type sizes and radii are cleared, so a class that is
-  not on this page does not exist: colour comes from the semantic names, size from the six steps.
-  Spacing is Tailwind's 0.25rem unit. The steps in use are 1, 2, 3, 4, 6, 8 and 12 (4 to 48px).
-*/
+/* Tailwind's default palette, type sizes and radii are cleared. Classes not defined below do not exist. */
 @theme {
   --color-*: initial;
   --color-transparent: transparent;
@@ -42,8 +38,8 @@
   --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
-  /* Six steps. xs is metadata, sm is the working size of dense lists, base is reading text and
-     touch inputs, lg a row title, xl a page title, 2xl a book title. */
+  /* The scale has six steps. xs is metadata, sm is the working size of dense lists, and base is
+     reading text and touch inputs. lg is a row title, xl is a page title, and 2xl is a book title. */
   --text-*: initial;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;

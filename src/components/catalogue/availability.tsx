@@ -8,7 +8,7 @@ interface AvailabilityProps {
   className?: string;
 }
 
-/** The answer a reader came for. Icon and words carry the state, so colour is never the only cue. */
+/** Use both an icon and text so colour is not the only state cue. */
 export function Availability({ lendable, total, className }: AvailabilityProps) {
   const state =
     total === 0
