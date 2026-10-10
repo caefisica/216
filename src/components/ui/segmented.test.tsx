@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
 import { useState } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { Segmented } from "./segmented";
+import { Segmented, SegmentedNav } from "./segmented";
 
 const options = [
   { value: "all", label: "Todos" },
@@ -70,5 +70,35 @@ describe("Segmented", () => {
       "lent",
     ]);
     expect(second.querySelectorAll("input")[2].checked).toBe(true);
+  });
+});
+
+describe("SegmentedNav", () => {
+  const items = [
+    { href: "/admin/loans", label: "Solicitudes", current: false },
+    { href: "/admin/loans?view=loans", label: "Prestados", current: true },
+  ];
+
+  it("is a navigation named by its label whose items are links", () => {
+    render(<SegmentedNav label="Vista" items={items} />);
+
+    const nav = screen.getByRole("navigation", { name: "Vista" });
+
+    expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/admin/loans", "/admin/loans?view=loans"]);
+  });
+
+  it("marks only the current view for assistive technology", () => {
+    render(<SegmentedNav label="Vista" items={items} />);
+
+    expect(screen.getByRole("link", { name: "Prestados" }).getAttribute("aria-current")).toBe(
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "Solicitudes" }).getAttribute("aria-current")).toBe(
+      null,
+    );
   });
 });

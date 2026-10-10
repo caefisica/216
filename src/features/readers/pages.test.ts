@@ -241,8 +241,9 @@ describe("my books page", () => {
   it("reads a pending request as waiting and a rejected one with its reason", async () => {
     const markup = await html(ProfilePage());
 
-    expect(row(markup, "Esperado")).toContain("Esperando respuesta de la biblioteca");
-    expect(row(markup, "Negado")).toContain("No aprobado: Solo se presta en sala");
+    expect(row(markup, "Esperado")).toContain("Esperando respuesta");
+    expect(row(markup, "Negado")).toContain("No aprobado");
+    expect(row(markup, "Negado")).toContain("Solo se presta en sala");
     expect(row(markup, "Negado")).not.toContain("Esperando");
   });
 

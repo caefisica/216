@@ -100,6 +100,59 @@ describe("BookIntakeForm", () => {
     expect((screen.getByLabelText("Ejemplares") as HTMLInputElement).value).toBe("1");
   });
 
+  it("keeps the typed book and shows a refusal above the button", async () => {
+    actionMocks.createIntakeBook.mockResolvedValue({
+      ok: false,
+      error: { code: "failed", message: "Ya existe un libro con ese ISBN." },
+    });
+    render(<BookIntakeForm facets={facets} />);
+
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Mecánica" } });
+    fireEvent.change(screen.getByLabelText("Categoría"), { target: { value: categoryId } });
+    fireEvent.click(screen.getByRole("button", { name: "Registrar libro" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Ya existe un libro con ese ISBN.");
+    expect((screen.getByLabelText("Título") as HTMLInputElement).value).toBe("Mecánica");
+    expect(screen.queryByText("Escribe en el lomo")).toBeNull();
+  });
+
+  it("shows a refused extra copy under the matches", async () => {
+    actionMocks.addCopy.mockResolvedValue({
+      ok: false,
+      error: { code: "failed", message: "No se pudo agregar el ejemplar." },
+    });
+    actionMocks.getBooks.mockResolvedValue({
+      ok: true,
+      value: {
+        items: [
+          {
+            id: "existing-book",
+            code: "CAFG01",
+            title: "Mecánica",
+            author: null,
+            imageUrl: null,
+            category: { id: categoryId, code: "FG", name: "Física", parent: null },
+            copyCount: 1,
+            lendableCount: 1,
+            isHearted: false,
+          },
+        ],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      },
+    });
+    render(<BookIntakeForm facets={facets} />);
+
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Mecánica" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Agregar ejemplar" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("No se pudo agregar el ejemplar.");
+    expect(screen.getByRole("button", { name: "Agregar ejemplar" })).toBeTruthy();
+  });
+
   it("adds a copy to an existing title when a match is found", async () => {
     actionMocks.addCopy.mockResolvedValue({ ok: true, value: { code: "CAFG01.2" } });
     actionMocks.getBooks.mockResolvedValue({
