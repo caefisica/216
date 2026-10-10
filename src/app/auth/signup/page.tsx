@@ -1,13 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Field, Input } from "@/components/ui/field";
+import { FormError } from "@/components/ui/form-error";
 import { signUpAction } from "@/features/auth/actions/signup";
-import { AuthShell, FormError, SubmitButton, authLink } from "../auth-shell";
+import { AuthShell, SubmitButton, authLink } from "../auth-shell";
 
 export default function SignUpPage() {
   const [state, formAction] = useActionState(signUpAction, null);
+  // Keep these fields controlled because React clears uncontrolled fields after the action.
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
 
   return (
     <AuthShell
@@ -17,10 +21,24 @@ export default function SignUpPage() {
       <form action={formAction} className="grid gap-4">
         <FormError message={state?.error} />
         <Field label="Nombre">
-          <Input name="name" required autoFocus autoComplete="name" />
+          <Input
+            name="name"
+            required
+            autoFocus
+            autoComplete="name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
         </Field>
         <Field label="Correo">
-          <Input name="email" type="email" required autoComplete="email" />
+          <Input
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
         </Field>
         <Field label="Contraseña" hint="Mínimo 8 caracteres.">
           <Input

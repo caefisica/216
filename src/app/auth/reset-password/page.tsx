@@ -3,9 +3,10 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { Field, Input } from "@/components/ui/field";
+import { FormError } from "@/components/ui/form-error";
 import { resetPasswordAction } from "@/features/auth/actions/reset-password";
 import { requestPasswordResetAction } from "@/features/auth/actions/reset-password-request";
-import { AuthShell, FormError, SubmitButton, authLink } from "../auth-shell";
+import { AuthShell, SubmitButton, authLink } from "../auth-shell";
 
 function NewPasswordForm() {
   const [state, formAction] = useActionState(resetPasswordAction, null);

@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { Field, Input } from "@/components/ui/field";
+import { FormError } from "@/components/ui/form-error";
 import { Button } from "@/components/ui/button";
 import {
   resendVerificationEmailAction,
@@ -9,7 +10,7 @@ import {
 } from "@/features/auth/actions/verify-email";
 import { toast } from "@/hooks/use-toast";
 import { isErr } from "@/lib/result";
-import { AuthShell, FormError, SubmitButton } from "../auth-shell";
+import { AuthShell, SubmitButton } from "../auth-shell";
 
 export default function VerifyEmailPage() {
   const [state, formAction] = useActionState(verifyEmailAction, null);
@@ -29,7 +30,7 @@ export default function VerifyEmailPage() {
             maxLength={6}
             required
             autoFocus
-            className="font-mono text-lg tracking-widest"
+            className="font-mono tracking-widest"
           />
         </Field>
         <SubmitButton idle="Confirmar" busy="Confirmando…" />
@@ -38,7 +39,7 @@ export default function VerifyEmailPage() {
       <div>
         <Button
           type="button"
-          variant="quiet"
+          variant="secondary"
           disabled={resending}
           onClick={() =>
             startTransition(async () => {

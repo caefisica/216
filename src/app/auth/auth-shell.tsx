@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Page } from "@/components/ui/page";
+import { Page, PageTitle } from "@/components/ui/page";
 
 export function AuthShell({
   title,
@@ -15,19 +15,10 @@ export function AuthShell({
 }) {
   return (
     <Page width="prose" className="max-w-sm sm:pt-16">
-      <h1 className="font-serif text-2xl font-semibold">{title}</h1>
+      <PageTitle>{title}</PageTitle>
       {intro && <p className="mt-2 text-muted-foreground">{intro}</p>}
-      <div className="mt-6 grid gap-4">{children}</div>
+      <div className="mt-6 grid gap-5">{children}</div>
     </Page>
-  );
-}
-
-export function FormError({ message }: { message?: string | null }) {
-  if (!message) return null;
-  return (
-    <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-destructive">
-      {message}
-    </p>
   );
 }
 
@@ -41,4 +32,4 @@ export function SubmitButton({ idle, busy }: { idle: string; busy: string }) {
 }
 
 export const authLink =
-  "inline-flex min-h-control items-center text-accent underline underline-offset-2";
+  "inline-flex min-h-control items-center rounded-xs text-accent underline underline-offset-2";
