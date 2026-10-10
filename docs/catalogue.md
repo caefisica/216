@@ -228,8 +228,8 @@ the largest control on the page.
   (_Disponible_, _2 de 3 disponibles_, _No disponible_ or _Sin ejemplares_).
   Staff also see the code. The whole row links to the title.
 - Typing searches after a short pause. Two controls sit under the field: the
-  category (top-level categories group their subcategories) and _Solo
-  disponibles_. Staff get a third, to review copies without a label or a place,
+  category (top-level categories group their subcategories) and _Todos_ or
+  _Disponibles_. Staff get a third, to review copies without a label or a place,
   with how many there are. Everything is in the URL.
 - A count of the matches sits above the list, with _Quitar filtros_ when any
   filter is on. Below it, when there is more than one page, the range
@@ -248,16 +248,17 @@ question first: is it available.
   filtered list. The back link returns to the last search, filters and page of
   the catalogue in this browser tab, however the reader reached the book. The
   catalogue stores that query in `sessionStorage` as `216:catalogue`.
-- Below a rule, the availability, then where to find it (the place of a copy on
-  the shelf) or, when all copies are out, _Vuelve hacia el_ the earliest due
-  date that is still ahead, or _Prestado, sin fecha de vuelta_ when every due
-  date has passed. A copy past its date reads _vencido hace_ the days late, here
-  and in the copies table. Then the one action: _Solicitar préstamo_, with a
-  note behind _Añadir una nota_. A visitor is asked to sign in and an unverified
-  account to verify its email. After a request the action becomes the state of
-  the request. That state also shows when no copy is lendable, so a reader who
-  holds the last copy reads _Lo tienes prestado hasta_ the due date, or _vencido
-  hace_ the days late.
+- In a card, the availability, then where to find it (the place of a copy on the
+  shelf) or, when all copies are out, _Vuelve hacia el_ the earliest due date
+  that is still ahead, or _Prestado, sin fecha de vuelta_ when every due date
+  has passed. When every copy is missing or in maintenance it reads _Ningún
+  ejemplar está en circulación_. A copy past its date reads _vencido hace_ the
+  days late, here and in the copies table. Then the one action: _Solicitar
+  préstamo_, with a note behind _Añadir una nota_. A visitor is asked to sign in
+  and an unverified account to verify its email. After a request the action
+  becomes the state of the request. That state also shows when no copy is
+  lendable, so a reader who holds the last copy reads _Lo tienes prestado hasta_
+  the due date, or _vencido hace_ the days late.
 - Readers with a verified account can save the title. Staff see _Editar libro_
   instead of the request.
 - The description follows. The copies sit in a closed _Ejemplares_ section: for
