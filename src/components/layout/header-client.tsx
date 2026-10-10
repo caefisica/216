@@ -41,10 +41,6 @@ export function HeaderClient({ user, staff, pending }: HeaderClientProps) {
             label: "Registrar",
             active: pathname.startsWith("/admin/books"),
           },
-        ]
-      : []),
-    ...(staff
-      ? [
           {
             href: "/admin/settings",
             label: "Ajustes",
