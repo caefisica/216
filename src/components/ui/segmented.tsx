@@ -1,8 +1,40 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 
 import { cn } from "@/lib/utils";
+
+const track = "inline-flex h-control items-stretch rounded-md border bg-sunken p-0.5";
+const segment =
+  "inline-flex items-center gap-1.5 rounded-sm px-3 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[color,background-color,box-shadow] duration-100 ease-out hover:text-foreground";
+
+interface SegmentedNavProps {
+  label: string;
+  items: readonly { href: string; label: React.ReactNode; current: boolean }[];
+  className?: string;
+}
+
+/** Use links when each view has its own URL. `Segmented` controls local state. */
+export function SegmentedNav({ label, items, className }: SegmentedNavProps) {
+  return (
+    <nav aria-label={label} className={cn(track, className)}>
+      {items.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          aria-current={item.current ? "page" : undefined}
+          className={cn(
+            segment,
+            "aria-[current=page]:bg-raised aria-[current=page]:text-foreground aria-[current=page]:shadow-raised",
+          )}
+        >
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
 
 interface SegmentedProps<T extends string> {
   label: string;
@@ -26,17 +58,15 @@ export function Segmented<T extends string>({
   const name = React.useId();
 
   return (
-    <fieldset
-      className={cn(
-        "inline-flex h-control items-stretch rounded-md border bg-sunken p-0.5",
-        className,
-      )}
-    >
+    <fieldset className={cn(track, className)}>
       <legend className="sr-only">{label}</legend>
       {options.map((option) => (
         <label
           key={option.value}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-3 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[color,background-color,box-shadow] duration-100 ease-out hover:text-foreground has-checked:bg-raised has-checked:text-foreground has-checked:shadow-raised has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
+          className={cn(
+            segment,
+            "cursor-pointer has-checked:bg-raised has-checked:text-foreground has-checked:shadow-raised has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent",
+          )}
         >
           <input
             type="radio"
