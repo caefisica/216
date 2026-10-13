@@ -27,7 +27,7 @@
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
-    "@next/mdx": "16.3.8",
+    "@next/mdx": "16.4.0",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",
     "@radix-ui/react-alert-dialog": "^1.1.24",
