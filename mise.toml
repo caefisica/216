@@ -1,5 +1,5 @@
 [tools]
-bun = "1.4.2"
+bun = "1.4.3"
 
 [tasks.check]
 description = "Format check, lint, type check and tests. Leaves no generated file behind."

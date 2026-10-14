@@ -12,9 +12,9 @@ roles.
 
 ## Get started
 
-You need [Bun](https://bun.sh) 1.4.2 (`mise install` reads it from `mise.toml`).
-There is no database to install: local development runs D1 and R2 in the Workers
-runtime simulator, and keeps their state in `.wrangler/state`.
+You need [Bun](https://bun.sh), at the version `mise.toml` pins: `mise install`
+installs it. There is no database to install: local development runs D1 and R2
+in the Workers runtime simulator, and keeps their state in `.wrangler/state`.
 
 ```bash
 bun install
