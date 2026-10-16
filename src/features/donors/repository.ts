@@ -1,6 +1,6 @@
 import { getDb } from "@/lib/db";
-import { books, copies, donors } from "@/lib/db/schema";
-import { desc, eq, sql } from "drizzle-orm";
+import { books, borrowRequests, copies, donors } from "@/lib/db/schema";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 
 export async function listDonorGifts() {
   const db = await getDb();
@@ -62,10 +62,20 @@ export async function listDonorGifts() {
     donorsById.set(row.donorId, donor);
   }
 
+  const [loans] = await db
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
+    .from(borrowRequests)
+    .innerJoin(copies, eq(borrowRequests.copyId, copies.id))
+    .where(
+      and(isNotNull(copies.donorId), inArray(borrowRequests.status, ["approved", "returned"])),
+    );
+
   const donorGroups = [...donorsById.values()];
 
   return {
     donors: donorGroups,
     totalCopies: donorGroups.reduce((total, donor) => total + donor.copyCount, 0),
+    titleCount: new Set(donorRows.map((row) => row.bookId)).size,
+    loanCount: loans?.count ?? 0,
   };
 }
