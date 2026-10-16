@@ -1,15 +1,15 @@
 import * as React from "react";
-import { ChevronDown } from "lucide-react";
+import { AlertTriangle, ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-// iOS Safari zooms into a field whose text is under 16px, so touch screens get 1rem.
+// Text is 16px at every width, because iOS Safari zooms into a field whose text is smaller.
 const control =
-  "w-full rounded-sm border border-input bg-surface px-3 text-base text-foreground shadow-[inset_0_1px_2px_rgb(0_0_0/0.04)] transition-[border-color] duration-100 ease-out placeholder:text-muted-foreground hover:border-muted-foreground disabled:opacity-50 aria-invalid:border-destructive pointer-coarse:text-[1rem]";
+  "w-full rounded-md border border-input bg-surface px-3 text-base text-foreground transition-[border-color] placeholder:text-muted-foreground hover:border-muted-foreground disabled:opacity-50 aria-invalid:border-destructive";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, ...props }, ref) => (
-    <input ref={ref} className={cn(control, "h-control", className)} {...props} />
+    <input ref={ref} className={cn(control, "h-field", className)} {...props} />
   ),
 );
 Input.displayName = "Input";
@@ -26,7 +26,7 @@ const Select = React.forwardRef<HTMLSelectElement, React.ComponentProps<"select"
     <div className="relative max-w-full">
       <select
         ref={ref}
-        className={cn(control, "h-control cursor-pointer appearance-none truncate pr-9", className)}
+        className={cn(control, "h-field cursor-pointer appearance-none truncate pr-10", className)}
         {...props}
       >
         {children}
@@ -51,12 +51,13 @@ interface FieldProps {
 /** The wrapping label associates the control without requiring an id. */
 function Field({ label, hint, error, className, children }: FieldProps) {
   return (
-    <label className={cn("grid content-start gap-1.5", className)}>
-      <span className="text-sm font-medium">{label}</span>
+    <label className={cn("grid content-start gap-2", className)}>
+      <span className="text-sm font-semibold">{label}</span>
       {children}
       {hint && !error && <span className="text-sm text-muted-foreground">{hint}</span>}
       {error && (
-        <span role="alert" className="text-sm text-destructive">
+        <span role="alert" className="flex items-start gap-1.5 text-sm text-destructive">
+          <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
           {error}
         </span>
       )}

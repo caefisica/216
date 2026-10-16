@@ -6,22 +6,23 @@ interface DisclosureProps {
   title: string;
   /** A number or short note after the title. */
   detail?: React.ReactNode;
+  open?: boolean;
   className?: string;
   children: React.ReactNode;
 }
 
-/** Detail few readers need, one click away. The summary is a 36px target, 44px on touch screens. */
-export function Disclosure({ title, detail, className, children }: DisclosureProps) {
+/** Detail few readers need, one click away. The summary is a 40px target, 44px on touch screens. */
+export function Disclosure({ title, detail, open, className, children }: DisclosureProps) {
   return (
-    <details className={cn("group", className)}>
-      <summary className="-ml-1 inline-flex min-h-control list-none items-center gap-1.5 rounded-sm pr-2 pl-1 text-md font-semibold transition-colors duration-100 hover:bg-sunken [&::-webkit-details-marker]:hidden">
+    <details open={open} className={cn("group", className)}>
+      <summary className="-ml-2 inline-flex max-w-full min-h-control list-none items-center gap-2 rounded-md pr-3 pl-2 text-base font-semibold transition-colors hover:bg-sunken [&::-webkit-details-marker]:hidden">
         <ChevronRight
           aria-hidden
-          className="size-4 text-muted-foreground transition-transform duration-150 ease-out group-open:rotate-90"
+          className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
         />
-        {title}
+        <span className="min-w-0 text-balance">{title}</span>
         {detail !== undefined && (
-          <span className="font-normal text-muted-foreground tabular-nums">{detail}</span>
+          <span className="shrink-0 font-normal text-muted-foreground tabular-nums">{detail}</span>
         )}
       </summary>
       <div className="mt-3">{children}</div>

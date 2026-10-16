@@ -15,7 +15,7 @@ interface HeaderClientProps {
 }
 
 const link =
-  "inline-flex h-control items-center gap-1.5 rounded-sm px-1.5 text-sm sm:px-3 font-medium whitespace-nowrap text-muted-foreground transition-colors duration-100 hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:underline aria-[current=page]:decoration-[1.5px] aria-[current=page]:underline-offset-8";
+  "inline-flex h-control items-center gap-2 rounded-md px-2 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground sm:px-3 aria-[current=page]:text-foreground aria-[current=page]:underline aria-[current=page]:decoration-2 aria-[current=page]:decoration-accent aria-[current=page]:underline-offset-8";
 
 export function HeaderClient({ user, staff, pending }: HeaderClientProps) {
   const pathname = usePathname() ?? "";
@@ -56,17 +56,26 @@ export function HeaderClient({ user, staff, pending }: HeaderClientProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-page items-center gap-1 px-4 py-2 sm:gap-4 sm:px-6">
+      <div
+        className={cn(
+          "mx-auto flex max-w-page items-center gap-1 px-4 py-2 sm:gap-4 sm:px-6",
+          staff && "max-sm:flex-wrap",
+        )}
+      >
         <Link
           href="/"
-          className="-ml-1 inline-flex min-h-control items-center rounded-sm px-1 font-serif text-xl font-medium leading-none"
+          className="-ml-2 inline-flex min-h-control items-center rounded-md px-2 text-xl font-semibold leading-none"
           aria-label="216, inicio"
         >
           216
         </Link>
         <nav
           aria-label="Principal"
-          className="-mx-1 flex min-w-0 flex-1 items-center overflow-x-auto"
+          // Staff have five destinations, which do not fit beside the logo on a phone.
+          className={cn(
+            "-mx-1 flex min-w-0 flex-1 items-center overflow-x-auto",
+            staff && "max-sm:order-last max-sm:basis-full",
+          )}
         >
           {items.map((item) => (
             <Link
@@ -77,7 +86,7 @@ export function HeaderClient({ user, staff, pending }: HeaderClientProps) {
             >
               {item.label}
               {"count" in item && item.count !== undefined && item.count > 0 && (
-                <span className="rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
+                <span className="rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground tabular-nums">
                   <span className="sr-only">, </span>
                   {item.count}
                   <span className="sr-only"> pendientes</span>
@@ -87,13 +96,13 @@ export function HeaderClient({ user, staff, pending }: HeaderClientProps) {
           ))}
         </nav>
         {user ? (
-          <form action={signOutAction}>
+          <form action={signOutAction} className="ml-auto">
             <button type="submit" className={link}>
               Salir
             </button>
           </form>
         ) : (
-          <Link href="/auth/signin" className={link}>
+          <Link href="/auth/signin" className={cn(link, "ml-auto")}>
             Entrar
           </Link>
         )}

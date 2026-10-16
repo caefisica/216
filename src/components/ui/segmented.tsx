@@ -5,9 +5,9 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-const track = "inline-flex h-control items-stretch rounded-md border bg-sunken p-0.5";
+const track = "inline-flex h-control items-stretch rounded-md bg-sunken p-1";
 const segment =
-  "inline-flex items-center gap-1.5 rounded-sm px-3 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[color,background-color,box-shadow] duration-100 ease-out hover:text-foreground";
+  "inline-flex items-center gap-2 rounded-sm px-3 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-[color,background-color,box-shadow] hover:text-foreground";
 
 interface SegmentedNavProps {
   label: string;

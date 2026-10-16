@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 
 export function Card({ className, ...props }: React.ComponentProps<"div">) {
-  return <div className={cn("rounded-md border bg-surface", className)} {...props} />;
+  return <div className={cn("rounded-md bg-surface shadow-raised", className)} {...props} />;
 }
 
 export function CardList({ className, ...props }: React.ComponentProps<"ul">) {
   return (
     <ul
-      className={cn("divide-y overflow-hidden rounded-md border bg-surface", className)}
+      className={cn("divide-y overflow-hidden rounded-md bg-surface shadow-raised", className)}
       {...props}
     />
   );
@@ -17,7 +17,7 @@ export function CardRow({ className, ...props }: React.ComponentProps<"li">) {
   return (
     <li
       className={cn(
-        "relative px-4 py-3 transition-colors sm:px-5 duration-100 ease-out has-[a[data-row-link]]:hover:bg-sunken/60",
+        "relative px-4 py-4 transition-colors sm:px-6 has-[a[data-row-link]]:hover:bg-sunken",
         className,
       )}
       {...props}

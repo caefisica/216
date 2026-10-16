@@ -2,10 +2,10 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 const cloths = [
-  "bg-cover-1 text-cover-light",
-  "bg-cover-2 text-cover-light",
-  "bg-cover-3 text-cover-light",
-  "bg-cover-4 text-cover-dark",
+  "bg-cover-1 text-cover-paper",
+  "bg-cover-2 text-cover-paper",
+  "bg-cover-3 text-cover-paper",
+  "bg-cover-4 text-cover-ink",
 ] as const;
 
 function clothFor(category: string) {
@@ -16,13 +16,12 @@ function clothFor(category: string) {
   return cloths[Math.abs(hash) % cloths.length];
 }
 
-// The hairline keeps a white or pale cover from melting into the page.
-const frame =
-  "relative aspect-[2/3] w-full overflow-hidden rounded-xs shadow-cover after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:shadow-[inset_0_0_0_1px_rgb(0_0_0/0.1)] after:content-['']";
+// The shadow's hairline keeps a white or pale cover from melting into the page.
+const frame = "relative aspect-cover w-full overflow-hidden rounded-sm shadow-raised";
 
-// Shading at the left edge reads as the spine of a cloth binding.
+// A darker band at the left edge reads as the spine of a cloth binding.
 const spine =
-  "before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:w-[8%] before:bg-[linear-gradient(90deg,rgb(0_0_0/0.28),rgb(255_255_255/0.1)_70%,transparent)] before:content-['']";
+  "before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:w-2 before:bg-cover-ink/20 before:content-['']";
 
 interface BookCoverProps {
   title: string;
@@ -68,9 +67,7 @@ export function BookCover({
         aria-hidden
         className={cn(frame, spine, clothFor(category), "grid place-items-center", className)}
       >
-        <span className="pl-[8%] font-serif text-2xl font-medium">
-          {title.match(/\p{L}|\d/u)?.[0]}
-        </span>
+        <span className="pl-2 text-xl font-semibold">{title.match(/\p{L}|\d/u)?.[0]}</span>
       </div>
     );
   }
@@ -79,18 +76,12 @@ export function BookCover({
     <div
       role="img"
       aria-label={`Portada generada de ${title}`}
-      className={cn(frame, spine, clothFor(category), "@container", className)}
+      className={cn(frame, spine, clothFor(category), className)}
     >
-      <div className="absolute inset-0 flex flex-col py-[10cqi] pr-[9cqi] pl-[15cqi]">
-        <p className="line-clamp-8 font-serif text-[clamp(0.75rem,11cqi,1.75rem)] leading-[1.12] font-medium hyphens-auto break-words">
-          {title}
-        </p>
-        <span className="mt-[7cqi] h-px w-[18cqi] shrink-0 bg-current opacity-50" />
-        {author && (
-          <p className="mt-auto line-clamp-2 text-[clamp(0.625rem,6.5cqi,0.875rem)] leading-snug">
-            {author}
-          </p>
-        )}
+      <div className="absolute inset-0 flex flex-col gap-3 py-4 pr-3 pl-5">
+        <p className="line-clamp-6 text-base font-semibold hyphens-auto break-words">{title}</p>
+        <span className="h-px w-8 shrink-0 bg-current opacity-50" />
+        {author && <p className="mt-auto line-clamp-2 text-xs">{author}</p>}
       </div>
     </div>
   );
