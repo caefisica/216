@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { Disclosure } from "@/components/ui/disclosure";
 import { Field, Input, Select } from "@/components/ui/field";
 import { CopyCondition, CopyOrigin, CopyStatus } from "@/lib/db/schema";
 import { CONDITION_LABELS, ORIGIN_LABELS, STATUS_LABELS, locationLabel } from "../labels";
@@ -77,9 +78,8 @@ export function CopyForm({ draft, onChange, locations, donors }: CopyFormProps) 
         Código escrito en el lomo
       </label>
 
-      <details>
-        <summary className="inline-flex min-h-control items-center">Más datos del ejemplar</summary>
-        <div className="mt-2 grid gap-4 sm:grid-cols-2">
+      <Disclosure title="Más datos del ejemplar">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Origen">
             <Select
               value={draft.origin}
@@ -147,7 +147,7 @@ export function CopyForm({ draft, onChange, locations, donors }: CopyFormProps) 
             />
           </Field>
         </div>
-      </details>
+      </Disclosure>
     </div>
   );
 }

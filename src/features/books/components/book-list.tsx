@@ -73,7 +73,7 @@ export function BookList({ result, filters, staff }: BookListProps) {
         {filtered && (
           <Link
             href="/"
-            className="-mr-2 inline-flex min-h-control items-center rounded-sm px-2 text-sm font-medium text-muted-foreground transition-colors duration-100 hover:text-foreground"
+            className="-mr-2 inline-flex min-h-control items-center rounded-sm px-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             Quitar filtros
           </Link>
@@ -134,7 +134,7 @@ export function BookListSkeleton({ rows = 6 }: { rows?: number }) {
             key={index}
             className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-4 sm:grid-cols-[4rem_minmax(0,1fr)_auto] sm:gap-x-5"
           >
-            <Skeleton className="aspect-[2/3] w-full" />
+            <Skeleton className="aspect-cover w-full" />
             <div className="grid content-center gap-2">
               <Skeleton className="h-5 w-3/4" />
               <Skeleton className="h-4 w-2/5" />

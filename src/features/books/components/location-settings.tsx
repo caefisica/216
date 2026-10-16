@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Disclosure } from "@/components/ui/disclosure";
 import { Field, Input, Select } from "@/components/ui/field";
 import { FormError } from "@/components/ui/form-error";
 import { SectionTitle } from "@/components/ui/page";
@@ -177,11 +178,8 @@ export function LocationSettings({
           Aún no hay ubicaciones. Agrega la primera para que los ejemplares nuevos tengan lugar.
         </p>
       ) : (
-        <details>
-          <summary className="inline-flex min-h-control items-center text-muted-foreground underline underline-offset-4">
-            Mostrar las {locations.length} ubicaciones
-          </summary>
-          <ul className="mt-1 divide-y border-y">
+        <Disclosure title="Ubicaciones" detail={locations.length}>
+          <ul className="divide-y border-y">
             {locations.map((location) => (
               <li key={location.id} className="flex items-center justify-between gap-3 py-2">
                 <div className="min-w-0">
@@ -197,7 +195,7 @@ export function LocationSettings({
               </li>
             ))}
           </ul>
-        </details>
+        </Disclosure>
       )}
     </section>
   );

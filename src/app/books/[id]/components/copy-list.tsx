@@ -49,7 +49,7 @@ export function CopyList({
           >
             <span className="font-mono text-xs leading-6 text-muted-foreground">{copy.code}</span>
             <div className="min-w-0">
-              <p className="flex items-center gap-2 font-medium">
+              <p className="flex items-center gap-2 font-semibold">
                 <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", state.tone)} />
                 {state.text}
               </p>

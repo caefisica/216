@@ -67,7 +67,7 @@ export function UserRoles({ users, selfId }: { users: User[]; selfId: string }) 
               className="grid gap-2 py-3 sm:grid-cols-[1fr_12rem] sm:items-center sm:gap-6"
             >
               <div className="min-w-0">
-                <p className="truncate font-medium">{user.name}</p>
+                <p className="truncate font-semibold">{user.name}</p>
                 <p className="truncate text-muted-foreground">{user.email}</p>
               </div>
               <Select

@@ -15,7 +15,7 @@ export default function Loading() {
               key={row}
               className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-4 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-x-5"
             >
-              <Skeleton className="aspect-[2/3] w-full" />
+              <Skeleton className="aspect-cover w-full" />
               <div className="grid content-center gap-2">
                 <Skeleton className="h-5 w-3/4" />
                 <Skeleton className="h-4 w-2/5" />

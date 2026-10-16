@@ -5,7 +5,7 @@ import { getBooksService, getFacetsService } from "@/features/books/service";
 import { BookList, BookListSkeleton } from "@/features/books/components/book-list";
 import { CatalogueSearch } from "@/features/books/components/catalogue-search";
 import type { BookPage } from "@/features/books/types";
-import { Page } from "@/components/ui/page";
+import { Page, PageTitle } from "@/components/ui/page";
 
 async function Results({
   books,
@@ -37,7 +37,7 @@ export default async function CataloguePage({
 
   return (
     <Page>
-      <h1 className="mb-6 font-serif text-2xl font-medium sm:text-3xl">Catálogo</h1>
+      <PageTitle className="mb-6">Catálogo</PageTitle>
       <CatalogueSearch
         filters={filters}
         categories={facets.categories}

@@ -34,7 +34,7 @@ export function BookGallery({ images, title, author, category }: BookGalleryProp
               aria-pressed={index === current}
               onClick={() => setCurrent(index)}
               className={cn(
-                "relative aspect-[2/3] w-9 overflow-hidden rounded-xs ring-offset-2 ring-offset-background transition-opacity duration-100 pointer-coarse:w-11",
+                "relative aspect-cover w-10 overflow-hidden rounded-sm ring-offset-2 ring-offset-background transition-opacity pointer-coarse:w-12",
                 index === current ? "ring-2 ring-foreground" : "opacity-70 hover:opacity-100",
               )}
             >

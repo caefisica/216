@@ -64,7 +64,7 @@ function Title({ book }: { book: { id: string; title: string } }) {
     <p className="text-pretty">
       <Link
         href={`/books/${book.id}`}
-        className="inline-flex items-center rounded-xs font-serif text-lg font-medium underline-offset-2 hover:underline pointer-coarse:min-h-control"
+        className="inline-flex items-center rounded-sm text-base font-semibold underline-offset-4 hover:underline pointer-coarse:min-h-control"
       >
         {book.title}
       </Link>
@@ -112,7 +112,7 @@ function LoanRow({ loan, now }: { loan: ActiveLoanRow; now: Date }) {
             </Badge>
             <a
               href={`mailto:${loan.reader.email}`}
-              className="inline-flex items-center rounded-xs text-sm text-accent underline underline-offset-2 pointer-coarse:min-h-control"
+              className="inline-flex items-center rounded-sm text-sm text-accent underline underline-offset-4 pointer-coarse:min-h-control"
             >
               {loan.reader.email}
             </a>

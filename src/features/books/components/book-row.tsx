@@ -28,12 +28,12 @@ export function BookRow({
         className="row-span-2 self-start sm:row-span-1"
       />
       <div className="min-w-0 self-center">
-        <Heading className="font-serif text-lg font-medium text-pretty">
+        <Heading className="text-base font-semibold text-pretty">
           <Link href={`/books/${book.id}`} {...rowLink}>
             {book.title}
           </Link>
         </Heading>
-        {book.author && <p className="mt-0.5 text-muted-foreground">{book.author}</p>}
+        {book.author && <p className="text-muted-foreground">{book.author}</p>}
         <p className="mt-1 text-sm text-muted-foreground">
           {book.category.name}
           {staff && <span className="ml-2 font-mono text-xs">{book.code}</span>}
@@ -42,7 +42,7 @@ export function BookRow({
       <Availability
         lendable={book.lendableCount}
         total={book.copyCount}
-        className="col-start-2 mt-2.5 justify-self-start sm:col-start-3 sm:row-start-1 sm:mt-0 sm:self-center"
+        className="col-start-2 mt-2 justify-self-start sm:col-start-3 sm:row-start-1 sm:mt-0 sm:self-center"
       />
     </CardRow>
   );

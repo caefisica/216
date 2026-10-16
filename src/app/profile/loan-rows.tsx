@@ -91,7 +91,7 @@ export function LoanRow({ request, now }: { request: BorrowRequest; now: Date })
         />
       )}
       <div className="min-w-0 self-center">
-        <h3 className="font-serif text-lg font-medium text-pretty">
+        <h3 className="text-base font-semibold text-pretty">
           {book ? (
             <Link href={`/books/${book.id}`} {...rowLink}>
               {book.title}
@@ -100,8 +100,8 @@ export function LoanRow({ request, now }: { request: BorrowRequest; now: Date })
             "Libro retirado del catálogo"
           )}
         </h3>
-        {book?.author && <p className="mt-0.5 text-muted-foreground">{book.author}</p>}
-        <div className="mt-2 grid justify-items-start gap-1.5">
+        {book?.author && <p className="text-muted-foreground">{book.author}</p>}
+        <div className="mt-2 grid justify-items-start gap-2">
           <Status request={request} now={now} />
         </div>
       </div>

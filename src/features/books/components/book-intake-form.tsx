@@ -175,14 +175,14 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
             <Check aria-hidden />
             Libro registrado
           </Badge>
-          <p id="registrado" className="font-serif text-lg font-medium text-pretty">
+          <p id="registrado" className="text-lg font-semibold text-pretty">
             {fields.title}
             {issued.copies > 1 && ` · ${issued.copies} ejemplares`}
           </p>
         </div>
         <div className="grid gap-1 rounded-sm bg-sunken px-4 py-3">
           <p className="text-sm text-muted-foreground">Escribe en el lomo</p>
-          <p className="font-mono text-2xl font-medium">{issued.copyCode}</p>
+          <p className="font-mono text-2xl font-semibold">{issued.copyCode}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button variant="primary" autoFocus onClick={addAnother}>
@@ -209,7 +209,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
         </Field>
         {matches.length > 0 && (
           <Card>
-            <p className="px-4 pt-3 text-sm font-medium">¿Ya está en el catálogo?</p>
+            <p className="px-4 pt-3 text-sm font-semibold">¿Ya está en el catálogo?</p>
             <ul className="mt-1 divide-y">
               {matches.map((match) => (
                 <li

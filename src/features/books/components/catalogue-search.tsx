@@ -110,7 +110,7 @@ export function CatalogueSearch({ filters, categories, review, children }: Catal
         <div className="relative">
           <Search
             aria-hidden
-            className="pointer-events-none absolute left-3.5 top-1/2 size-[1.125rem] -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             ref={input}
@@ -136,7 +136,7 @@ export function CatalogueSearch({ filters, categories, review, children }: Catal
             <button
               type="button"
               aria-label="Borrar la búsqueda"
-              className="absolute right-1 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-100 hover:bg-sunken hover:text-foreground"
+              className="absolute right-1 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sunken hover:text-foreground"
               onClick={() => {
                 clearTimeout(timer.current);
                 setSearch("");
@@ -207,10 +207,7 @@ export function CatalogueSearch({ filters, categories, review, children }: Catal
       {/* Delay the fade so fast searches do not flash a loading state. */}
       <div
         aria-busy={pending}
-        className={cn(
-          "mt-6 transition-opacity duration-150 ease-out",
-          pending && "opacity-55 delay-150",
-        )}
+        className={cn("mt-6 transition-opacity", pending && "opacity-55 delay-150")}
       >
         {children}
       </div>

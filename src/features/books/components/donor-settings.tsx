@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Disclosure } from "@/components/ui/disclosure";
 import { Field, Input } from "@/components/ui/field";
 import { FormError } from "@/components/ui/form-error";
 import { SectionTitle } from "@/components/ui/page";
@@ -87,15 +88,12 @@ export function DonorSettings({ donors }: { donors: Donor[] }) {
       {donors.length === 0 ? (
         <p className="text-muted-foreground">Aún no hay donantes registrados.</p>
       ) : (
-        <details>
-          <summary className="inline-flex min-h-control items-center text-muted-foreground underline underline-offset-4">
-            Mostrar los {donors.length} donantes
-          </summary>
-          <ul className="mt-1 divide-y border-y">
+        <Disclosure title="Donantes" detail={donors.length}>
+          <ul className="divide-y border-y">
             {donors.map((donor) => (
               <li key={donor.id} className="flex items-center justify-between gap-3 py-2">
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{donor.name}</p>
+                  <p className="truncate font-semibold">{donor.name}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {donor.copyCount} {donor.copyCount === 1 ? "ejemplar" : "ejemplares"}
                     {donor.motivation ? ` · ${donor.motivation}` : ""}
@@ -107,7 +105,7 @@ export function DonorSettings({ donors }: { donors: Donor[] }) {
               </li>
             ))}
           </ul>
-        </details>
+        </Disclosure>
       )}
     </section>
   );

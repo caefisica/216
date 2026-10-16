@@ -3,7 +3,8 @@ import { ChevronRight } from "lucide-react";
 import { Availability } from "@/components/catalogue/availability";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Page } from "@/components/ui/page";
+import { Disclosure } from "@/components/ui/disclosure";
+import { Page, PageTitle } from "@/components/ui/page";
 import { getSession, isVerifiedStaff } from "@/features/auth/protected-action";
 import { getBookById } from "@/features/books/actions";
 import { locationLabel } from "@/features/books/labels";
@@ -33,7 +34,7 @@ function whereOrWhen(book: BookDetailed, now: Date) {
 }
 
 const crumb =
-  "inline-flex items-center rounded-xs transition-colors duration-100 hover:text-foreground pointer-coarse:min-h-control";
+  "inline-flex items-center rounded-sm transition-colors hover:text-foreground pointer-coarse:min-h-control";
 
 export default async function BookPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -67,13 +68,13 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
 
         <div className="min-w-0">
           <header>
-            <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
+            <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
               {parent && (
                 <>
                   <Link href={`/?category=${parent.code}`} className={crumb}>
                     {parent.name}
                   </Link>
-                  <ChevronRight aria-hidden className="size-3.5 opacity-60" />
+                  <ChevronRight aria-hidden className="size-4" />
                 </>
               )}
               <Link href={`/?category=${detail.category.code}`} className={crumb}>
@@ -81,15 +82,13 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
               </Link>
               {staff && <span className="ml-2 font-mono text-xs">{detail.code}</span>}
             </p>
-            <h1 className="mt-2 font-serif text-2xl font-medium text-balance hyphens-auto sm:text-3xl">
-              {detail.title}
-            </h1>
-            {detail.author && <p className="mt-2 text-md text-muted-foreground">{detail.author}</p>}
+            <PageTitle className="mt-2 text-balance hyphens-auto">{detail.title}</PageTitle>
+            {detail.author && <p className="mt-2 text-lg text-muted-foreground">{detail.author}</p>}
           </header>
 
-          <Card aria-label="Disponibilidad" role="region" className="mt-6 grid gap-4 p-4 sm:p-5">
+          <Card aria-label="Disponibilidad" role="region" className="mt-6 grid gap-4 p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
-              <div className="grid min-w-0 justify-items-start gap-1.5">
+              <div className="grid min-w-0 justify-items-start gap-2">
                 <Availability lendable={detail.lendableCount} total={detail.copies.length} />
                 {where && <p className="text-sm text-pretty text-muted-foreground">{where}</p>}
               </div>
@@ -124,19 +123,16 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
           </Card>
 
           {detail.description && (
-            <p className="mt-8 max-w-measure text-md text-pretty">{detail.description}</p>
+            <p className="mt-8 max-w-measure text-base text-pretty">{detail.description}</p>
           )}
 
-          <details className="group mt-8" open={staff}>
-            <summary className="-ml-1 inline-flex min-h-control list-none items-center gap-1.5 rounded-sm pr-2 pl-1 font-medium transition-colors duration-100 hover:bg-sunken [&::-webkit-details-marker]:hidden">
-              <ChevronRight
-                aria-hidden
-                className="size-4 text-muted-foreground transition-transform duration-150 ease-out group-open:rotate-90"
-              />
-              Ejemplares
-              <span className="text-muted-foreground tabular-nums">{detail.copies.length}</span>
-            </summary>
-            <div className="mt-3 grid gap-3">
+          <Disclosure
+            title="Ejemplares"
+            detail={detail.copies.length}
+            open={staff}
+            className="mt-8"
+          >
+            <div className="grid gap-4">
               {detail.copies.length > 0 ? (
                 <CopyList copies={detail.copies} staff={staff} now={now} />
               ) : (
@@ -148,7 +144,7 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
                 </p>
               )}
             </div>
-          </details>
+          </Disclosure>
         </div>
       </article>
     </Page>

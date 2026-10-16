@@ -21,7 +21,7 @@ interface BorrowPanelProps {
 }
 
 const inlineLink =
-  "font-medium text-accent underline decoration-accent/40 underline-offset-[3px] transition-colors duration-100 hover:decoration-accent";
+  "font-semibold text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent";
 
 export function BorrowPanel({ bookId, reader, request, now }: BorrowPanelProps) {
   const router = useRouter();
@@ -51,7 +51,7 @@ export function BorrowPanel({ bookId, reader, request, now }: BorrowPanelProps) 
   }
   if (request?.status === "approved") {
     return (
-      <p className="flex items-start gap-2 font-medium">
+      <p className="flex items-start gap-2 font-semibold">
         <Check aria-hidden className="mt-1 size-4 shrink-0 text-success" />
         Lo tienes prestado{request.dueDate ? dueSuffix(request.dueDate, now) : ""}.
       </p>
@@ -62,7 +62,7 @@ export function BorrowPanel({ bookId, reader, request, now }: BorrowPanelProps) 
       <div className="flex items-start gap-2">
         <Clock aria-hidden className="mt-1 size-4 shrink-0 text-muted-foreground" />
         <p>
-          <span className="font-medium">Solicitud enviada.</span>{" "}
+          <span className="font-semibold">Solicitud enviada.</span>{" "}
           <span className="text-muted-foreground">Un bibliotecario la revisará. </span>
           <Link href="/profile" className={inlineLink}>
             Ver mis libros
@@ -110,7 +110,7 @@ export function BorrowPanel({ bookId, reader, request, now }: BorrowPanelProps) 
           <button
             type="button"
             onClick={() => setNoting(true)}
-            className="inline-flex min-h-control items-center rounded-xs text-sm text-muted-foreground underline decoration-border underline-offset-4 transition-colors duration-100 hover:text-foreground hover:decoration-current"
+            className="inline-flex min-h-control items-center rounded-sm text-sm text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground hover:decoration-current"
           >
             Añadir una nota
           </button>

@@ -28,7 +28,7 @@ export async function BookEditorLoader({ bookId }: { bookId?: string }) {
     <Page width="prose">
       <Link
         href={`/books/${book.value.id}`}
-        className="-ml-2 inline-flex min-h-control items-center gap-1.5 rounded-sm px-2 text-sm font-medium text-muted-foreground transition-colors duration-100 hover:bg-sunken hover:text-foreground"
+        className="-ml-2 inline-flex min-h-control items-center gap-2 rounded-md px-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-sunken hover:text-foreground"
       >
         <ArrowLeft aria-hidden className="size-4" />
         {book.value.title}

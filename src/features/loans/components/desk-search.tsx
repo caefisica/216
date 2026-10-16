@@ -139,10 +139,7 @@ export function DeskSearch({
       <div
         aria-busy={pending}
         inert={pending}
-        className={cn(
-          "mt-2 transition-opacity duration-150 ease-out",
-          pending && "opacity-55 delay-150",
-        )}
+        className={cn("mt-2 transition-opacity", pending && "opacity-55 delay-150")}
       >
         {children}
       </div>

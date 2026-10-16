@@ -45,8 +45,8 @@ export function AccountForm({ name, email }: { name: string; email: string }) {
           }}
         />
       </Field>
-      <div className="grid gap-1.5">
-        <span className="text-sm font-medium">Correo</span>
+      <div className="grid gap-2">
+        <span className="text-sm font-semibold">Correo</span>
         <p className="break-all text-muted-foreground">{email}</p>
       </div>
       <div>

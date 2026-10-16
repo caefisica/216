@@ -1,14 +1,14 @@
 import type { ComponentPropsWithoutRef } from "react";
 import Link from "next/link";
 
-const linkClass = "text-accent underline underline-offset-2";
+const linkClass = "text-accent underline underline-offset-4";
 
 const components = {
   h1: (props: ComponentPropsWithoutRef<"h1">) => (
-    <h1 className="font-serif text-2xl font-semibold" {...props} />
+    <h1 className="text-2xl font-semibold sm:text-3xl" {...props} />
   ),
   h2: (props: ComponentPropsWithoutRef<"h2">) => (
-    <h2 className="mt-4 text-lg font-semibold" {...props} />
+    <h2 className="mt-4 text-xl font-semibold" {...props} />
   ),
   p: (props: ComponentPropsWithoutRef<"p">) => <p {...props} />,
   ul: (props: ComponentPropsWithoutRef<"ul">) => (
