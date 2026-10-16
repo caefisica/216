@@ -1,7 +1,8 @@
-import { execFileSync } from "node:child_process";
+import { execFile } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { drizzle } from "drizzle-orm/d1";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { renderCatalogueSql } from "./seed-sql";
@@ -10,21 +11,23 @@ import register from "./seeds/catalogue.json";
 import { runCatalogueSeed } from "./seeds/catalogue";
 import { createTestDatabase, type TestDatabase } from "./test-database";
 
+const run = promisify(execFile);
 const WRANGLER = join(process.cwd(), "node_modules", ".bin", "wrangler");
 const TABLES = ["categories", "locations", "donors", "books", "copies"];
 
 let dir: string;
 let testDb: TestDatabase;
 
-function wrangler(...args: string[]) {
-  return execFileSync(WRANGLER, ["d1", ...args, "--local", "--persist-to", dir], {
-    encoding: "utf8",
+// Asynchronous, so this process keeps serving the in-process database while wrangler runs.
+async function wrangler(...args: string[]) {
+  const { stdout } = await run(WRANGLER, ["d1", ...args, "--local", "--persist-to", dir], {
     maxBuffer: 64 * 1024 * 1024,
   });
+  return stdout;
 }
 
-function fileQuery<T>(sql: string): T[] {
-  const [result] = JSON.parse(wrangler("execute", "DB", "--json", "--command", sql));
+async function fileQuery<T>(sql: string): Promise<T[]> {
+  const [result] = JSON.parse(await wrangler("execute", "DB", "--json", "--command", sql));
   return result.results;
 }
 
@@ -41,10 +44,10 @@ beforeAll(async () => {
   testDb = await createTestDatabase();
   await runCatalogueSeed(drizzle(testDb.db, { schema }));
 
-  wrangler("migrations", "apply", "DB");
+  await wrangler("migrations", "apply", "DB");
   const file = join(dir, "catalogue.sql");
   writeFileSync(file, await renderCatalogueSql());
-  wrangler("execute", "DB", "--file", file);
+  await wrangler("execute", "DB", "--file", file);
 }, 240_000);
 
 afterAll(async () => {
@@ -53,8 +56,8 @@ afterAll(async () => {
 });
 
 describe("the catalogue SQL file loaded into an empty database", () => {
-  it("holds the counts of the register", () => {
-    const [counts] = fileQuery<Record<string, number>>(
+  it("holds the counts of the register", async () => {
+    const [counts] = await fileQuery<Record<string, number>>(
       `SELECT (SELECT count(*) FROM categories) AS categories,
               (SELECT count(*) FROM locations) AS locations,
               (SELECT count(*) FROM donors) AS donors,
@@ -74,15 +77,15 @@ describe("the catalogue SQL file loaded into an empty database", () => {
     for (const table of TABLES) {
       const columns = await stableColumns(table);
       const query = `SELECT ${columns} FROM ${table} ORDER BY id`;
-      expect(fileQuery(query), table).toEqual(await testDb.query(query));
+      expect(await fileQuery(query), table).toEqual(await testDb.query(query));
     }
   }, 60_000);
 
   it("loads again without adding rows", async () => {
     const file = join(dir, "again.sql");
     writeFileSync(file, await renderCatalogueSql());
-    wrangler("execute", "DB", "--file", file);
-    const [{ n }] = fileQuery<{ n: number }>("SELECT count(*) AS n FROM copies");
+    await wrangler("execute", "DB", "--file", file);
+    const [{ n }] = await fileQuery<{ n: number }>("SELECT count(*) AS n FROM copies");
     expect(n).toBe(register.books.reduce((sum, book) => sum + book.copies.length, 0));
   }, 60_000);
 });

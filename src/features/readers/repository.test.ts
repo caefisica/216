@@ -58,6 +58,8 @@ describe("reader catalogue reads", () => {
   it("groups donated copies by donor and keeps the donated titles", async () => {
     await expect(listDonorGifts()).resolves.toEqual({
       totalCopies: 3,
+      titleCount: 2,
+      loanCount: 1,
       donors: [
         expect.objectContaining({
           id: "donor-1",
