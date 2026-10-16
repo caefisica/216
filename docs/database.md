@@ -190,9 +190,11 @@ On the seeded local database, `EXPLAIN QUERY PLAN` reports:
 The donors page uses one grouped read that inner-joins `donors`, `copies` and
 `books`, so a donor without copies is not listed. It orders donors by their
 total copies and groups the returned rows in memory to show each donor's titles.
-The profile page ("Mis libros") uses two authenticated reads. One joins each
-loan to its title and assigned copy, including its due date and, for a rejected
-request, the reason. The other lists the favorites with their availability.
+A second read counts the approved and returned loans of copies that have a
+donor, which the page shows as how often donated books were borrowed. The
+profile page ("Mis libros") uses two authenticated reads. One joins each loan to
+its title and assigned copy, including its due date and, for a rejected request,
+the reason. The other lists the favorites with their availability.
 
 ## Loan desk queries
 
