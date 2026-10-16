@@ -9,7 +9,9 @@ export default defineConfig({
     builtin: true,
   },
   ignorePatterns: [".next/**", "out/**", "build/**", "next-env.d.ts"],
+  jsPlugins: ["./lint/design-tokens.js"],
   rules: {
+    "design-tokens/no-raw-values": "error",
     "no-array-constructor": "error",
     "no-unused-expressions": "warn",
     "no-unused-vars": "warn",
@@ -53,6 +55,11 @@ export default defineConfig({
     "typescript/triple-slash-reference": "error",
   },
   overrides: [
+    {
+      // The rule and its test hold raw values on purpose, as the patterns and the cases they check.
+      files: ["lint/**"],
+      rules: { "design-tokens/no-raw-values": "off" },
+    },
     {
       files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
       rules: {
