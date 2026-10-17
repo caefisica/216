@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "216",
+  "account_id": "165a663123262d8ba6c08e92cff7e056",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -21,7 +22,7 @@
     {
       "binding": "DB",
       "database_name": "216",
-      "database_id": "5e1a9f58-f85e-4c91-8ffa-ec9580ad10e1",
+      "database_id": "cde257f7-66c1-4d77-bdeb-24ff57bd1687",
       "migrations_dir": "migrations",
     },
   ],
