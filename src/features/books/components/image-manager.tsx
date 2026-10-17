@@ -27,6 +27,7 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
     if (files.length === 0) return;
     setUploading(true);
     try {
+      /* oxlint-disable no-await-in-loop -- Photos upload one at a time, and the first failure stops the rest. */
       for (const [index, file] of files.entries()) {
         const form = new FormData();
         form.append("file", file);
@@ -46,6 +47,7 @@ export function ImageManager({ bookId, images }: ImageManagerProps) {
           return;
         }
       }
+      /* oxlint-enable no-await-in-loop */
       toast({ title: "Fotos agregadas" });
     } finally {
       setUploading(false);

@@ -10,7 +10,7 @@ import { getFileUrl } from "../src/lib/storage";
 import { addBookImageRecord } from "../src/features/books/repository";
 import { remoteBucket, remoteDatabase, runCf, type ObjectBucket } from "./cloudflare-remote";
 
-const USAGE = `Usage: bun run covers:fetch -- [--remote] [--dry-run]
+const USAGE = `Usage: mise run covers:fetch -- [--remote] [--dry-run]
 
 Matches titles without a cover on Open Library and stores the covers in R2 and the database.
 Without --remote it uses the local database and bucket. With --remote it uses production through
@@ -144,7 +144,7 @@ export async function fetchCovers({
   let lastRequestAt = 0;
   const politeFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const wait = REQUEST_GAP_MS - (Date.now() - lastRequestAt);
-    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    if (wait > 0) await new Promise((done) => setTimeout(done, wait));
     const response = await fetcher(input, init);
     lastRequestAt = Date.now();
     return response;

@@ -133,10 +133,12 @@ export async function addBookImageService(input: {
 /** Deletes the title with its copies, images and loan history. */
 export async function deleteBookService(bookId: string) {
   const images = await listBookImagesByBookId(bookId);
-  for (const img of images) {
-    const key = getFileKey(img.imageUrl);
-    if (key) await deleteFile(key);
-  }
+  await Promise.all(
+    images.flatMap((img) => {
+      const key = getFileKey(img.imageUrl);
+      return key ? [deleteFile(key)] : [];
+    }),
+  );
 
   await deleteBookRecord(bookId);
   revalidatePath("/");

@@ -56,6 +56,7 @@ export function CopyForm({ draft, onChange, locations, donors }: CopyFormProps) 
           />
           <datalist id={donorList}>
             {donors.map((donor) => (
+              // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- A datalist option suggests its `value` and has no text.
               <option key={donor.id} value={donor.name} />
             ))}
           </datalist>

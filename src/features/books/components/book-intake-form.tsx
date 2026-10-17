@@ -48,7 +48,10 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
   const [errors, setErrors] = useState<Partial<Record<keyof IntakeFields, string>>>({});
   const [issued, setIssued] = useState<IssuedBook | null>(null);
   const [saving, setSaving] = useState(false);
-  const [matches, setMatches] = useState<BookListItem[]>([]);
+  const [found, setFound] = useState<{ title: string; items: BookListItem[] }>({
+    title: "",
+    items: [],
+  });
   const [addingCopyId, setAddingCopyId] = useState<string | null>(null);
   const [addedCopy, setAddedCopy] = useState<{ id: string; code: string } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -63,23 +66,23 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
       ),
     [facets.categories],
   );
+  // Show results only for the title they were fetched for.
+  const matches = found.title === fields.title.trim() ? found.items : [];
 
   useEffect(() => {
     const remembered = localStorage.getItem(CATEGORY_KEY);
     if (remembered && categoryIds.has(remembered)) {
+      // oxlint-disable-next-line react/set-state-in-effect -- Only the browser has the remembered category; the server render cannot.
       setFields((current) => ({ ...current, categoryId: remembered }));
     }
   }, [categoryIds]);
 
   useEffect(() => {
     const title = fields.title.trim();
-    if (title.length < 3) {
-      setMatches([]);
-      return;
-    }
+    if (title.length < 3) return;
     const timer = setTimeout(async () => {
       const result = await getBooks({ search: title });
-      if (!isErr(result)) setMatches(result.value.items.slice(0, 5));
+      if (!isErr(result)) setFound({ title, items: result.value.items.slice(0, 5) });
     }, 250);
     return () => clearTimeout(timer);
   }, [fields.title]);
@@ -159,7 +162,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
 
   const addAnother = () => {
     setIssued(null);
-    setMatches([]);
+    setFound({ title: "", items: [] });
     setAddedCopy(null);
     setFields((current) => ({ ...initialFields, categoryId: current.categoryId }));
     setErrors({});
@@ -185,6 +188,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
           <p className="font-mono text-2xl font-semibold">{issued.copyCode}</p>
         </div>
         <div className="flex flex-wrap gap-3">
+          {/* oxlint-disable-next-line jsx-a11y/no-autofocus -- Submitting the form replaced it, so focus returns to the next step. */}
           <Button variant="primary" autoFocus onClick={addAnother}>
             Registrar otro
           </Button>
@@ -201,6 +205,7 @@ export function BookIntakeForm({ facets }: BookIntakeFormProps) {
       <div className="grid gap-2">
         <Field label="Título" error={errors.title}>
           <Input
+            // oxlint-disable-next-line jsx-a11y/no-autofocus -- The page has one task, and its first field starts it.
             autoFocus
             value={fields.title}
             aria-invalid={Boolean(errors.title)}

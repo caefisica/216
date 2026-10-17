@@ -12,12 +12,14 @@ interface ImageDropzoneProps extends Omit<DropzoneOptions, "onDrop"> {
   label?: string;
 }
 
+const IMAGE_TYPES = { "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"] };
+
 export function ImageDropzone({
   onDrop,
   onRejection,
   className,
   label = "Añadir fotos",
-  accept = { "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"] },
+  accept = IMAGE_TYPES,
   maxSize = 5 * 1024 * 1024,
   multiple = true,
   ...props

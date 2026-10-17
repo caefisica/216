@@ -49,6 +49,7 @@ export default async function BookPage({ params }: { params: Promise<{ id: strin
   const parent = detail.category.parent;
   // A reader who holds the last copy still needs to see that it is theirs.
   const showBorrow = !staff && (detail.lendableCount > 0 || detail.request !== null);
+  // oxlint-disable-next-line react/purity -- A server component renders once per request.
   const now = new Date();
   const where = whereOrWhen(detail, now);
 

@@ -24,6 +24,7 @@ function NewPasswordForm() {
             inputMode="numeric"
             autoComplete="one-time-code"
             required
+            // oxlint-disable-next-line jsx-a11y/no-autofocus -- The page has one task, and its first field starts it.
             autoFocus
             pattern="\d{6}"
             maxLength={6}
@@ -64,7 +65,14 @@ export default function ResetPasswordPage() {
       <form action={formAction} className="grid gap-4">
         <FormError message={state?.error} />
         <Field label="Correo">
-          <Input name="email" type="email" required autoFocus autoComplete="email" />
+          <Input
+            name="email"
+            type="email"
+            required
+            // oxlint-disable-next-line jsx-a11y/no-autofocus -- The page has one task, and its first field starts it.
+            autoFocus
+            autoComplete="email"
+          />
         </Field>
         <SubmitButton idle="Enviar código" busy="Enviando…" />
       </form>

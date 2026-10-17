@@ -21,6 +21,7 @@ export default function SignInPage() {
             name="email"
             type="email"
             required
+            // oxlint-disable-next-line jsx-a11y/no-autofocus -- The page has one task, and its first field starts it.
             autoFocus
             autoComplete="email"
             value={email}

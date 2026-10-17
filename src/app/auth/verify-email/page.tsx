@@ -29,6 +29,7 @@ export default function VerifyEmailPage() {
             pattern="[0-9]{6}"
             maxLength={6}
             required
+            // oxlint-disable-next-line jsx-a11y/no-autofocus -- The page has one task, and its first field starts it.
             autoFocus
             className="font-mono tracking-widest"
           />

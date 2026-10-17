@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { recalledCatalogue } from "@/features/books/catalogue-memory";
 
+// The remembered query never changes while this page is open, so there is nothing to subscribe to.
+const subscribeNever = () => () => {};
+
 /** Leads to the catalogue with the search, filters and page the reader left. */
 export function BackLink() {
-  const [href, setHref] = useState("/");
-  useEffect(() => setHref(recalledCatalogue()), []);
+  const href = useSyncExternalStore(subscribeNever, recalledCatalogue, () => "/");
 
   return (
     <Link

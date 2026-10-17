@@ -57,6 +57,7 @@ function Desk({ page }: { page: Page }) {
 /** Stands in for the server: a navigation suspends the page until `arrive` resolves it. */
 function App() {
   const [page, setPage] = useState<Page>({ query: "ana", arrived: Promise.resolve() });
+  // oxlint-disable-next-line react/globals -- The test drives the page from outside, through this handle.
   follow = (query) =>
     setPage({
       query,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/field";
@@ -36,21 +36,21 @@ export function DeskSearch({
   const armed = useRef<string | null>(null);
   const frame = useRef<number>(undefined);
 
-  function disarm() {
+  const disarm = useCallback(() => {
     armed.current = null;
     if (frame.current !== undefined) cancelAnimationFrame(frame.current);
-  }
+  }, []);
 
   useEffect(
     () => () => {
       clearTimeout(timer.current);
       disarm();
     },
-    [],
+    [disarm],
   );
 
   // Another list is not the one Enter was pressed on.
-  useEffect(disarm, [view]);
+  useEffect(disarm, [disarm, view]);
 
   // Follow URL changes from other links after the field's own navigation settles.
   useEffect(() => {
@@ -120,6 +120,7 @@ export function DeskSearch({
             aria-label="Buscar lector, título o código de ejemplar"
             placeholder="Lector, título o código de ejemplar"
             autoComplete="off"
+            // oxlint-disable-next-line jsx-a11y/no-autofocus -- The page has one task, and its search starts it.
             autoFocus
             enterKeyHint="go"
             value={value}

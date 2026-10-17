@@ -17,8 +17,11 @@ export const runCf: CfRunner = async (args) => {
     return stdout.trim() ? JSON.parse(stdout) : null;
   } catch (error) {
     const { stderr = "", code } = error as { stderr?: string; code?: string | number };
-    if (code === "ENOENT") throw new Error("The cf CLI is not installed. See docs/deployment.md.");
-    throw new Error(`cf ${args.slice(0, 3).join(" ")} failed:\n${stderr.trim()}`);
+    if (code === "ENOENT")
+      throw new Error("The cf CLI is not installed. See docs/deployment.md.", { cause: error });
+    throw new Error(`cf ${args.slice(0, 3).join(" ")} failed:\n${stderr.trim()}`, {
+      cause: error,
+    });
   }
 };
 
@@ -41,8 +44,8 @@ export function remoteDatabase(run: CfRunner, databaseId: string) {
     async (queries) => {
       const batch = queries.map(({ sql, params }) => ({ sql, params }));
       const results = await query({ batch });
-      return results.map(({ results }, index) => ({
-        rows: queries[index].method === "get" ? results.rows[0] : results.rows,
+      return results.map((statement, index) => ({
+        rows: queries[index].method === "get" ? statement.results.rows[0] : statement.results.rows,
       }));
     },
     { schema },

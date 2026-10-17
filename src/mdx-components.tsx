@@ -5,9 +5,11 @@ const linkClass = "text-accent underline underline-offset-4";
 
 const components = {
   h1: (props: ComponentPropsWithoutRef<"h1">) => (
+    // oxlint-disable-next-line jsx-a11y/heading-has-content -- MDX passes the heading text in `props.children`.
     <h1 className="text-2xl font-semibold sm:text-3xl" {...props} />
   ),
   h2: (props: ComponentPropsWithoutRef<"h2">) => (
+    // oxlint-disable-next-line jsx-a11y/heading-has-content -- MDX passes the heading text in `props.children`.
     <h2 className="mt-4 text-xl font-semibold" {...props} />
   ),
   p: (props: ComponentPropsWithoutRef<"p">) => <p {...props} />,

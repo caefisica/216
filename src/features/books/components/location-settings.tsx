@@ -116,6 +116,7 @@ export function LocationSettings({
           <Field label="Mueble">
             <Input
               required
+              // oxlint-disable-next-line jsx-a11y/no-autofocus -- The click that opened the form focuses its first field.
               autoFocus
               value={form.cabinet}
               onChange={(event) => patch({ cabinet: event.target.value })}

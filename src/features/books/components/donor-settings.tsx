@@ -65,6 +65,7 @@ export function DonorSettings({ donors }: { donors: Donor[] }) {
           <Field label="Nombre" hint="Aparece en el crédito.">
             <Input
               required
+              // oxlint-disable-next-line jsx-a11y/no-autofocus -- The click that opened the form focuses its first field.
               autoFocus
               value={name}
               onChange={(event) => setName(event.target.value)}

@@ -19,6 +19,7 @@ export function Page({ width = "page", className, ...props }: PageProps) {
 }
 
 export function PageTitle({ className, ...props }: React.ComponentProps<"h1">) {
+  // oxlint-disable-next-line jsx-a11y/heading-has-content -- The caller passes the heading text in `props.children`.
   return <h1 className={cn("text-2xl font-semibold sm:text-3xl", className)} {...props} />;
 }
 

@@ -613,13 +613,13 @@ export async function allocateCopy(bookId: string) {
 /** Inserts the title with its first copy in one batch, so a title never exists without it. */
 export async function createBookRecord(
   book: BookFields & { code: string },
-  copyCount: number,
+  copiesToCreate: number,
   copyAt: (number: number) => CopyFields,
 ) {
   const db = await getDb();
   const bookId = crypto.randomUUID();
   const { categoryId, ...fields } = book;
-  const copyStatements = Array.from({ length: copyCount }, (_, index) =>
+  const copyStatements = Array.from({ length: copiesToCreate }, (_, index) =>
     db.insert(copies).values({
       bookId,
       number: index + 1,
@@ -633,7 +633,7 @@ export async function createBookRecord(
       ...fields,
       categoryId,
       ...derivedTitleColumns(book.title, book.author),
-      nextCopy: copyCount + 1,
+      nextCopy: copiesToCreate + 1,
     }),
     ...copyStatements,
   ]);

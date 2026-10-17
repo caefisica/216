@@ -17,6 +17,7 @@ export default async function ProfilePage() {
     listUserActivity(user.id),
     getFavoriteBooksService(user.id),
   ]);
+  // oxlint-disable-next-line react/purity -- A server component renders once per request.
   const now = new Date();
   const current = activity.filter((request) => isCurrent(request, now));
   const past = activity.filter((request) => !isCurrent(request, now));

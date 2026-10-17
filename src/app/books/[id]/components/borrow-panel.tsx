@@ -88,6 +88,7 @@ export function BorrowPanel({ bookId, reader, request, now }: BorrowPanelProps) 
     <div className="grid gap-3">
       {noting && (
         <Textarea
+          // oxlint-disable-next-line jsx-a11y/no-autofocus -- The reader's click opened this field.
           autoFocus
           aria-label="Nota para el bibliotecario"
           placeholder="Por ejemplo, el volumen que necesitas"
