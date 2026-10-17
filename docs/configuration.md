@@ -27,9 +27,9 @@ See [Email](auth.md#email).
 | `ASSETS`                | Assets    | Static files from `.open-next/assets`.                           |
 | `WORKER_SELF_REFERENCE` | Service   | The Worker calling itself, used by OpenNext.                     |
 
-The D1 `database_id` and the R2 `bucket_name` in `wrangler.jsonc` belong to the
-production Cloudflare account. To run your own copy, replace them with resources
-from your account. See [deployment](deployment.md).
+The `account_id`, D1 `database_id` and R2 `bucket_name` in `wrangler.jsonc`
+belong to the production Cloudflare account. To run your own copy, replace them
+with your account ID and resources. See [deployment](deployment.md).
 
 `bun run dev` and `bun run preview` simulate all of these locally and keep their
 state in `.wrangler/state`. Email is not simulated: without `RESEND_API_KEY` in

@@ -24,16 +24,19 @@ serves the built Worker locally, with local D1 and R2.
 
 ## First deploy in a new account
 
-1. Create the database: `bunx wrangler d1 create 216`. Put the returned
+1. Choose the Cloudflare account for the copy. Set `account_id` in
+   `wrangler.jsonc` to that account's ID. Do not keep the production account ID
+   from this repository.
+2. Create the database: `bunx wrangler d1 create 216`. Put the returned
    `database_id` in `wrangler.jsonc` under `d1_databases`.
-2. Create the bucket: `bunx wrangler r2 bucket create 216-storage`. Keep the
+3. Create the bucket: `bunx wrangler r2 bucket create 216-storage`. Keep the
    binding name `_216_storage`.
-3. Run `bun run deploy`. Migrations create the tables, but no categories or
+4. Run `bun run deploy`. Migrations create the tables, but no categories or
    books: staff cannot register a title until the categories exist.
-4. [Load the catalogue](#load-the-catalogue).
-5. Set the Resend API key: `bunx wrangler secret put RESEND_API_KEY`. See
+5. [Load the catalogue](#load-the-catalogue).
+6. Set the Resend API key: `bunx wrangler secret put RESEND_API_KEY`. See
    [Email](#email).
-6. [Create the first admin](#first-admin).
+7. [Create the first admin](#first-admin).
 
 The images need no public bucket URL, because the Worker serves them.
 
