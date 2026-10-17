@@ -22,7 +22,7 @@ export async function uploadFile(
   return putFileInBucket(bucket, key, body, contentType);
 }
 
-export function putFileInBucket(
+function putFileInBucket(
   bucket: R2Bucket,
   key: string,
   body: Buffer | Uint8Array | Blob | ReadableStream | string,
@@ -31,7 +31,7 @@ export function putFileInBucket(
   return bucket.put(key, body, { httpMetadata: { contentType } });
 }
 
-export function deleteFileFromBucket(bucket: R2Bucket, key: string) {
+function deleteFileFromBucket(bucket: R2Bucket, key: string) {
   return bucket.delete(key);
 }
 
@@ -60,29 +60,6 @@ export function getFileKey(url: string) {
   } catch {
     return null;
   }
-}
-
-/**
- * @workaround R2Bucket.copy() is supported at runtime but currently missing
- * from official TypeScript definitions. We use get+put to avoid '@ts-ignore'.
- */
-async function copyFile(sourceKey: string, destinationKey: string) {
-  const bucket = await getBucket();
-  const object = await bucket.get(sourceKey);
-
-  if (!object) {
-    throw new Error(`Source object '${sourceKey}' not found in R2.`);
-  }
-
-  return await bucket.put(destinationKey, object.body, {
-    httpMetadata: object.httpMetadata,
-    customMetadata: object.customMetadata,
-  });
-}
-
-export async function moveFile(sourceKey: string, destinationKey: string) {
-  await copyFile(sourceKey, destinationKey);
-  await deleteFile(sourceKey);
 }
 
 export async function getFile(key: string) {
