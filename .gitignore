@@ -1,6 +1,6 @@
 /node_modules
 
-# written by bun run db:seed:sql
+# written by mise run db:seed:sql
 /catalogue.sql
 
 # bundlers

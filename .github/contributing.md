@@ -8,21 +8,22 @@ Follow [Get started](../readme.md#get-started). Read
 ## Checks
 
 CI ([`ci.yml`](workflows/ci.yml)) runs the full project check on every pull
-request into `master`, every push to `master` and manual workflow runs. Run it
-before you push:
+request, every push to `master` and manual workflow runs. Run it before you
+push:
 
 ```bash
 mise run check
 ```
 
-`mise run check` runs the format check, lint, the type check and the tests. The
-database tests start a real local D1 database in a temporary directory and apply
-the migrations to it, so they need no server and no Docker.
+`mise run check` runs lint and the format check, the type check, the tests and
+the build. It writes no tracked file. The database tests start a real local D1
+database in a temporary directory and apply the migrations to it, so they need
+no server and no Docker.
 
-`bun run format` also formats the Markdown in this repository: 80 columns, prose
-wrapped (see [`oxfmt.config.ts`](../oxfmt.config.ts)).
+`mise run fix` applies the safe lint fixes and formats every file, Markdown
+included: 80 columns, prose wrapped (see [`.oxfmtrc.json`](../.oxfmtrc.json)).
 
-`bun run knip` reports unused files, exports and dependencies. CI does not run
+`mise run knip` reports unused files, exports and dependencies. CI does not run
 it.
 
 Tests are `*.test.ts` files next to the code, run by Vitest. Add one that fails

@@ -3,7 +3,7 @@
 
     python3 -I scripts/convert-register.py "<register>.xlsx"
 
-Writes src/lib/db/seeds/catalogue.json (what `bun run db:seed` loads) and
+Writes src/lib/db/seeds/catalogue.json (what `mise run db:seed` loads) and
 src/lib/db/seeds/catalogue.review.csv (every row dropped, repaired or worth a
 second look, for the librarians). Standard library only.
 """

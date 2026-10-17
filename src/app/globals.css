@@ -4,7 +4,7 @@
 
 /*
  * Every visual value lives in this file. Components read the role names below and write no colour,
- * font, size, shadow or curve of their own. `bun run lint` fails when one appears elsewhere.
+ * font, size, shadow or curve of their own. `mise run lint` fails when one appears elsewhere.
  * Tailwind's default palette, type sizes, weights, radii, shadows and easings are cleared, so a
  * class that is not defined here does not exist.
  */

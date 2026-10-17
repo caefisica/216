@@ -292,7 +292,7 @@ the spine code and puts focus on _Registrar otro_.
 
 ## Imported covers
 
-`bun run covers:fetch` queries Open Library one work at a time. It normalizes
+`mise run covers:fetch` queries Open Library one work at a time. It normalizes
 the title and first author, requires a close title match, stores the response in
 `.cache/covers/open-library.json`, and records misses in
 `.cache/covers/misses.json`. It downloads accepted images to the existing

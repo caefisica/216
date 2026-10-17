@@ -5,7 +5,7 @@ import * as schema from "./schema";
 import { runCatalogueSeed } from "./seeds/catalogue";
 import { runDemoSeed } from "./seeds/demo";
 
-/** Everything `bun run db:seed` writes: the demo accounts and the librarians' catalogue. */
+/** Everything `mise run db:seed` writes: the demo accounts and the librarians' catalogue. */
 export async function runSeed(db: Database, password: string) {
   await runDemoSeed(db, password);
   await runCatalogueSeed(db);

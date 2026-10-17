@@ -12,19 +12,20 @@ roles.
 
 ## Get started
 
-You need [Bun](https://bun.sh), at the version `mise.toml` pins: `mise install`
-installs it. There is no database to install: local development runs D1 and R2
-in the Workers runtime simulator, and keeps their state in `.wrangler/state`.
+You need [mise](https://mise.jdx.dev). It installs Bun and Node at the versions
+`mise.toml` pins. There is no database to install: local development runs D1 and
+R2 in the Workers runtime simulator, and keeps their state in `.wrangler/state`.
 
 ```bash
-bun install
-bun run dev
-bun run db:seed
+mise install
+mise run install
+mise run dev
+mise run db:seed
 ```
 
-`bun run dev` applies the migrations in [`migrations/`](migrations) to the local
-database, then starts Next.js. `bun run db:seed` adds three demo accounts and
-the librarians' catalogue to that database, and is safe to repeat.
+`mise run dev` applies the migrations in [`migrations/`](migrations) to the
+local database, then starts Next.js. `mise run db:seed` adds three demo accounts
+and the librarians' catalogue to that database, and is safe to repeat.
 
 Open <http://localhost:3000> and sign in as `admin@unmsm.edu.pe` with the
 password `password123`. Demo accounts are listed in
@@ -44,7 +45,7 @@ password `password123`. Demo accounts are listed in
 - Register titles and their physical copies (each with a code for the spine, a
   place, a donor and a condition), edit them and upload cover images as a
   librarian.
-- Complete missing cover matches from Open Library with `bun run covers:fetch`.
+- Complete missing cover matches from Open Library with `mise run covers:fetch`.
 - Manage locations and donors as a librarian, and change user roles (which
   includes suspending) as an admin, under Ajustes.
 - Sign up and confirm the account with a six-digit code, and reset a password

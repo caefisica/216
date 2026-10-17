@@ -44,7 +44,7 @@ reset answer is the same for every address, so it still does not reveal which
 addresses have an account.
 
 In development, `RESEND_API_KEY` is not set unless you put it in `.dev.vars`, so
-read the code in the `bun run dev` terminal:
+read the code in the `mise run dev` terminal:
 
 ```text
 [email] To student@example.com: Tu código de verificación es 482913. Expira en 10 minutos.
