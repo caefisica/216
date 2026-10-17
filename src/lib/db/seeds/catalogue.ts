@@ -4,7 +4,7 @@ import * as schema from "../schema";
 import register from "./catalogue.json";
 import { stableId } from "./ids";
 
-export interface RegisterCopy {
+interface RegisterCopy {
   number: number;
   origin: schema.CopyOrigin;
   volume?: string;
