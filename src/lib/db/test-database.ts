@@ -19,7 +19,11 @@ export interface TestDatabase {
  */
 export async function createTestDatabase(): Promise<TestDatabase> {
   const dir = mkdtempSync(join(tmpdir(), "216-test-db-"));
-  const proxy = await getPlatformProxy<CloudflareEnv>({ envFiles: [], persist: { path: dir } });
+  const proxy = await getPlatformProxy<CloudflareEnv>({
+    envFiles: [],
+    persist: { path: dir },
+    remoteBindings: false,
+  });
   const { env } = proxy;
 
   const files = readdirSync(MIGRATIONS_DIR)
