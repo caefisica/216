@@ -56,7 +56,7 @@ export default defineConfig({
   },
   overrides: [
     {
-      // The rule and its test hold raw values on purpose, as the patterns and the cases they check.
+      // The rule uses raw values because it matches those values directly.
       files: ["lint/**"],
       rules: { "design-tokens/no-raw-values": "off" },
     },
