@@ -31,10 +31,10 @@ The D1 `database_id` and the R2 `bucket_name` in `wrangler.jsonc` belong to the
 production Cloudflare account. To run your own copy, replace them with resources
 from your account. See [deployment](deployment.md).
 
-`mise run dev` and `mise run preview` simulate all of these locally and keep
-their state in `.wrangler/state`. Email is not simulated: without
-`RESEND_API_KEY` in `.dev.vars` the mailer logs the message, and with it the
-mailer calls Resend. [`src/lib/storage.ts`](../src/lib/storage.ts) and
+`bun run dev` and `bun run preview` simulate all of these locally and keep their
+state in `.wrangler/state`. Email is not simulated: without `RESEND_API_KEY` in
+`.dev.vars` the mailer logs the message, and with it the mailer calls Resend.
+[`src/lib/storage.ts`](../src/lib/storage.ts) and
 [`src/lib/db/index.ts`](../src/lib/db/index.ts) read the bindings through
 `getCloudflareContext()`.
 
@@ -52,10 +52,10 @@ optimizer needs an image binding this app does not configure.
 `compatibility_date` in `wrangler.jsonc` selects the Workers runtime behavior.
 It must not be later than the `workerd` release bundled by `wrangler`, or
 `wrangler` refuses to start. When you upgrade `wrangler`, move the date forward
-to that release date and run `mise run check` and `mise run preview`. The
+to that release date and run `bun run check` and `bun run preview`. The
 `nodejs_compat` flag provides the Node.js APIs that Next.js needs.
 
-After you change `wrangler.jsonc`, run `mise run typegen` to regenerate
+After you change `wrangler.jsonc`, run `bun run typegen` to regenerate
 `worker-configuration.d.ts`. Git ignores that file, so a check run never changes
-tracked files. `mise run typecheck` and `mise run build` generate it, and
-`mise run typegen` gives your editor the same file.
+tracked files. `bun run typecheck` and `bun run build` generate it, and
+`bun run typegen` gives your editor the same file.

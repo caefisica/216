@@ -10,7 +10,7 @@ import { getFileUrl } from "../src/lib/storage";
 import { addBookImageRecord } from "../src/features/books/repository";
 import { remoteBucket, remoteDatabase, runCf, type ObjectBucket } from "./cloudflare-remote";
 
-const USAGE = `Usage: mise run covers:fetch -- [--remote] [--dry-run]
+const USAGE = `Usage: bun run covers:fetch [--remote] [--dry-run]
 
 Matches titles without a cover on Open Library and stores the covers in R2 and the database.
 Without --remote it uses the local database and bucket. With --remote it uses production through

@@ -6,17 +6,17 @@ schema is defined in `src/lib/db/schema/`. The SQL that creates it is in
 
 ## Migrations
 
-| Command                          | Does                                                           |
-| -------------------------------- | -------------------------------------------------------------- |
-| `mise run db:migrate`            | Apply pending migrations to the local database.                |
-| `mise run db:migrate:production` | Apply pending migrations to the production database.           |
-| `mise run db:generate`           | Write a new migration from the difference to the schema files. |
-| `mise run db:seed`               | Add the demo accounts and the catalogue to the local database. |
-| `mise run db:seed:sql`           | Write the catalogue as `catalogue.sql` for production.         |
-| `mise run admin:create`          | Create or promote an admin. `--remote` targets production.     |
+| Command                         | Does                                                           |
+| ------------------------------- | -------------------------------------------------------------- |
+| `bun run db:migrate`            | Apply pending migrations to the local database.                |
+| `bun run db:migrate:production` | Apply pending migrations to the production database.           |
+| `bun run db:generate`           | Write a new migration from the difference to the schema files. |
+| `bun run db:seed`               | Add the demo accounts and the catalogue to the local database. |
+| `bun run db:seed:sql`           | Write the catalogue as `catalogue.sql` for production.         |
+| `bun run admin:create`          | Create or promote an admin. `--remote` targets production.     |
 
-`mise run dev` runs `db:migrate` first. The local database lives in
-`.wrangler/state`; delete that folder to start over. `mise run deploy` runs
+`bun run dev` runs `db:migrate` first. The local database lives in
+`.wrangler/state`; delete that folder to start over. `bun run deploy` runs
 `db:migrate:production` before it uploads the Worker.
 
 Wrangler records applied migrations in the `d1_migrations` table and applies
@@ -26,10 +26,10 @@ each file once, in order. A migration that fails is rolled back.
 
 1. Edit a file in `src/lib/db/schema/`. Export new tables from
    `schema/index.ts`.
-2. Run `mise run db:generate`. Read the new file in `migrations/`: SQLite cannot
+2. Run `bun run db:generate`. Read the new file in `migrations/`: SQLite cannot
    alter every column in place, so drizzle-kit may recreate a table, and a
    recreated table loses rows unless you copy them.
-3. Run `mise run db:migrate` and check the app locally.
+3. Run `bun run db:migrate` and check the app locally.
 4. Commit the schema change with the migration. Never edit a migration that has
    been applied in production; add a new one.
 
@@ -39,7 +39,7 @@ from the seed below; production gets them as
 
 ## Seeds
 
-[`seed.ts`](../src/lib/db/seed.ts) is the entry point of `mise run db:seed`. It
+[`seed.ts`](../src/lib/db/seed.ts) is the entry point of `bun run db:seed`. It
 runs two seeds and only ever writes to the local database. Every insert does
 nothing when the row exists, so the seed is safe to repeat and never overwrites
 an edit.
@@ -85,7 +85,7 @@ the guesses and the subcategory names.
 
 ### Seeding production
 
-`mise run db:seed:sql` writes the catalogue seed, and only that, to the
+`bun run db:seed:sql` writes the catalogue seed, and only that, to the
 git-ignored `catalogue.sql` ([`seed-sql.ts`](../src/lib/db/seed-sql.ts)). It
 builds the statements with the same code as `db:seed` and writes their values
 into the SQL, because `wrangler d1 execute --file` takes no bound parameters. A

@@ -10,7 +10,7 @@
 Log in once with `bunx wrangler login`, then:
 
 ```bash
-mise run deploy
+bun run deploy
 ```
 
 It applies pending migrations to the production D1 database, builds the Worker
@@ -19,8 +19,8 @@ fails stops the deploy before any new code is live. Write migrations that work
 with the previous version of the code as well, because the two run side by side
 for a moment.
 
-`mise run build` builds without uploading. After it, `mise run preview` serves
-the built Worker locally, with local D1 and R2.
+`bun run build` builds without uploading. After it, `bun run preview` serves the
+built Worker locally, with local D1 and R2.
 
 ## First deploy in a new account
 
@@ -28,7 +28,7 @@ the built Worker locally, with local D1 and R2.
    `database_id` in `wrangler.jsonc` under `d1_databases`.
 2. Create the bucket: `bunx wrangler r2 bucket create 216-storage`. Keep the
    binding name `_216_storage`.
-3. Run `mise run deploy`. Migrations create the tables, but no categories or
+3. Run `bun run deploy`. Migrations create the tables, but no categories or
    books: staff cannot register a title until the categories exist.
 4. [Load the catalogue](#load-the-catalogue).
 5. Set the Resend API key: `bunx wrangler secret put RESEND_API_KEY`. See
@@ -39,12 +39,12 @@ The images need no public bucket URL, because the Worker serves them.
 
 ## Load the catalogue
 
-`mise run db:seed` writes to the local database only. To fill the production
+`bun run db:seed` writes to the local database only. To fill the production
 database, render the same seed as one SQL file and apply it with Wrangler, after
 the migrations:
 
 ```bash
-mise run db:seed:sql
+bun run db:seed:sql
 bunx wrangler d1 execute DB --remote --file catalogue.sql
 ```
 
@@ -55,11 +55,11 @@ since. What the seed holds is in [database](database.md#seeds).
 
 ## Load the covers
 
-`mise run covers:fetch` fills the local database and bucket. To fill production,
+`bun run covers:fetch` fills the local database and bucket. To fill production,
 after the catalogue is loaded:
 
 ```bash
-mise run covers:fetch -- --remote
+bun run covers:fetch --remote
 ```
 
 It reads the database and bucket named in `wrangler.jsonc` and writes through
@@ -95,7 +95,7 @@ To send to other users:
 ## First admin
 
 ```bash
-mise run admin:create -- --email you@example.com --name "Your Name" --remote
+bun run admin:create --email you@example.com --name "Your Name" --remote
 ```
 
 It writes through Wrangler, so it uses the `bunx wrangler login` from

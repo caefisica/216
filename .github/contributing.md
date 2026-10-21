@@ -12,19 +12,19 @@ request, every push to `master` and manual workflow runs. Run it before you
 push:
 
 ```bash
-mise run check
+bun run check
 ```
 
-`mise run check` runs lint and the format check, the type check, the tests and
+`bun run check` runs lint and the format check, the type check, the tests and
 the build. It writes no tracked file. The database tests start a real local D1
 database in a temporary directory and apply the migrations to it, so they need
 no server and no Docker.
 
-`mise run fix` applies the safe lint fixes and formats every file, Markdown
+`bun run fix` applies the safe lint fixes and formats every file, Markdown
 included: 80 columns, prose wrapped (see [`.oxfmtrc.json`](../.oxfmtrc.json)).
 
-`mise run knip` reports unused files, exports and dependencies. CI does not run
-it.
+`bun run knip` reports unused files, exports and dependencies, and
+`bun run knip:fix` removes them. CI does not run it.
 
 Tests are `*.test.ts` files next to the code, run by Vitest. Add one that fails
 without your change. Run the app too, and describe what you did in the pull

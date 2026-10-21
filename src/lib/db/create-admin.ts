@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/sqlite-proxy";
 import { createAdmin } from "./admin";
 import * as schema from "./schema";
 
-const USAGE = `Usage: mise run admin:create -- --email <email> [--name <name>] [--remote]
+const USAGE = `Usage: bun run admin:create --email <email> [--name <name>] [--remote]
 
 Makes the account an admin. The password is read from stdin, or prompted for on a terminal.
 An existing account is promoted. A new one needs --name and a password.
