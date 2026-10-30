@@ -1,6 +1,6 @@
-# Commands only the operator runs. Captain's bash guard refuses them in agent
-# and captain sessions; see Captain's docs/guards.md. Local D1, preview and
-# builds are open to agents.
+# Commands only the operator runs. The agent harness reads this file from
+# master and refuses a command that runs the program with every listed word
+# among its arguments. Local D1, preview and builds are open to agents.
 
 # Production deploy and its D1 migration.
 bun deploy
