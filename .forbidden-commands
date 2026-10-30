@@ -1,0 +1,11 @@
+# Commands only the operator runs. Captain's bash guard refuses them in agent
+# and captain sessions; see Captain's docs/guards.md. Local D1, preview and
+# builds are open to agents.
+
+# Production deploy and its D1 migration.
+bun deploy
+bun db:migrate:production
+opennextjs-cloudflare deploy
+wrangler deploy
+# Any wrangler call on the remote D1 or another production resource.
+wrangler --remote
